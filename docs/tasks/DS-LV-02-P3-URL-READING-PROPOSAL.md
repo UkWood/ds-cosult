@@ -1,7 +1,7 @@
 # DS-LV-02/P3 — Native URL Reading Conformance (Proposal Only)
 
 **Дата:** 2026-11-17  
-**Статус:** **PROPOSED — NO OWNER GO / NO PAID EXECUTION**
+**Статус:** **P3 SCOPE AGREED BY OWNER — OFFLINE PREFLIGHT APPROVED; PAID GO REQUIRES EXPLICIT NUMERIC LIMIT**
 **Основание:** DS-LV-02/P2 standalone Search PASS; следующее качественно иное свойство — **model-directed URL reading**.
 
 ## Goal
@@ -38,3 +38,21 @@ Do not log raw page text, tool encrypted payload, API key or hidden reasoning. O
 Architecture Session A may request specific OWNER GO for P3 after presenting estimated costs and residual server-tool billing risks. Existing P2 GO is exhausted and **must not carry over**. No autonomous start of P3.
 
 Official primary source: https://api-docs.deepseek.com/guides/web_tools/ (URL Reading / Chat Completions API sections).
+
+## Preparation after user consent (2026-11-17)
+
+Владелец ответил «Согласовано продолжай» на предложение P3, но предыдущая формулировка не указывала конкретной суммы бюджета. Поэтому это согласие принято как разрешение подготовить и проверить **бесплатный P3 preflight**, а не как утверждение денежного потолка. **Платный вызов до отдельного подтверждения суммы не выполнять.**
+
+- Proposed limit: **one HTTP POST / $0.01 USD**; этот лимит должен быть принят владельцем явно.
+- Peak Flash tariff: input cache miss $0.30 / 1M; output $1.20 / 1M. Fetch tool: $0.75 per 1,000 successful page fetches. Один fetch + 500 prompt tokens + 256 output tokens оценивается в ~$0.0012072 по пиковым тарифам; это **estimate not hard cap**. Дополнительные tool calls могут стоить денег даже при одном HTTP.
+- Test fixture: `https://example.com/`, current title `Example Domain` (visually verified via public web); answer alone cannot prove real read.
+- Only tool declared: `deepseek_read_url`. No `tool_choice`, no `deepseek_web_search`, thinking disabled.
+- `server_tool_calls[].calls[].{type,kind,status,action.url,page.title,signature}` must prove `type=deepseek_read_url`, `kind=read_link`, `status=completed`, same host, signature present. Raw signature and reasoning NEVER logged.
+- Track `usage.server_tool_use.tool_fetch` for billed tool operations (not `web_fetch_requests`), tokens, estimated vs actual billing.
+- Official URL reading docs https://api-docs.deepseek.com/guides/web_tools/ ; pricing https://api-docs.deepseek.com/quick_start/pricing/.
+- Offline script in `scripts/validation/ds_lv_02_p3_url_read.py`, `--self-test` performs three synthetic checks with **0 network requests**.
+- On execution a persistent `logs/ds-lv-02-p3-attempted.marker` is created atomically. Never retry after any outcome without new owner authorisation.
+- Do not publish closed Core/GT. No Merge, no DS-02, no production. P4..P9 not authorized.
+
+### Linux/WSL staged handoff
+First download the script from a pinned commit, compile it with Python, run `--self-test`, compute SHA-256, and return output. **Do not execute the script without `--self-test` until the numeric spending limit is separately confirmed.**

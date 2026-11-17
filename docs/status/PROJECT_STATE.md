@@ -8,7 +8,7 @@
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 выполнен и принят**, старое разрешение исчерпано. **P2 отдельно разрешён и ВЫПОЛНЕН/ПРИНЯТ**: один standalone Search API, лимит $0.01; разрешение исчерпано. P3..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 подготовка согласована, платный запуск пока не разрешён: отсутствует утверждённый числовой бюджет**. P4..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -50,8 +50,13 @@
 - Владелец согласовал один прямой Search API вызов с бюджетом $0.01; `POST /v1/tools/search`, `count=1`, `need_content=false`. Published charge estimate $0.00075 for successful nonempty result, actual billing unverified.
 - Safe test script: `scripts/validation/ds_lv_02_p2_search.py`; scope & GO: `docs/tasks/DS-LV-02-P2-OWNER-GO.md`. **P2 executed and accepted:** 2026-11-17 19:00:23 UTC, HTTP 200, `result_count=1`, valid official DeepSeek documentation URL, 862 ms, estimated $0.00075, actual billing UNKNOWN. Отчёт: `docs/acceptance/DS-LV-02-P2-ARCHITECTURE-ACCEPTANCE.md`, JSON: `docs/evidence/DS-LV-02-P2-RESULT.json`. Разрешение исчерпано, P3 не разрешён.
 
+## P3 preflight preparation (2026-11-17)
+- User: «Согласовано продолжай». P3 scope/offline preparation approved; no numeric budget was previously proposed. Paid P3 NOT AUTHORIZED until owner confirms proposed **1 HTTP POST and $0.01 USD** with acknowledged server-side fetch billing risk.
+- Verified official docs (Chat Completions + `deepseek_read_url`), JSON `message.server_tool_calls`, true billed `usage.server_tool_use.tool_fetch`, and separate model token charges.
+- Read-only one-page fixture `https://example.com/`; safe `scripts/validation/ds_lv_02_p3_url_read.py` with `--self-test` (zero network), one-attempt marker, getpass, redacted report.
+
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3..P9 NOT AUTHORIZED**. P3 design only: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 OFFLINE PREFLIGHT READY, PAID GO PENDING BUDGET; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**

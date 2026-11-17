@@ -35,5 +35,7 @@
 - **DS-LV-02/P2 completed + accepted (2026-11-17 19:00:23 UTC):** owner-authorized 1 standalone Search API HTTP POST returned 200 and 1 official-documentation result (`https://api-docs.deepseek.com/news/news261113/#1`), no content fetch, latency 862 ms, fee estimate $0.00075, actual billing unknown. P2 ACCEPTED; detailed report `docs/acceptance/DS-LV-02-P2-ARCHITECTURE-ACCEPTANCE.md`, evidence `docs/evidence/DS-LV-02-P2-RESULT.json`. Authorization exhausted.
 - **DS-LV-02/P3 proposal drafted:** model-directed `deepseek_read_url` on `https://example.com/`, explicitly NOT authorized and NOT executed; differentiate from managed Search/Fetch and `deepseek_web_search`.
 
+- **DS-LV-02/P3 scope consent (2026-11-17):** user replied «Согласовано продолжай». Completed official documentation and tariff preflight; prepared offline-safe WSL script including synthetic self-tests, authentic `message.server_tool_calls` scrutiny and billed tool_fetch tracking. A numeric budget for P3 was not previously agreed; propose one POST / $0.01, but **NO PAID GO until explicit numeric acceptance**. No API request executed.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
