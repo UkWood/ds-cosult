@@ -43,5 +43,8 @@
 
 - **DS-LV-02/P3 execution/acceptance (2026-11-17 19:16:47 UTC):** one owner-authorized `deepseek-flash` URL-reading call, HTTP 200, completed `read_link`, signature present, 419 tokens, `tool_fetch=1`, 1709 ms, estimated $0.0009207, billing unverified. `example.com` current HTML has no H1 and only `<title>Example Domain</title>`; DeepSeek Chinese answer denied H1 and correctly named title, consistent with source. Original expected positive H1 and substring-only scorer flawed. Architecture result **PASS for tool capability, WITH REVIEW NOTES for fixture and language**. P3 GO exhausted; P4 draft only.
 
+- **DS-LV-02/P4 scope permission (2026-11-17):** владелец «Разрешаю» после P4 proposal, но сумма не была предложена. Подтверждена подготовка scope, NOT paid GO. Потребуется отдельное утверждение 1 HTTP POST / $0.01 с риском нескольких server-side операций. Подготовлен WSL script `scripts/validation/ds_lv_02_p4_web_search.py`, только `--self-test` офлайн. Никаких P4 API-вызовов пока не выполнялось.
+- **P3 user-supplied HTML evidence addendum:** проверен предоставленный файл `Example Domain.html` (577 bytes, SHA-256 `25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484`), `<title>Example Domain</title>`, без H1; байты не объявляются как идентичные прочитанным DeepSeek.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

@@ -8,7 +8,7 @@
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4 scope/preflight согласован, **платный P4 ещё НЕ РАЗРЕШЁН без числового бюджета**; P5..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -68,7 +68,7 @@
 
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with fixture/language review notes; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 offline preflight prepared (paid GO needs $0.01 explicit confirmation); P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
 
@@ -76,3 +76,9 @@
 - Пользователь ответил «Разрешаю» на прямой вопрос: «Подтверждаете GO для одного платного вызова `deepseek_read_url` с лимитом $0,01 USD?». **OWNER GO GRANTED: exactly one Chat Completions HTTP POST, $0.01 organizational limit**.
 - Официальный контракт URL-reading повторно сверён; script from SHA `4b6bdf5058946337021aade831d09cf34831ecaa` успешно прошёл WSL offline preflight. **P3 paid request EXECUTED 2026-11-17 19:16:47 UTC**.
 - Статическая строка `authorization` внутри ранее закреплённого скрипта всё ещё содержит `P3_BUDGET_OWNER_GO_REQUIRED_BEFORE_EXECUTION`; это метка времени создания скрипта, а не действующее состояние разрешения. **Нормативный источник GO — запись в `docs/tasks/DS-LV-02-P3-OWNER-GO.md`**; при приёмке явно сверить обе записи и не делать повторов.
+
+## P4 preparation (2026-11-17)
+- Owner: «Разрешаю» after proposal to proceed to native `deepseek_web_search`, **but no numeric spend limit in that proposal**. Scope and offline work approved; **paid call not yet authorized**.
+- Reviewed official DeepSeek Web Tools/Chat Completions docs and pricing. 1 outer HTTP call may create multiple billable `tool_search` and `tool_fetch` operations; these are distinct from HTTP calls. Proposal: one POST, $0.01 organizational limit, risk of not having provider-enforced hard cap.
+- WSL offline safety/selftest script: `scripts/validation/ds_lv_02_p4_web_search.py` — `--self-test` costs $0; real mode uses getpass, no retry, atomic marker and redacted diagnostic.
+- User-supplied `Example Domain.html` (related P3) examined as a separate file. SHA256 `25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484`, 577 bytes; contains HTML title `Example Domain` and no H1. **Not a copy of the DeepSeek tool's encrypted snapshot**; no original uploaded HTML bytes published.

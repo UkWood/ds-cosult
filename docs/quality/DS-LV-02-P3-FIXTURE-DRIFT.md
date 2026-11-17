@@ -33,3 +33,7 @@ DeepSeek returned (Chinese) **no explicit H1, page title Example Domain** — co
 - Original P3 executed / accepted for **tool availability**.
 - H1 positive extraction benchmark invalidated; not reusable without correction.
 - No additional DeepSeek call permitted by exhausted P3 budget.
+
+## Independent user-supplied static HTML snapshot (2026-11-17)
+
+A separate user-uploaded file `Example Domain.html` was inspected, size **577 bytes**, SHA-256 `25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484`. It includes `<title>Example Domain</title>` and body paragraph `<p>...`, with **no H1**. This strengthens the observation that the original P3 H1 expectation was stale. The original file bytes are **not published** and do not prove exactly what DeepSeek's server-side Fetch saw.
