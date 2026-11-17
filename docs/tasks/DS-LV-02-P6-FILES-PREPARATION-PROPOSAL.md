@@ -1,7 +1,7 @@
 # DS-LV-02/P6 — Synthetic Files API Text/Rich Parsing (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P6-TEXT PASS WITH REVIEW NOTES / CLEANUP CHECK VERIFIED BEFORE EXPIRY; P6-RICH SAFE OFFLINE PREFLIGHT NEXT**
+**Status:** **P6-TEXT PASS WITH REVIEW NOTES; P6-RICH OFFLINE PREFLIGHT PASS, ONE CONTROLLED LIVE CYCLE NEXT**
 
 ## Objective
 Determine whether direct DeepSeek Files API can ingest a simple **synthetic public fixture** and make text- and rich-layout-parsed content available for model answers, with evidence of file lifetime, provenance and privacy controls. This is **not** a Saturn PDF corpus test and does not approve uploading company files.
@@ -38,3 +38,6 @@ New **one-call read-only filtered List Files diagnostic** to verify account stat
 One authorized filtered list GET at 20:52:28 UTC returned HTTP200, empty complete list, target absent and file ID hash matched, before server expiry 21:34:56 UTC. This closes CR-P6-01 with separate evidence and preserves the original P6-TEXT evaluator output. `../acceptance/DS-LV-02-P6-TEXT-CLEANUP-CLOSURE.md`.
 
 **P6-RICH**: corrected new script `scripts/validation/ds_lv_02_p6_rich_safe.py`, original P6-TEXT script unchanged. Run **`--self-test` offline first**. Following independent WSL acceptance, only one Rich cycle (upload/chat/delete/complete-list verification; max 4 HTTP) is permitted. No provider call for Rich yet.
+
+## P6-RICH WSL offline preflight accepted (recorded 2026-11-18)
+User-provided Python compile and synthetic self-test PASS (0 HTTP/$0); PDF SHA-256 checked, standalone RICH script owner local SHA256 `5ac81b7552d543c73303fb01ec71e1a2e4bb643c520c23d9ba62322dcb47e83b`, source pinned at `b6f6f056990f698b170a880f54277f8157ab12a9`. Accepted report `../evidence/DS-LV-02-P6-RICH-OFFLINE-PREFLIGHT.md`. **Live P6-RICH not yet executed.** Next permitted operation one cycle max four HTTP; DELETE response + full filtered List Files absence must be audited before any P7 stage.

@@ -70,5 +70,7 @@
 
 - **DS-LV-02/P6-TEXT CR-P6-01 CLOSED (2026-11-17 20:52:28 UTC):** owner single read-only GET /files returned HTTP200, 0 records, has_more:false, target ID hash matched and target not listed before 21:34:56 UTC TTL. Independent cleanup gate PASS, alongside earlier DELETE200/deleted:true. Original GET400/evaluator report preserved as originally emitted; **P6-TEXT PASS WITH REVIEW NOTES**, `docs/acceptance/DS-LV-02-P6-TEXT-CLEANUP-CLOSURE.md`. P6 HTTP used 5/9; corrected **RICH-only** script prepared `scripts/validation/ds_lv_02_p6_rich_safe.py`, requires separate offline preflight before one authorized 4-HTTP Rich cycle. No P6-RICH calls yet.
 
+- **DS-LV-02/P6-RICH offline preflight PASS (recorded 2026-11-18):** owner WSL `py_compile` clean, `--self-test` PASS, fixture SHA validated, 0 DeepSeek API calls, $0. Source Git blob `83659995ba1d2c35795c8a5cb0d28afa58e1c251`, owner local SHA256 `5ac81b7552d543c73303fb01ec71e1a2e4bb643c520c23d9ba62322dcb47e83b`. Live corrected Rich-only path code gate inspected. Evidence `docs/evidence/DS-LV-02-P6-RICH-OFFLINE-PREFLIGHT.md`. Next one paid RICH-only upload+chat+delete+complete list cycle (≤4 HTTP), no retries. P6-RICH unexecuted to date of log.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
