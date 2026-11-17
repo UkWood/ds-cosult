@@ -1,5 +1,8 @@
 # DS-SEC-04 — Public Consultant Input, Throttling and Budget Guardrails (Proposal)
 
+
+**CURRENT APPROVAL UPDATE (2026-11-18):** The owner accepted the numerical **pilot defaults** and budget-guard architecture; see `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Specifically the earlier *per-session rolling-24-hour* 20-request suggestion is **superseded** by the accepted **20 billable POST attempts per canonical IP per configured operator-calendar day**. Exact timezone, organization USD budgets, contacts and privacy configuration must be supplied before deployment. Historical proposal text below is preserved, not binding where superseded.
+
 **Recorded:** 2026-11-18  
 **Status:** **ARCHITECTURE PROPOSAL FOR OWNER REVIEW — NOT NUMERICALLY APPROVED; NO IMPLEMENTATION OR PAID EXPERIMENT**  
 **Accepted prerequisites:** DS-SEC-01 explicit `Не выдумывай` system rule; DS-SEC-03 strict technical competence scope + **required** question-length, progressive rate limiting and escalation-to-support capabilities.  
