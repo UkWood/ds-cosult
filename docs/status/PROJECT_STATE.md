@@ -103,3 +103,7 @@
 - Owner reply «Разрешаю» interpreted as approval for **free research and offline script**, as the proposal explicitly calls for a separate numerical GO before a paid test.
 - Official DeepSeek docs: deep thinking search may perform **about 20 internal tool steps**, single search can bill multiple queries, `max_tool_calls` ignored in Responses API. No verified enforceable per-request USD cap in consulted docs; 1 HTTP POST and `max_tokens` alone do not guarantee charge below $0.01. See `docs/research/DS-LV-02-P5-SERVER-TOOL-BUDGET-REVIEW.md`.
 - Safe `scripts/validation/ds_lv_02_p5_thinking_search.py` prepared; run `--self-test` only before budget GO. **No P5 HTTP request executed; no new DeepSeek charges.**
+
+## P5 Offline WSL preflight acceptance — 2026-11-17
+- Script from pinned commit `4009ad2d17d71c627deb61b0fca3c941f7a27e3a` compiled successfully and synthetic `--self-test` returned **PASS**. Owner-reported local SHA-256: `4a9dd93517ae09a1e0f1ec61415d1ab65666cdb127a2d0dd2681c43941882608`. `NETWORK REQUESTS: 0 | API COST: $0`.
+- Acceptance record: `docs/evidence/DS-LV-02-P5-OFFLINE-PREFLIGHT.md`. **Only offline preflight accepted**. Live Deep Thinking + native Web Search remains UNTESTED and **PAID P5 NOT AUTHORIZED** without numeric budget/risk consent; P6–P9 not authorized.

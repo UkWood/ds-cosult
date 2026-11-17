@@ -54,5 +54,7 @@
 
 - **DS-LV-02/P5 free prep authorization (2026-11-17):** владелец «Разрешаю» после предложения исследовать серверные лимиты и сделать офлайн-скрипт. Разрешена **только бесплатная подготовка**, не платный API-вызов. Официальная документация указывает до примерно 20 внутренних шагов и несколько billable Search queries в одном call; Responses `max_tool_calls` игнорируется. Нет подтверждённого hard dollar cap; risk review `docs/research/DS-LV-02-P5-SERVER-TOOL-BUDGET-REVIEW.md`. Создан `scripts/validation/ds_lv_02_p5_thinking_search.py` с 0-network `--self-test`, секретным вводом, журналом без reasoning и защитой от повторов. P5 paid НЕ ИСПОЛНЕН.
 
+- **DS-LV-02/P5 OFFLINE PREFLIGHT PASS (2026-11-17):** пользователь выполнил WSL `py_compile` + `--self-test` без ошибок; 0 запросов и $0 API. Локальный SHA-256 `4a9dd93517ae09a1e0f1ec61415d1ab65666cdb127a2d0dd2681c43941882608` зафиксирован по пользовательскому терминалу. Запись `docs/evidence/DS-LV-02-P5-OFFLINE-PREFLIGHT.md`. Платный P5 без отдельного подтверждения числового риска НЕ РАЗРЕШЁН. P6–P9 не разрешены.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

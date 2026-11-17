@@ -39,3 +39,6 @@ Owner replied «Разрешаю» to a proposal for **free documentation/cost r
 Script `scripts/validation/ds_lv_02_p5_thinking_search.py` supports offline-only `--self-test` (4 synthetic test scenarios, 0 HTTP/0 USD). **Do not use `--execute-after-owner-go` without separately signed numerical GO.** Request uses only `deepseek_web_search`, thinking enabled, reasoning_effort low, max_tokens 1536 and one public official-doc comparison question. Tests completed `deep_search` search/open/find calls, citations, presence of reasoning metadata, billed tool counters, language. Full final answer stored **locally only** for human quality review; raw reasoning never recorded.
 
 P5 is not a comparative evaluation of quality and does not complete any Saturn Ground Truth. P6..P9 blocked.
+
+## WSL Offline Preflight — PASS (2026-11-17)
+User-provided execution of pinned `scripts/validation/ds_lv_02_p5_thinking_search.py`: Python compilation and synthetic `--self-test` both PASS, **0 network / $0**. Local SHA256: `4a9dd93517ae09a1e0f1ec61415d1ab65666cdb127a2d0dd2681c43941882608`. Evidence record: `../evidence/DS-LV-02-P5-OFFLINE-PREFLIGHT.md`. This is not a paid-test GO. No paid execution or real P5 capability verification has occurred.
