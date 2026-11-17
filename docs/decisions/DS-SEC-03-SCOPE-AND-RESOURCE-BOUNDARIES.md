@@ -1,5 +1,8 @@
 # DS-SEC-03 — Accepted Product Guardrails: Consultant Scope and Resource Boundaries
 
+
+**CURRENT NUMERIC APPROVAL NOTE (2026-11-18):** The owner has now approved the previously proposed numeric pilot parameters as documented in `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`; the originally pending count/delay values are therefore resolved by the later decision. Deployment configuration values are still pending.
+
 **Recorded:** 2026-11-18  
 **Decision type:** **OWNER ACCEPTED — PRINCIPLES / POLICY DIRECTION ONLY**  
 **Implementation:** **NOT AUTHORISED / NOT DEPLOYED**  
