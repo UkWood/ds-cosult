@@ -76,5 +76,7 @@
 
 - **DS-LV-02/P7 original offline preflight PASS and owner UX decision (2026-11-18):** WSL `py_compile`, `--self-test`, pinned PDF checksum all passed, 0 API calls/$0. Original script local SHA256 `43c889db1e4a2a5ef2729240eb6dd5ce50f4d7b86c1744644da62ef07a489024`. User explicitly requested removal of duplicate `Enter P...-APPROVED` prompts. Architecture accepted and removed P7's exact gate, keeping hidden key, TTY, one-attempt marker, no retries, SHA pin and spending limits. Decision `docs/decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md`. **Re-run new offline preflight only**, no paid P7 yet; P8/P9 to follow same UX policy.
 
+- **DS-LV-02/P7 revised OCR WSL offline preflight PASS (recorded 2026-11-18):** Owner WSL compiled revised pinned script `scripts/validation/ds_lv_02_p7_ocr.py` from commit `6779014bfd21e4749e1ff090ad4b52154530c342`, `--self-test` PASS, 0 network/$0, fixture SHA matched. Local script SHA `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c`; no redundant P7-APPROVED prompt, one-shot exclusive marker + hidden key retained. Evidence `docs/evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. One direct paid OCR HTTP POST may now execute under owner blanket GO; P8/P9 still blocked pending subsequent acceptance.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

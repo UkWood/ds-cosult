@@ -164,3 +164,8 @@
 - Owner WSL P7 original Python `py_compile` PASS; `--self-test` PASS, pinned synthetic PDF checksum OK, 0 network/$0. Original pinned commit `21c47b020b0951a3109c72b3d1cae8df4e5bb6af` local script SHA256 `43c889db1e4a2a5ef2729240eb6dd5ce50f4d7b86c1744644da62ef07a489024`. Evidence `docs/evidence/DS-LV-02-P7-OCR-ORIGINAL-OFFLINE-PREFLIGHT.md`.
 - Owner explicitly requested **remove redundant `Enter P...-APPROVED` confirmation prompts** in future scripts, retaining permission/limit controls. Decision `docs/decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md` applies P7–P9.
 - P7 script changed only to drop the typed consent gate, retaining `getpass` for key, one-post marker, SHA pinning, no retries or redirects. **New pinned script SHA changes; new offline preflight REQUIRED before paid P7**. No live P7 API calls yet. P8/P9 remain stage-gated.
+
+## P7 revised OCR script — WSL offline preflight ACCEPTED (recorded 2026-11-18)
+- Owner ran Python syntax check and `--self-test` on revised pinned commit `6779014bfd21e4749e1ff090ad4b52154530c342`, Git blob `b2901a91df937999558a38b357b745c23f4f7f7a`; both PASS. User-reported local SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c`.
+- Pinned synthetic one-page PDF SHA `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` validated inside selftest; 0 DeepSeek network calls, $0. Typed `P7-APPROVED` gate gone; hidden key and one-shot safeguards remain.
+- Accepted evidence `docs/evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. **P7 next: exactly one OCR POST** max 1 HTTP / $0.01 organizational under prior blanket owner GO; paid P7 **NOT YET EXECUTED**. P8/P9 stage-gated.

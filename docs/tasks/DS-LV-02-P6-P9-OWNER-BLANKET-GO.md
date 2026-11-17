@@ -73,3 +73,6 @@ Pinned RICH-only script local SHA256 `5ac81b7552d543c73303fb01ec71e1a2e4bb643c52
 
 ## Operator UX owner decision — 2026-11-18
 Owner directed removal of extra operator confirmation inputs `Enter P...-APPROVED` in following scripts, beyond the explicit stage authorization already granted. Accepted policy `docs/decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md` for **P7–P9**; this is a removal of *redundant phrase-entry only*, not an authorization for retries or removing pinned-file/hash, once-only markers, TTY/getpass, stage gates or ceilings. The P7 code update changes file SHA: new offline self-test required before any paid request. **All monetary and HTTP caps unchanged**.
+
+## P7 revised offline preflight gate passed — recorded 2026-11-18
+Owner-reported revised P7 Python SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c`, compile/self-test PASS, no network cost. Evidence `docs/evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. One P7 OCR POST now eligible; **1 HTTP / $0.01 organizational**, no budget or request-count increase; no redundant typed phrase, only hidden getpass key. P8/P9 await P7 outcome.

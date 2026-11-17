@@ -1,7 +1,7 @@
 # DS-LV-02/P7 — Direct OCR One-Page Conformance Test
 
 **Date:** 2026-11-18  
-**State:** **ORIGINAL OFFLINE PREFLIGHT PASS; P7 UX-REVISED SCRIPT NEW OFFLINE PREFLIGHT REQUIRED; PAID NOT EXECUTED**  
+**State:** **P7 UX-REVISED OFFLINE PREFLIGHT PASS; SINGLE PAID OCR POST APPROVED, NOT EXECUTED**  
 **Precedent:** P6 Files API Text/Rich accepted with review notes; P6 budget 9/9 used.  
 **Stage allowance:** **$0.010 organizational / 1 HTTP POST max**; no retries; no provider-enforced monetary cap.
 
@@ -42,3 +42,6 @@ No Merge, DS-02, production, NEW RAG or Saturn source writes.
 
 ## P7 original offline PASS + removal of redundant confirmation prompt (2026-11-18)
 Owner WSL successfully compiled and self-tested the original pinned script (SHA256 `43c889db1e4a2a5ef2729240eb6dd5ce50f4d7b86c1744644da62ef07a489024`), 0 API calls / $0, PDF SHA OK. Evidence `../evidence/DS-LV-02-P7-OCR-ORIGINAL-OFFLINE-PREFLIGHT.md`. Owner requested that further scripts omit `Enter P...-APPROVED` phrases; accepted decision `../decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md`. P7 script has only the two lines for the redundant `input(...)` removed: now local `getpass` follows the TTY+fixture checks directly. No other protections removed. **New source SHA requires new zero-network preflight before the one paid P7 OCR request**; blanket GO / 1 HTTP / $0.01 organizational cap unchanged. P8/P9 will implement no typed confirmation gate.
+
+## Revised script independently accepted offline — recorded 2026-11-18
+Revised `ds_lv_02_p7_ocr.py` commit `6779014bfd21e4749e1ff090ad4b52154530c342` owner SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c` passed `py_compile`, `--self-test`, fixture byte identity checks; DeepSeek requests 0 and API cost $0. Owner confirmation phrase removed as requested, getpass retained. `../evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. **Next one paid `--execute-once` call only** with P7 organizational $0.01, 1 HTTP limit. No retry; P8 gated until result reviewed.
