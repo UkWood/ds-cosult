@@ -79,3 +79,6 @@ Owner-reported revised P7 Python SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab
 
 ## P7 final one-request closure — 2026-11-18
 P7 OCR one authorized POST completed at 2026-11-17 21:31:39 UTC, HTTP200, one successful page; expected OCR page charge $0.000225, invoice not verified. **P7 HTTP 1/1 exhausted; no retry.** P6 HTTP 9/9 already exhausted. P8 allowance remains 4 Chat Completions HTTP, organizational $0.02; P9 offline zero HTTP. **P8 offline only next**, no typed approval phrase. Global monetary risk target $0.05 unchanged.
+
+## P8 offline preflight accepted — recorded 2026-11-18
+Owner WSL Python compile and four-turn scripted `--self-test` PASS, **0 API calls/$0**; pinned script owner SHA-256 `6ca43fe2031a542700e46c8bd4f931115100934d9d0cbde0e5be47e76af19b3e`. Acceptance evidence `docs/evidence/DS-LV-02-P8-OFFLINE-PREFLIGHT.md`. **P8 TURN-1 may now make one paid POST**; 4 total P8 HTTP attempts/$0.02 organizational (non-binding hard cap), no retry, no redundant typed confirmation, each subsequent turn after prior independent review. P9 remains offline and gated.

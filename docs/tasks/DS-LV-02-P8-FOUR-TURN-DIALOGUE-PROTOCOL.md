@@ -1,7 +1,7 @@
 # DS-LV-02/P8 — 4-Turn Synthetic Conversational Continuity Test
 
 **Recorded:** 2026-11-18  
-**Status:** **OWNER BLANKET GO ACTIVE — OFFLINE PREFLIGHT PENDING; NO P8 PAID CALLS**  
+**Status:** **OFFLINE PREFLIGHT PASS — P8 TURN-1 ELIGIBLE FOR ONE PAID POST; NO P8 LIVE CALLS YET**  
 **Previous stage:** P7 direct OCR accepted with review notes.  
 **Limit:** **four** `POST /chat/completions` at most, **$0.020 organizational total** (not provider-enforced hard cap).
 
@@ -43,3 +43,6 @@ No external evidence retrieval in this test; the ground truth is provided in the
 Architect commits script plus P7 acceptance/evidence. Owner WSL downloads pinned script, runs `py_compile`, `--self-test`, reports checksum. **No P8 live POST before Architecture accepted the offline result.** Afterward, only `--turn-1` will be provided (not multiple turns at once), within general owner GO. No `P8-APPROVED` phrase.
 
 P9 offline evaluation after four-turn results; no production, no merge, no NEW RAG or Saturn source changes.
+
+## P8 offline Linux acceptance — recorded 2026-11-18
+Owner WSL verified no P8 state or turn markers, downloaded pinned script from commit `49dba55308e83dcd136c5620c43322b4e186ba3e`, compilation and `--self-test` PASS, **0 requests/$0**. Owner local SHA-256 `6ca43fe2031a542700e46c8bd4f931115100934d9d0cbde0e5be47e76af19b3e`, unchanged Git blob `28c22cad5b27a6a0e7063b7a3608dbd3aac0075a`. Evidence `../evidence/DS-LV-02-P8-OFFLINE-PREFLIGHT.md` accepted. Proceed **only with `--turn-1`** under general owner GO (P8 4 HTTP/$0.02 organizational) and prior pinned source/hash verification. Subsequent turns remain sequentially gated, no retries and no typed P8-APPROVED phrase.
