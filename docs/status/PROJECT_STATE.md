@@ -1,7 +1,7 @@
 # PROJECT STATE — DS-консультант
 
 **Обновлено:** 2026-11-17  
-**Текущий статус:** **DS-LV-02/P5 DEEP THINKING + NATIVE WEB SEARCH PASS WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
+**Текущий статус:** **DS-LV-02/P6 TEXT+RICH PASS WITH REVIEW NOTES; P7 OCR OFFLINE PREFLIGHT NEXT; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
 ## Решения владельца
 - DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
@@ -153,3 +153,9 @@
 - Pinned script commit `b6f6f056990f698b170a880f54277f8157ab12a9`, owner local WSL SHA-256 `5ac81b7552d543c73303fb01ec71e1a2e4bb643c520c23d9ba62322dcb47e83b`, Git blob `83659995ba1d2c35795c8a5cb0d28afa58e1c251`. Python compile PASS; offline `--self-test` PASS with 0 DeepSeek calls / $0; fixture PDF SHA `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` checked OK.
 - Code audit: only `--execute-rich` paid mode, previously accepted P6-TEXT cleanup and pre-expiry list gate checked, new filtered complete file list replaces ungrounded GET404 requirement; old P6-TEXT script unchanged.
 - **P6-RICH OFFLINE PREFLIGHT PASS; one controlled live cycle now eligible**, ≤4 remaining HTTP of P6 9 max; no paid Rich request yet. Evidence `docs/evidence/DS-LV-02-P6-RICH-OFFLINE-PREFLIGHT.md`; P7–P9 stage-gated.
+
+## P6-RICH live PASS; P6 final acceptance — recorded 2026-11-18
+- Owner one permitted Rich-only cycle at 2026-11-17 21:11:27 UTC, all **4 HTTP200** (upload/chat/DELETE/list), delete ack true and **full list empty** `has_more=false`, target absent. `rich_layout_recognition`, one pinned synthetic PDF SHA `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286`. Model exactly reproduced FENIX-17 12.4 L TX-731, ORBIT-5 6.8 L RB-204 and additionally **2 squares red+blue** (unavailable in TEXT).
+- RICH 567 prompt+69 completion =636 tokens, 5,179 ms, peak estimate $0.0004779. TEXT 184+96=280 tokens, peak estimate $0.0003954. **P6 total peak estimate $0.0008733; actual provider debit unknown**.
+- **P6 PASS WITH REVIEW NOTES**, all **9/9 HTTP** (TEXT4 + cleanup list1 + RICH4), no P6 rerun. Reports `docs/evidence/DS-LV-02-P6-RICH-RESULT.json` and `docs/acceptance/DS-LV-02-P6-FINAL-ARCHITECTURE-ACCEPTANCE.md`. Scope only simple synthetic PDF, no complex Saturn diagram accuracy established.
+- **P7 one-page OCR is next and only offline prep approved for immediate execution** (owner's blanket GO supports ≤1 paid OCR POST after offline acceptance). `scripts/validation/ds_lv_02_p7_ocr.py`, `docs/tasks/DS-LV-02-P7-OCR-TEST-PROTOCOL.md`. P8/P9 remain stage gated.

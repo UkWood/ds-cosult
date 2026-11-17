@@ -1,0 +1,41 @@
+{
+  "test_id": "DS-LV-02-P6-RICH",
+  "purpose": "rich_layout_recognition",
+  "fixture_sha256": "069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286",
+  "fixture_bytes": 1031,
+  "timestamp_utc": "2026-11-17T21:11:27.502837+00:00",
+  "max_http_requests": 4,
+  "http_requests_attempted": 4,
+  "upload_http_status": 200,
+  "chat_http_status": 200,
+  "delete_http_status": 200,
+  "verify_get_http_status": 200,
+  "deletion_acknowledged": true,
+  "deletion_verified_absent": true,
+  "file_id_sha256": "358a6b7747272cd25f54e637c033daec75d5feead78b3671bce4289ab43be55f",
+  "expires_after_seconds_requested": 3600,
+  "expires_at_reported": 1794953489,
+  "chat_model_observed": "deepseek-flash",
+  "finish_reason": "stop",
+  "answer_preview": "Устройства:\n- FENIX-17 — ёмкость 12.4 L, код TX-731\n- ORBIT-5 — ёмкость 6.8 L, код RB-204\n\nГеометрические фигуры: видны две — красный квадрат и синий квадрат.",
+  "usage": {
+    "prompt_tokens": 567,
+    "completion_tokens": 69,
+    "total_tokens": 636
+  },
+  "estimated_peak_cost_usd": 0.0004779,
+  "actual_billing_usd": null,
+  "status": "FILE_AND_CHAT_RETURNED_REVIEW_NEEDED",
+  "error_type": null,
+  "verify_list_records_count": 0,
+  "verify_list_has_more": false,
+  "latency_ms": 5179,
+  "source": "owner-provided redacted WSL stdout",
+  "architecture_result": "PASS_WITH_REVIEW_NOTES",
+  "comments": [
+    "4 HTTP operations completed, all 200; original file delete acknowledged then full rich-layout-recognition file list empty, has_more=false.",
+    "Source text exact match and two colored vector squares (red and blue) matched ground truth in pinned synthetic PDF.",
+    "The script status is a generic positive diagnostic requiring architecture review, not an error.",
+    "No exact real bill known, estimated peak includes 1 page parse ($0.000225) and Flash prompt/completion token charges."
+  ]
+}

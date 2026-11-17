@@ -65,3 +65,8 @@ Architecture allocates **one extra read-only `GET /files`** solely to verify tar
 
 ## P6-RICH offline preflight accepted — recorded 2026-11-18
 Pinned RICH-only script local SHA256 `5ac81b7552d543c73303fb01ec71e1a2e4bb643c520c23d9ba62322dcb47e83b`, offline compile/self-test PASS, 0 network and API cost $0; PDF SHA `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` OK. `docs/evidence/DS-LV-02-P6-RICH-OFFLINE-PREFLIGHT.md`. P6 HTTP remaining **4/9**, P6 organizational $0.02 and total P6–P9 $0.05 **unchanged**. One paid Rich-only cycle may execute sequentially under blanket GO, no retry; independent DELETE and complete list cleanup gate required before P7.
+
+## P6 final spending/request closure — recorded 2026-11-18
+- P6-TEXT: 4 HTTP + independent list diagnostic: 1 HTTP + P6-RICH: 4 HTTP = **9/9** allocated HTTP requests. Both DELETE acknowledged and independent complete lists confirmed absence before one-hour expiry; no files need further cleanup calls in these observations.
+- RICH peak estimate $0.0004779; TEXT $0.0003954, **P6 total peak estimate $0.0008733**, invoice still unknown. **P6 CLOSED; NO RE-RUN or re-upload**.
+- P7 retains one direct OCR POST, organizational risk allowance $0.01; no Files API storage/chat/deletion in P7; synthetic one-page document only. P8 4 chat POST/$0.02 and P9 offline review remain staged. **Global $0.05 organizational target unchanged**. P7 local offline preflight required before any paid call.

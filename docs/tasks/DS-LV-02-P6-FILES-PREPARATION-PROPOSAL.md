@@ -1,7 +1,7 @@
 # DS-LV-02/P6 — Synthetic Files API Text/Rich Parsing (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P6-TEXT PASS WITH REVIEW NOTES; P6-RICH OFFLINE PREFLIGHT PASS, ONE CONTROLLED LIVE CYCLE NEXT**
+**Status:** **P6 COMPLETE — TEXT AND RICH LIVE PASS WITH REVIEW NOTES; 9/9 HTTP EXHAUSTED**
 
 ## Objective
 Determine whether direct DeepSeek Files API can ingest a simple **synthetic public fixture** and make text- and rich-layout-parsed content available for model answers, with evidence of file lifetime, provenance and privacy controls. This is **not** a Saturn PDF corpus test and does not approve uploading company files.
@@ -41,3 +41,6 @@ One authorized filtered list GET at 20:52:28 UTC returned HTTP200, empty complet
 
 ## P6-RICH WSL offline preflight accepted (recorded 2026-11-18)
 User-provided Python compile and synthetic self-test PASS (0 HTTP/$0); PDF SHA-256 checked, standalone RICH script owner local SHA256 `5ac81b7552d543c73303fb01ec71e1a2e4bb643c520c23d9ba62322dcb47e83b`, source pinned at `b6f6f056990f698b170a880f54277f8157ab12a9`. Accepted report `../evidence/DS-LV-02-P6-RICH-OFFLINE-PREFLIGHT.md`. **Live P6-RICH not yet executed.** Next permitted operation one cycle max four HTTP; DELETE response + full filtered List Files absence must be audited before any P7 stage.
+
+## P6-RICH completed / final architecture acceptance — recorded 2026-11-18
+Owner's one Rich cycle completed 2026-11-17 21:11:27 UTC, upload/chat/delete/full-list all HTTP200; complete rich list has zero records, deletion verified. Answer matched textual facts and **two vector squares red and blue**. Rich peak estimate $0.0004779, total P6 both variants $0.0008733 estimated; actual billing unknown. P6 all 9/9 HTTP spent. `../evidence/DS-LV-02-P6-RICH-RESULT.json`; `../acceptance/DS-LV-02-P6-FINAL-ARCHITECTURE-ACCEPTANCE.md`. **No further P6 live calls.** P7 OCR offline preparation next.
