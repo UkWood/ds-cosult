@@ -55,8 +55,12 @@
 - Verified official docs (Chat Completions + `deepseek_read_url`), JSON `message.server_tool_calls`, true billed `usage.server_tool_use.tool_fetch`, and separate model token charges.
 - Read-only one-page fixture `https://example.com/`; safe `scripts/validation/ds_lv_02_p3_url_read.py` with `--self-test` (zero network), one-attempt marker, getpass, redacted report.
 
+## P3 offline preflight result (2026-11-17)
+- Linux/WSL user report: `py_compile` clean; `--self-test` PASS; 0 network requests, $0 cost; local script SHA-256 `1de63e655bc84c19fce73076442280946ff099d06d5b3ae8898b4a8cd8fc26e2`.
+- Detailed provenance and limits: `docs/evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. **No paid DeepSeek request executed; P3 still pending separate GO (1 request / $0.01 proposed).**
+
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 OFFLINE PREFLIGHT READY, PAID GO PENDING BUDGET; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 OFFLINE PREFLIGHT PASS, PAID GO PENDING BUDGET; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**

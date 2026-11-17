@@ -56,3 +56,6 @@ Official primary source: https://api-docs.deepseek.com/guides/web_tools/ (URL Re
 
 ### Linux/WSL staged handoff
 First download the script from a pinned commit, compile it with Python, run `--self-test`, compute SHA-256, and return output. **Do not execute the script without `--self-test` until the numeric spending limit is separately confirmed.**
+
+## Offline preflight update — PASS
+WSL client report: `python3 -m py_compile` completed, `--self-test` PASS, network requests 0 and API cost $0, script SHA-256 `1de63e655bc84c19fce73076442280946ff099d06d5b3ae8898b4a8cd8fc26e2`. See `../evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. **Paid P3 STILL NOT AUTHORIZED.**

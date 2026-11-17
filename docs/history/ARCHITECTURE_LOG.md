@@ -37,5 +37,7 @@
 
 - **DS-LV-02/P3 scope consent (2026-11-17):** user replied «Согласовано продолжай». Completed official documentation and tariff preflight; prepared offline-safe WSL script including synthetic self-tests, authentic `message.server_tool_calls` scrutiny and billed tool_fetch tracking. A numeric budget for P3 was not previously agreed; propose one POST / $0.01, but **NO PAID GO until explicit numeric acceptance**. No API request executed.
 
+- **DS-LV-02/P3 offline preflight PASS (2026-11-17):** владелец подтвердил успешную Python compilation, три синтетические самопроверки (0 network, $0), локальный SHA-256 скрипта `1de63e655bc84c19fce73076442280946ff099d06d5b3ae8898b4a8cd8fc26e2`; evidence `docs/evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. Платный P3 не запускался; отдельное подтверждение суммы $0.01 требуется.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
