@@ -1,5 +1,8 @@
 # DS-01C — AI Tunnel Provider Conformance Gate v0.1
 
+> **HISTORICAL / SUPERSEDED.** Это неактивное задание. Использовать [Direct DeepSeek Capability Gate](DS-01C-DIRECT-DEEPSEEK-CAPABILITY-GATE.md).
+
+
 **Status:** TEST DESIGN ONLY — NO AUTHORIZED API EXECUTION.  
 **Date:** 2026-11-17.  
 **Dependencies:** owner-supplied secure local key, approved ruble budget, provider policy and non-sensitive test payloads.

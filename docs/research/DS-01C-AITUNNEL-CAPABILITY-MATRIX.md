@@ -1,5 +1,8 @@
 # DS-01C — AI Tunnel Capability Matrix v0.1
 
+> **HISTORICAL / SUPERSEDED.** AI Tunnel не используется; актуальная проверка [Direct DeepSeek Capability Gate](DS-01C-DIRECT-DEEPSEEK-CAPABILITY-GATE.md).
+
+
 Дата: 2026-11-17. Источник: официальная документация провайдера. **Documented ≠ Runtime Verified**.
 
 | Capability | Contract / field | Evidence | Status |

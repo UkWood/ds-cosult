@@ -1,5 +1,8 @@
 # DS-01 — API Transport Addendum AT-01 v0.1
 
+> **SUPERSEDED — НЕ ПРИМЕНЯТЬ.** Актуальный транспортный протокол: [DS-01 Direct DeepSeek Addendum](DS-01-DIRECT-DEEPSEEK-PROTOCOL-ADDENDUM.md), решение [ADR-0004](../decisions/ADR-0004-direct-deepseek-api.md). Исторический текст сохранён.
+
+
 Дата: 2026-11-17. Статус: **TRANSPORT ACCEPTED; EXPERIMENTAL CAPABILITIES UNVERIFIED**. Подчиняется принятому DS-01 v0.1.
 
 ## Новая архитектурная граница

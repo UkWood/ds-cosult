@@ -1,5 +1,8 @@
 # ADR-0003 — AI Tunnel как основной API-транспорт проекта
 
+> **ИСТОРИЧЕСКИЙ ADR — SUPERSEDED by [ADR-0004](ADR-0004-direct-deepseek-api.md), 2026-11-17. AI Tunnel больше не является выбранным провайдером. Следующий текст сохраняется для полноты истории.**
+
+
 Дата: 2026-11-17  
 Статус: **ACCEPTED — transport choice specified by project owner**  
 Capability conformance: **PENDING**, не считать принятой реализацией.

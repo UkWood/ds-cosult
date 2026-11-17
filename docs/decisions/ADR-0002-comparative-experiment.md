@@ -1,5 +1,8 @@
 # ADR-0002 — Comparative DeepSeek Experiment: DS-01 v0.1
 
+> **Транспортное уточнение:** текущий основной API-провайдер — прямой DeepSeek по [ADR-0004](ADR-0004-direct-deepseek-api.md). Методика DS-01 остаётся APPROVED.
+
+
 Дата: 2026-11-17. Статус: APPROVED — прямое утверждение владельца DS-01 v0.1.
 
 ## Исследовательский вопрос
