@@ -27,7 +27,7 @@
 | P3 | DSAPI-06 native `deepseek_read_url` | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17** |
 | P4 | DSAPI-04 `deepseek_web_search`, thinking disabled | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17** |
 | P5 | DSAPI-05 deep thinking + search | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17; GO EXHAUSTED** |
-| P6 | DSAPI-08/09 Files + text/rich recognition | 2 × (upload+chat+delete+GET) | **8** | **GENERAL OWNER GO; PREFLIGHT PENDING** |
+| P6 | DSAPI-08/09 Files + text/rich recognition | Text 4 + read-only cleanup List Files 1 + Rich 4 | **9** | **TEXT PARTIAL / CLEANUP GATE OPEN; RICH STOP** |
 | P7 | DSAPI-10 OCR synthetic single page | 1 multipart OCR | 1 | **GENERAL OWNER GO; STAGED AFTER P6** |
 | P8 | DSAPI-11 4-turn short dialogue | 4 Chat Completions | 4 | **GENERAL OWNER GO; STAGED AFTER P7** |
 | P9 | DSAPI-12 faults/billing/summary | OFFLINE ONLY | **0** | **GENERAL OWNER GO; STAGED AFTER P8** |

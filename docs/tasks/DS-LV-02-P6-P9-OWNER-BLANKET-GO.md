@@ -9,11 +9,11 @@
 
 | Stage | Organizational USD risk allowance | External HTTP request ceiling | Scope |
 |---|---:|---:|---|
-| P6 Files API comparison | **$0.020** | **8 total** (two 4-request variants) | 2 file uploads, 2 chat requests, 2 deletes, 2 delete-verification GETs |
+| P6 Files API comparison | **$0.020** | **9 total** (Text 4, one cleanup list diagnostic, Rich 4) | 2 uploads, 2 chats, 2 deletes, 2 GETs, 1 filtered GET list |
 | P7 OCR single page | **$0.010** | **1** | One synthetic 1-page OCR POST |
 | P8 4-turn conversation | **$0.020** | **4** | Four simple non-tool chat POSTs |
 | P9 offline audit | **$0.000** | **0** | No provider calls |
-| **TOTAL** | **$0.050** | **13 maximum** | |
+| **TOTAL** | **$0.050** | **14 maximum** | |
 
 **These monetary allocations are organizational controls, not DeepSeek-enforced hard caps.** If charges in any stage exceed or cannot be determined against its allowance, **stop before the next stage**. Maximum HTTP calls counts must be implemented locally; no retries or surprise calls. Every stage is accepted independently before continuing.
 
@@ -50,3 +50,8 @@ Sources checked 2026-11-17:
 
 ## P6 offline preflight accepted — 2026-11-17
 Pinned WSL script `scripts/validation/ds_lv_02_p6_files.py` compiled, synthetically tested; source local SHA256 `35c2e9b8ca89b2de75395f8097b3061e1d4417e3b56c1855c99ee48f7808c0a4`. One-page PDF fixture SHA256 `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` validated via `sha256sum -c` and text extraction. `docs/evidence/DS-LV-02-P6-OFFLINE-PREFLIGHT.md`. **No P6 paid attempt has yet occurred. P6-TEXT is allowed as next isolated subgate under blanket GO; P6-RICH is not yet cleared.**
+
+## CR-P6-01 controlled HTTP reallocation — 2026-11-17
+The P6-TEXT cycle performed all four originally allocated calls, with provider DELETE HTTP 200 `deleted:true`, but GET returned 400. The 404-only expectation in our independent deletion gate is not guaranteed by official `GET /files/{id}` reference. Provider acknowledgement is valid but independent absence is unresolved.
+
+Architecture allocates **one extra read-only `GET /files`** solely to verify target absence, without uploads, model runs, retests or budget change: **P6 max 9 HTTP**, P6–P9 max **14 HTTP**, total organizational **$0.05 unchanged**. Official reference `https://api-docs.deepseek.com/api/list-files/`. New stage `scripts/validation/ds_lv_02_p6_list_check.py --self-test` offline, then single `--check-target` only if preflight accepted. Do not print file ID, or other file metadata. P6-RICH is STOP until review. If target still listed, further remediation is outside existing HTTP plan and requires new owner decision.

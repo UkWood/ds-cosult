@@ -1,7 +1,7 @@
 # DS-LV-02/P6 — Synthetic Files API Text/Rich Parsing (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P6 OFFLINE PREFLIGHT PASS; P6-TEXT CONTROLLED EXECUTION NEXT, NO PAID CALL YET**
+**Status:** **P6-TEXT PARTIAL — FILE PARSE PASS, DELETION ACK PASS, POST-DELETE ABSENCE INCONCLUSIVE; P6-RICH STOPPED**
 
 ## Objective
 Determine whether direct DeepSeek Files API can ingest a simple **synthetic public fixture** and make text- and rich-layout-parsed content available for model answers, with evidence of file lifetime, provenance and privacy controls. This is **not** a Saturn PDF corpus test and does not approve uploading company files.
@@ -28,3 +28,8 @@ The owner authorized phases P6–P9 with prudent limits. Formal `DS-LV-02-P6-P9-
 
 ## P6 Offline Linux preflight closure — 2026-11-17
 Owner WSL outputs: `py_compile` PASS; `--self-test` PASS, 0 network/$0; fixture local SHA256 `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` `OK`; 1 PDF page; text extraction confirms both synthetic rows. Python local SHA256 `35c2e9b8ca89b2de75395f8097b3061e1d4417e3b56c1855c99ee48f7808c0a4`. Accepted as **offline readiness only**; report `../evidence/DS-LV-02-P6-OFFLINE-PREFLIGHT.md`. Next **P6-TEXT only**, ≤4 HTTP; GET/DELETE must be verified before P6-RICH is considered.
+
+## P6-TEXT executed / CR-P6-01 — 2026-11-17
+Upload200 + Chat200 extractive facts PASS + DELETE200 `deleted:true` provider-confirmed + subsequent GET400, not the 404 our old test insisted on. The official API documents `deleted:true` as positive deletion but no guaranteed missing-file GET status code; do not silently call independent absence verified. Report `../acceptance/DS-LV-02-P6-TEXT-ARCHITECTURE-ACCEPTANCE.md`.
+
+New **one-call read-only filtered List Files diagnostic** to verify account state under general P6–P9 owner-approved prudent limit, with P6 HTTP allocation updated to 9 (total stages 14) but budgets unchanged. New script `scripts/validation/ds_lv_02_p6_list_check.py` must first pass **offline-only `--self-test`**. P6-RICH remains STOPPED until this result independently accepted.

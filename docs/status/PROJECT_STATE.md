@@ -129,4 +129,11 @@
 ## P6 WSL offline preflight accepted — 2026-11-17
 - Owner reported successful `py_compile`, `--self-test` PASS, **0 DeepSeek network requests, $0 cost**. Script local SHA-256 `35c2e9b8ca89b2de75395f8097b3061e1d4417e3b56c1855c99ee48f7808c0a4`, pinned Git blob `3ef0b10108d8133ed4088c0adad4071aaea01ca4`.
 - Fixture local SHA-256 `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` checked `OK`, 1 page, `pdftotext` matches FENIX-17 12.4L TX-731 and ORBIT-5 6.8L RB-204. Evidence `docs/evidence/DS-LV-02-P6-OFFLINE-PREFLIGHT.md`.
-- **P6-TEXT now ready for one controlled upload + chat + delete + GET absence cycle (≤4 HTTP / $0.010 organizational first-variant budget), under general owner GO.** Not yet executed; P6-RICH and P7–P9 remain stage-gated.
+- **P6-TEXT EXECUTED: TEXT PARSE PASS / DELETE ACK PASS / GET 400 INDEPENDENT ABSENCE UNKNOWN.** P6-RICH and P7–P9 remain stage-gated.
+
+## P6-TEXT live execution / cleanup review — 2026-11-17
+- Owner-reported 4 attempted HTTP: upload 200, chat 200, DELETE 200 `deleted:true`, post-delete GET **400**; result `STOP_DELETION_VERIFICATION_UNCONFIRMED`.
+- Pinned PDF extraction **PASS** for FENIX-17 12.4L TX-731 and ORBIT-5 6.8L RB-204; colors/figures correctly reported unavailable in text_recognition. 184 prompt + 96 completion = 280 tokens; $0.0003954 peak estimate, billing unknown. Expiration 2026-11-17 21:34:56Z.
+- **CR-P6-01:** vendor DELETE success is `HTTP 200 deleted:true`, but our stricter GET=404 success requirement is **not guaranteed in docs**. GET 400 is unclassified without body: cannot infer definite absence or delete failure. Provider deletion acknowledgement PASS, independent absence INCONCLUSIVE; no P6-RICH.
+- Architecture preserved original evidence `docs/evidence/DS-LV-02-P6-TEXT-RESULT.json`, review `docs/acceptance/DS-LV-02-P6-TEXT-ARCHITECTURE-ACCEPTANCE.md`.
+- Within owner's delegated prudent P6–P9 scope **HTTP cap adjusted P6 8→9, cumulative 13→14**, no budget increase (P6 $0.02, all phases $0.05). Extra 1 read-only filtered file-list request reserved solely for cleanup verification, only after zero-network self-test on new `scripts/validation/ds_lv_02_p6_list_check.py`. **No extra API request yet**.
