@@ -43,3 +43,12 @@ A P9 audit can yield `PASS WITH REVIEW NOTES` **for evidence and protocol reconc
 After the offline WSL check, create `docs/evidence/DS-LV-02-P9-OFFLINE-WSL-AUDIT.md` and `docs/acceptance/DS-LV-02-P9-FINAL-ARCHITECTURE-ACCEPTANCE.md` in existing PR. Update `PROJECT_STATE.md` and `ARCHITECTURE_LOG.md`; post summary in PR. Separate architectural go/no-go for real corpus/entity dossiers requires an explicit future owner decision.
 
 **No P9 DeepSeek calls under any circumstances.**
+
+## Addendum QUALITY-P8-01 — prompted versus independent abstention (2026-11-18)
+
+The owner identified a methodological confound after P8's final acceptance. TURN-4 **user prompt explicitly says** `Если температура не указана, сообщи об отсутствии данных` **and the system prompt also says** `Не выдумывай недостающие характеристики`. A correct refusal under this **double cue** is **prompted abstention only**. P9 must preserve the original 4/4 scripted PASS but report distinct evidence gates:
+- `prompted_abstention: PASS` within original P8 synthetic task.
+- `no_user_hint_abstention: NOT_TESTED`.
+- `spontaneous_abstention_without_system_guard: NOT_TESTED`.
+
+Do not claim independently proven anti-hallucination or production reliability. Quality addendum: `docs/quality/DS-LV-02-P8-PROMPTED-ABSTENTION-CONFOUND.md`. A controlled follow-up with neutral user prompt and production-like versus neutral system instruction is **proposed only, not authorized**, cannot be launched by P9 or under exhausted P8 budget. Zero HTTP provider requests continue to apply.
