@@ -1,7 +1,7 @@
 # DS-LV-02/P3 — Native URL Reading Conformance (Proposal Only)
 
 **Дата:** 2026-11-17  
-**Статус:** **P3 SCOPE AGREED BY OWNER — OFFLINE PREFLIGHT APPROVED; PAID GO REQUIRES EXPLICIT NUMERIC LIMIT**
+**Статус:** **P3 PAID GO RECEIVED — 1 POST / $0.01 USD — NOT EXECUTED**
 **Основание:** DS-LV-02/P2 standalone Search PASS; следующее качественно иное свойство — **model-directed URL reading**.
 
 ## Goal
@@ -59,3 +59,6 @@ First download the script from a pinned commit, compile it with Python, run `--s
 
 ## Offline preflight update — PASS
 WSL client report: `python3 -m py_compile` completed, `--self-test` PASS, network requests 0 and API cost $0, script SHA-256 `1de63e655bc84c19fce73076442280946ff099d06d5b3ae8898b4a8cd8fc26e2`. See `../evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. **Paid P3 STILL NOT AUTHORIZED.**
+
+## Paid execution authorization (2026-11-17)
+Владелец явно подтвердил один платный вызов P3 с лимитом $0.01. Запись разрешения и границы в `DS-LV-02-P3-OWNER-GO.md`. Дополнительных запросов, повторов и перехода к P4 нет. Ранее созданный локальный скрипт не изменялся; его статическая метка `authorization` относится ко времени до разрешения — уточнить её по GO-документу при анализе JSON.

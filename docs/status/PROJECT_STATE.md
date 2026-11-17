@@ -8,7 +8,7 @@
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 подготовка согласована, платный запуск пока не разрешён: отсутствует утверждённый числовой бюджет**. P4..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 платный запуск разрешён — один HTTP POST, лимит $0.01; ещё не выполнен**. P4..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -57,10 +57,15 @@
 
 ## P3 offline preflight result (2026-11-17)
 - Linux/WSL user report: `py_compile` clean; `--self-test` PASS; 0 network requests, $0 cost; local script SHA-256 `1de63e655bc84c19fce73076442280946ff099d06d5b3ae8898b4a8cd8fc26e2`.
-- Detailed provenance and limits: `docs/evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. **No paid DeepSeek request executed; P3 still pending separate GO (1 request / $0.01 proposed).**
+- Detailed provenance and limits: `docs/evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. **No paid DeepSeek request executed at this status review; owner P3 GO now documented: 1 request / $0.01**.
 
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 OFFLINE PREFLIGHT PASS, PAID GO PENDING BUDGET; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 OFFLINE PREFLIGHT PASS, OWNER GO 1 POST/$0.01 — NOT EXECUTED; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
+
+## DS-LV-02/P3 owner paid GO — 2026-11-17
+- Пользователь ответил «Разрешаю» на прямой вопрос: «Подтверждаете GO для одного платного вызова `deepseek_read_url` с лимитом $0,01 USD?». **OWNER GO GRANTED: exactly one Chat Completions HTTP POST, $0.01 organizational limit**.
+- Официальный контракт URL-reading повторно сверён; script from SHA `4b6bdf5058946337021aade831d09cf34831ecaa` успешно прошёл WSL offline preflight. **P3 paid request NOT YET EXECUTED**.
+- Статическая строка `authorization` внутри ранее закреплённого скрипта всё ещё содержит `P3_BUDGET_OWNER_GO_REQUIRED_BEFORE_EXECUTION`; это метка времени создания скрипта, а не действующее состояние разрешения. **Нормативный источник GO — запись в `docs/tasks/DS-LV-02-P3-OWNER-GO.md`**; при приёмке явно сверить обе записи и не делать повторов.

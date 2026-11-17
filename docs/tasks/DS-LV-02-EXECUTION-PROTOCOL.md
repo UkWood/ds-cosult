@@ -24,7 +24,7 @@
 | P0 | окружение, синтаксис и цены, fixtures, безопасное хранение ключа | офлайн, без отправки данных | 0 | подготовлено |
 | P1 | DSAPI-03 thinking enabled + контроль без web tools | 1 Chat Completion | 1 | **PASS / ACCEPTED 2026-11-17** |
 | P2 | DSAPI-07 managed Search (raw JSON) | 1 Search request | 1 | **PASS / ACCEPTED 2026-11-17** |
-| P3 | DSAPI-06 native `deepseek_read_url` | 1 Chat Completion | 1 | НЕ РАЗРЕШЕНО |
+| P3 | DSAPI-06 native `deepseek_read_url` | 1 Chat Completion | 1 | **OWNER GO (1 POST / $0.01); NOT EXECUTED** |
 | P4 | DSAPI-04 `deepseek_web_search`, thinking disabled | 1 Chat Completion | 1 | НЕ РАЗРЕШЕНО |
 | P5 | DSAPI-05 deep thinking + search | 1 Chat Completion | 1 | НЕ РАЗРЕШЕНО |
 | P6 | DSAPI-08/09 Files + text/rich recognition | отдельное разрешение на upload/parse+chat+delete | проектно 6 | НЕ РАЗРЕШЕНО |
@@ -32,7 +32,7 @@
 | P8 | DSAPI-11 4-turn short dialogue | 4 Chat Completions | 4 | НЕ РАЗРЕШЕНО |
 | P9 | DSAPI-12 faults/billing/summary | офлайн анализ + по отдельному запросу диагностика | 0 по умолчанию | НЕ РАЗРЕШЕНО |
 
-**P1 и P2 приняты, оба индивидуальных разрешения исчерпаны; P3..P9 НЕ РАЗРЕШЕНЫ.** Старое GO на $0.01 и один вызов полностью использовано в LV-API-01. Предварительное число вызовов **не является разрешённым лимитом расходов**.
+**P1 и P2 приняты, старые разрешения исчерпаны; P3 имеет отдельный GO 1 HTTP POST / $0.01, пока не выполнен; P4..P9 НЕ РАЗРЕШЕНЫ.** Старое GO на $0.01 и один вызов полностью использовано в LV-API-01. Предварительное число вызовов **не является разрешённым лимитом расходов**.
 
 ## 3. Официальный Chat Completions контракт
 
