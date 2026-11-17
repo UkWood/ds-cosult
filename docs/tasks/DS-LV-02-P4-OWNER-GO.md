@@ -1,7 +1,7 @@
 # DS-LV-02/P4 — Explicit Owner GO for Native DeepSeek Web Search
 
 **Дата:** 2026-11-17  
-**Статус:** **OWNER GO CONFIRMED — ONE PAID HTTP POST, NOT YET EXECUTED**  
+**Статус:** **OWNER GO EXERCISED — 1 PAID HTTP POST / P4 ACCEPTED WITH REVIEW NOTES**  
 **Бюджет:** **$0.01 USD**, организационный лимит, не enforced hard cap DeepSeek.  
 **Основание:** пользователь ответил «Подтверждаю» на точный вопрос: «Подтверждаете GO для одного платного вызова P4 с организационным лимитом $0,01 USD, учитывая, что один запрос может инициировать несколько оплачиваемых Search/Fetch-операций и лимит не гарантирован технически?»
 
@@ -31,3 +31,6 @@ One outer HTTP request may trigger several server-side `tool_search` / `tool_fet
 `docs/evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md` — accepted as offline-only, 0 network/0 provider cost.
 
 **P4 is NOT YET EXECUTED.** After one invocation, this GO is exhausted regardless of outcome. P5..P9 remain NOT AUTHORIZED; no merge, no DS-02, no production, no hidden Core/GT, no changes to NEW RAG or Saturn-Main-Site.
+
+## Actual execution (2026-11-17 19:40:03 UTC)
+One owner-approved paid POST was used, HTTP 200, 3 billable search operations, 0 fetch, 9696 model tokens, latency 3638 ms; estimated peak $0.0054315, off-peak cache-miss $0.00384075; actual billed amount unknown. Acceptance `../acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`. **No P4 authorization remains.**

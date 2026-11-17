@@ -1,7 +1,7 @@
 # DS-LV-02/P4 — Native Web Search (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P4 OWNER GO FOR ONE PAID POST / $0.01 USD, NOT YET EXECUTED**
+**Status:** **P4 EXECUTED — TOOL & CITATION CAPABILITY PASS WITH REVIEW NOTES**
 
 ## Goal
 Test model-controlled `deepseek_web_search` through direct Chat Completions in `deepseek-flash` with thinking disabled. This is **not** the already verified standalone Search API (`POST /v1/tools/search`) and **not** P3 `deepseek_read_url`.
@@ -39,3 +39,6 @@ Owner-provided output: `--self-test` PASS; `NETWORK REQUESTS: 0 | API COST: $0`;
 
 ## Paid owner GO after preflight — 2026-11-17
 User explicitly confirmed P4 single paid HTTP POST and organizational $0.01 spend limit with residual risk that provider server-side tool charges may exceed that organizational target. Authoritative GO document: `DS-LV-02-P4-OWNER-GO.md`. The earlier static script authorization field predates this GO; pinned code is unchanged. **One request only, no retries. P5..P9 not authorized.**
+
+## Final closure — 2026-11-17
+One permitted native Web Search POST executed and accepted for **tool and structural citation capability**. 3 internal search queries (billable), 0 Fetch, 9,696 model tokens. Only 480 chars of response preview, so **full factual answer requires further source verification**; avoid equating overlapping URLs with claim grounding. GO exhausted. Reports `../evidence/DS-LV-02-P4-RESULT.json` and `../acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`. P5 is just proposed.

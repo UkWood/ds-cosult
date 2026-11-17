@@ -1,14 +1,14 @@
 # PROJECT STATE — DS-консультант
 
 **Обновлено:** 2026-11-17  
-**Текущий статус:** **DS-LV-02/P3 URL READING PASS WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
+**Текущий статус:** **DS-LV-02/P4 NATIVE WEB SEARCH PASS WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
 ## Решения владельца
 - DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4 платный запуск **OWNER GO — 1 HTTP POST / $0.01 USD**, не выполнен; P5..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4 выполнен, **PASS WITH REVIEW NOTES**; платный GO 1 POST/$0.01 исчерпан; P5..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -31,7 +31,7 @@
 ## Remaining blockers
 1. `ds-cosult` PUBLIC: нельзя публиковать закрытый Core/GT, секреты и ограниченные источники.
 2. Нет expert-approved Ground Truth, DS-CORPUS-1.0 не frozen.
-3. Native DeepSeek **thinking = PASS for one smoke test**; standalone Search **P2 PASS / ACCEPTED**; web/Files/OCR/standalone Fetch/continuity **UNTESTED**; native URL Reading **P3 PASS with review notes**.
+3. Native DeepSeek **thinking = PASS for one smoke test**; standalone Search **P2 PASS / ACCEPTED**; Files/OCR/standalone Fetch/continuity **UNTESTED**; native URL Reading **P3 PASS** and model-managed Web Search **P4 PASS**, both with review notes.
 4. Из 12 запланированных документов лишь 3 byte-pinned по Linux-отчёту, 9 ожидают проверку.
 5. Независимый custody/audit локальных исходных PDF/PNG и манифеста не получен; billing не сверён.
 6. Технические отношения, версии оборудования и неоднозначные стрелки в ЕАСДКиУ требуют экспертной оценки.
@@ -68,7 +68,7 @@
 
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 OFFLINE PREFLIGHT PASS + PAID OWNER GO (1 POST / $0.01), NOT EXECUTED; P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 Web Search PASS with review notes; P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
 
@@ -89,5 +89,12 @@
 
 ## P4 explicit paid GO — 2026-11-17
 - Owner reply «Подтверждаю» to a question proposing **one paid P4 Chat Completion** and **$0.01 USD organizational limit** with acknowledged risk of multiple billed server-side Search/Fetch operations. This is NOT a provider-enforced hard cap.
-- GO: `docs/tasks/DS-LV-02-P4-OWNER-GO.md`, pinned script `scripts/validation/ds_lv_02_p4_web_search.py` unchanged, WSL preflight accepted. **P4 NOT YET EXECUTED. P5..P9 NOT AUTHORIZED.**
+- GO: `docs/tasks/DS-LV-02-P4-OWNER-GO.md`, pinned script `scripts/validation/ds_lv_02_p4_web_search.py` unchanged, WSL preflight accepted. **P4 EXECUTED / ACCEPTED, GO exhausted. P5..P9 NOT AUTHORIZED.**
 - Static `authorization=P4_NUMERIC_BUDGET_GO_REQUIRED_BEFORE_PAID_RUN` in the verified script predates the GO and is a historical metadata label; authoritative authorization is the owner GO document. Do not rewrite the tested script only to change this label.
+
+## P4 live execution + acceptance — 2026-11-17 19:40:03 UTC
+- Owner-authorized 1 direct POST, HTTP 200, `deepseek_web_search` actually invoked and completed, **3 billable internal searches**, 13 sources reported, 9 citations saved, URL overlap true, 0 fetch. 9393 prompt tokens + 303 completion = 9696 total; 3638 ms, Russian answer preview.
+- Primary official release `https://api-docs.deepseek.com/news/news261113/` independently verified (date 2026-11-13, native Search and Fetch features). Only first 480 chars of answer accessible: **factual_answer_gate=NEEDS_SOURCE_REVIEW** remains. Citation trace passed, full claim grounding unmeasured.
+- Peak fee estimate $0.0054315; off-peak cache-miss estimate $0.00384075 for 19:40 UTC. Actual billing unknown; $0.01 organizational limit not enforceable by current script. P4 authorization **exhausted**; no re-run.
+- Architecture result **PASS WITH REVIEW NOTES**. Evidence `docs/evidence/DS-LV-02-P4-RESULT.json`; acceptance `docs/acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`.
+- P5 thinking+search **proposal only**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5..P9 not authorized.

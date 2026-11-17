@@ -50,5 +50,7 @@
 
 - **DS-LV-02/P4 explicit paid GO (2026-11-17):** «Подтверждаю» на 1 paid POST / $0.01 USD с предупреждением о нескольких billable server-side Search/Fetch operations; это организационный лимит, не технический hard cap. Записано в `docs/tasks/DS-LV-02-P4-OWNER-GO.md`. WSL self-test PASS и pinned script без изменений; платный запрос пока НЕ ИСПОЛНЕН. P5..P9 без GO.
 
+- **DS-LV-02/P4 completed, accepted (2026-11-17 19:40:03 UTC):** direct `deepseek-flash` thinking-disabled request HTTP 200; completed `deepseek_web_search` with 3 internal billed searches, 13 sources, citation-source overlap, zero fetch, 9393+303=9696 tokens, latency 3638ms. Peak-estimated $0.0054315; off-peak cache-miss $0.00384075; billing unknown. Official 2026-11-13 DeepSeek announcement independently verified but full model answer unavailable (480 chars preview), so only tool + citation capability PASS, complete factual accuracy NOT verified. `docs/acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`, `docs/evidence/DS-LV-02-P4-RESULT.json`. P4 GO exhausted. P5 proposal drafted, no paid GO.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

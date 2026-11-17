@@ -1,7 +1,7 @@
 # DS-01C — Direct DeepSeek API Capability & Conformance Gate v0.1
 
 **Дата:** 2026-11-17  
-**Статус:** BASE CHAT, THINKING basic, standalone Search basic и native URL Reading tool capability проверены; standalone Fetch и другие tools UNTESTED; каждый платный вызов требует отдельного GO.  
+**Статус:** BASE CHAT, THINKING basic, standalone Search, native URL Reading and model-directed native Web Search tool capabilities проверены; standalone Fetch and other tools UNTESTED; каждый платный вызов требует отдельного GO.  
 **Источник:** официальная документация `api-docs.deepseek.com`.
 
 ## Endpoint matrix
@@ -10,7 +10,7 @@
 | OpenAI-compatible chat | `POST https://api.deepseek.com/chat/completions` | DOCUMENTED | **PASS LV-API-01** |
 | Flash | model `deepseek-flash` (V4.1-Flash-1017 по документации) | DOCUMENTED | **PASS: alias observed `deepseek-flash` only** |
 | Thinking | `thinking: {"type":"enabled"}` | DOCUMENTED | **PASS: DS-LV-02/P1; reasoning_tokens=65** |
-| Web search | `tools:[{"type":"deepseek_web_search"}]` | DOCUMENTED | UNTESTED |
+| Web search | `tools:[{"type":"deepseek_web_search"}]` | DOCUMENTED | **P4 PASS WITH REVIEW NOTES; 1 completed call / 3 billed searches, citations** |
 | Deep thinking search | thinking + web tool | DOCUMENTED | UNTESTED |
 | URL read | `tools:[{"type":"deepseek_read_url"}]` | DOCUMENTED | **P3 PASS with fixture/language review notes; 1 read_link, 1 billed tool_fetch** |
 | Managed Search & Fetch | `POST /v1/tools/search`, `POST /v1/tools/fetch` | DOCUMENTED | **Search: P2 PASS (HTTP 200, 1 result); Fetch: UNTESTED** |
