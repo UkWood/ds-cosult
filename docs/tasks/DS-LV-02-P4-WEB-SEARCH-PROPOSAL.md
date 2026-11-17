@@ -33,3 +33,6 @@ One synthetic public question regarding the DeepSeek official 13 Nov 2026 releas
 **Linux validation**: `scripts/validation/ds_lv_02_p4_web_search.py --self-test` is offline, makes 0 network calls and costs $0. Real execution (without flag) needs separately confirmed numeric GO. The script records independently: actual search invocation / completed calls, citation overlap, safe model answer preview, language indicator, counted and billed Search/Fetch operations; answer accuracy stays pending human source review, never substring-graded. Exclusive attempt marker locks P4 after any first request.
 
 P5..P9 NOT AUTHORIZED. No Merge/DS-02/production.
+
+## WSL Offline Preflight Acceptance — 2026-11-17
+Owner-provided output: `--self-test` PASS; `NETWORK REQUESTS: 0 | API COST: $0`; `py_compile` clean; local script SHA256 `c10bd4a6b22aedb74f059a1d089c089e6686f70c6b247c993b315bd2710ba0bd`. Source `../evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md`. This establishes offline script readiness **only**. **P4 paid call not authorized until explicit numeric owner GO of 1 POST / $0.01 USD with server-side billing risk acknowledgement**.

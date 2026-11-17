@@ -46,5 +46,7 @@
 - **DS-LV-02/P4 scope permission (2026-11-17):** владелец «Разрешаю» после P4 proposal, но сумма не была предложена. Подтверждена подготовка scope, NOT paid GO. Потребуется отдельное утверждение 1 HTTP POST / $0.01 с риском нескольких server-side операций. Подготовлен WSL script `scripts/validation/ds_lv_02_p4_web_search.py`, только `--self-test` офлайн. Никаких P4 API-вызовов пока не выполнялось.
 - **P3 user-supplied HTML evidence addendum:** проверен предоставленный файл `Example Domain.html` (577 bytes, SHA-256 `25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484`), `<title>Example Domain</title>`, без H1; байты не объявляются как идентичные прочитанным DeepSeek.
 
+- **DS-LV-02/P4 offline Linux preflight (17.11.2026):** owner reported pinned script SHA256 `c10bd4a6b22aedb74f059a1d089c089e6686f70c6b247c993b315bd2710ba0bd`, Python compilation PASS, synthetic self-test PASS, 0 network requests and $0 DeepSeek cost. Accepted as preflight only; `docs/evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md`. Paid P4 has NO numeric GO; do not run until explicitly confirmed 1 POST/$0.01 with multi-search billing caveat.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

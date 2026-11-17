@@ -68,7 +68,7 @@
 
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 offline preflight prepared (paid GO needs $0.01 explicit confirmation); P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 OFFLINE PREFLIGHT PASS (paid GO needs $0.01 explicit confirmation); P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
 
@@ -82,3 +82,7 @@
 - Reviewed official DeepSeek Web Tools/Chat Completions docs and pricing. 1 outer HTTP call may create multiple billable `tool_search` and `tool_fetch` operations; these are distinct from HTTP calls. Proposal: one POST, $0.01 organizational limit, risk of not having provider-enforced hard cap.
 - WSL offline safety/selftest script: `scripts/validation/ds_lv_02_p4_web_search.py` — `--self-test` costs $0; real mode uses getpass, no retry, atomic marker and redacted diagnostic.
 - User-supplied `Example Domain.html` (related P3) examined as a separate file. SHA256 `25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484`, 577 bytes; contains HTML title `Example Domain` and no H1. **Not a copy of the DeepSeek tool's encrypted snapshot**; no original uploaded HTML bytes published.
+
+## P4 offline preflight acceptance (2026-11-17)
+- WSL report: `py_compile` clean, `--self-test` PASS, network requests 0, API cost $0; local script SHA256 `c10bd4a6b22aedb74f059a1d089c089e6686f70c6b247c993b315bd2710ba0bd`.
+- Acceptance evidence `docs/evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md`. **P4 PAID NOT YET EXECUTED; ONE POST / USD $0.01 remains a proposed, NOT approved numeric budget**. P5..P9 blocked.
