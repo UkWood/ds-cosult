@@ -192,3 +192,10 @@
 - Architecture **TURN-1 PASS WITH REVIEW NOTES / ACCEPTED** for this isolated synthetic factual query. Does NOT yet prove contextual continuity, reference resolution, update handling, or absence-based abstention; WSL private history is locally kept, not independently available to Architecture.
 - Evidence `docs/evidence/DS-LV-02-P8-TURN-1-RESULT.json`; independent decision `docs/acceptance/DS-LV-02-P8-TURN-1-ARCHITECTURE-ACCEPTANCE.md`.
 - **Next allowed: TURN-2 only**, via pinned source/hash and one local WSL command; answer must resolve «А у второй?» to ОРБИТА-5 24 В Ethernet. Review/record before TURN-3; P9 offline only. No Merge, DS-02, production or real Saturn/GT uploads.
+
+## DS-LV-02/P8 TURN-2 independent live acceptance — 2026-11-18
+- Owner WSL redacted JSON: **2026-11-17 22:10:55 UTC**, exactly one POST, HTTP200, observed `deepseek-flash`, `thinking.disabled`, no tool calls or reasoning, `finish_reason:stop`, latency 1432ms.
+- Context question **«А у второй?»** correctly resolved to **ОРБИТА-5** with both expected facts: **24 В and Ethernet**. Full short answer `ОРБИТА-5: питание 24 В, интерфейс Ethernet.` independently verified against SHA256 `bfe3cda9a5671d64cbe70a26d355c1562dbba0a68a0286b7fcbab44c7e0dea19`.
+- Usage: 150 prompt + 19 completion = **169 total tokens**, cache hits 0. Peak estimate **$0.0000678** for TURN-2 and **$0.0001275** cumulative P8; actual provider billing unverified.
+- **P8 2/4 paid HTTP attempts used**, 2 remain. Architecture **TURN-2 PASS WITH REVIEW NOTES / ACCEPTED** (client-supplied conversational context; server-hidden memory not established). Source: `docs/evidence/DS-LV-02-P8-TURN-2-RESULT.json`, independent `docs/acceptance/DS-LV-02-P8-TURN-2-ARCHITECTURE-ACCEPTANCE.md`.
+- **Next gate: TURN-3 only**, same checksum-pinned unchanged script, synthetic correction ЛИРА-17 interface **Ethernet** with power **12 В** unchanged. Independent review and GitHub evidence required before TURN-4; P9 offline only after P8. No reruns, Merge, DS-02, production or Saturn/NEW RAG writes.
