@@ -97,4 +97,9 @@
 - Primary official release `https://api-docs.deepseek.com/news/news261113/` independently verified (date 2026-11-13, native Search and Fetch features). Only first 480 chars of answer accessible: **factual_answer_gate=NEEDS_SOURCE_REVIEW** remains. Citation trace passed, full claim grounding unmeasured.
 - Peak fee estimate $0.0054315; off-peak cache-miss estimate $0.00384075 for 19:40 UTC. Actual billing unknown; $0.01 organizational limit not enforceable by current script. P4 authorization **exhausted**; no re-run.
 - Architecture result **PASS WITH REVIEW NOTES**. Evidence `docs/evidence/DS-LV-02-P4-RESULT.json`; acceptance `docs/acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`.
-- P5 thinking+search **proposal only**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5..P9 not authorized.
+- P5 thinking+search **offline preparation approved; paid testing NOT AUTHORIZED**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5 paid not authorized; P6..P9 not authorized.
+
+## P5 OFFLINE preparation authorized — 2026-11-17
+- Owner reply «Разрешаю» interpreted as approval for **free research and offline script**, as the proposal explicitly calls for a separate numerical GO before a paid test.
+- Official DeepSeek docs: deep thinking search may perform **about 20 internal tool steps**, single search can bill multiple queries, `max_tool_calls` ignored in Responses API. No verified enforceable per-request USD cap in consulted docs; 1 HTTP POST and `max_tokens` alone do not guarantee charge below $0.01. See `docs/research/DS-LV-02-P5-SERVER-TOOL-BUDGET-REVIEW.md`.
+- Safe `scripts/validation/ds_lv_02_p5_thinking_search.py` prepared; run `--self-test` only before budget GO. **No P5 HTTP request executed; no new DeepSeek charges.**

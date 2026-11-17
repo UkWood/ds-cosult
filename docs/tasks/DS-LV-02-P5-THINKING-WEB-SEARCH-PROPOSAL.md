@@ -1,7 +1,7 @@
 # DS-LV-02/P5 — Deep Thinking + Native Web Search (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **PROPOSED ONLY — NO OWNER GO, NO PAID EXECUTION**  
+**Status:** **OWNER APPROVED OFFLINE PREPARATION ONLY — NO PAID GO; P5 UNTESTED**  
 **Previous gates:** P1 thinking PASS, P2 standalone Search PASS, P3 URL-reading capability PASS WITH REVIEW NOTES, P4 model-managed Web Search PASS WITH REVIEW NOTES.
 
 ## Test objective
@@ -32,3 +32,10 @@ Proposed next actions: (1) free official docs/price/tool-budget review, (2) offl
 ## No automatic escalation
 
 P6..P9 remain unauthorized; no merges, DS-02, production or Corpus Freeze. NEW RAG and Saturn-Main-Site remain out of scope / read-only.
+
+## Offline preparation follow-up (2026-11-17)
+Owner replied «Разрешаю» to a proposal for **free documentation/cost research and offline code preparation**, not to a specific dollar budget. Therefore paid P5 is not authorized. Consulted official Web Tools / Chat Completions / Responses API / pricing / rate-limit guides. The Web Tools guide describes up to *about* 20 steps; search action may include multiple billed queries; Responses API `max_tool_calls` is explicitly ignored. No verified server-side hard dollar cap. See `docs/research/DS-LV-02-P5-SERVER-TOOL-BUDGET-REVIEW.md`.
+
+Script `scripts/validation/ds_lv_02_p5_thinking_search.py` supports offline-only `--self-test` (4 synthetic test scenarios, 0 HTTP/0 USD). **Do not use `--execute-after-owner-go` without separately signed numerical GO.** Request uses only `deepseek_web_search`, thinking enabled, reasoning_effort low, max_tokens 1536 and one public official-doc comparison question. Tests completed `deep_search` search/open/find calls, citations, presence of reasoning metadata, billed tool counters, language. Full final answer stored **locally only** for human quality review; raw reasoning never recorded.
+
+P5 is not a comparative evaluation of quality and does not complete any Saturn Ground Truth. P6..P9 blocked.
