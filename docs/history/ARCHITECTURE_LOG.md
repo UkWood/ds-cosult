@@ -86,3 +86,5 @@
 
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
+
+- **DS-LV-02/P8 TURN-1 LIVE ACCEPTED (2026-11-18; event 2026-11-17 22:07:31 UTC):** owner supplied exactly one redacted WSL result (200, `deepseek-flash`, no thinking/tools, finish stop, 142 tokens, 1097ms). Answer «ЛИРА-17: питание 12 В, интерфейс RS-485.» matches both synthetic ground truth fields; independently recomputed SHA256 `bd4b441fac779bf5525f830aacb1092bb042772885d5b93732e5504afe71a6e3`. Peak cost estimate **$0.0000597**; billed amount unknown. Separate Architecture Acceptance: **TURN-1 PASS WITH REVIEW NOTES**; `docs/acceptance/DS-LV-02-P8-TURN-1-ARCHITECTURE-ACCEPTANCE.md`, redacted `docs/evidence/DS-LV-02-P8-TURN-1-RESULT.json`. P8 **1/4 HTTP used**, no retry; owner may run only TURN-2 after pinned hash/local state checks. TURN-3/4 and P9 remain gated, no Merge/production/DS-02.
