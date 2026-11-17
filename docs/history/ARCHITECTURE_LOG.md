@@ -74,5 +74,7 @@
 
 - **DS-LV-02/P6 FINAL ACCEPTANCE (recorded 2026-11-18, test 2026-11-17 21:11 UTC):** owner P6-RICH exactly four HTTP200 upload/chat/delete/list, target absent after DELETE from complete list. Both source fields and two red+blue vector squares correctly recognized, whereas TEXT appropriately could not see graphics. RICH 567 input+69 output tokens, $0.0004779 peak estimate. P6 total TEXT+RICH $0.0008733 estimated peak; **9/9 HTTP allocation exhausted**, actual billing unverified. P6 **PASS WITH REVIEW NOTES**, `docs/acceptance/DS-LV-02-P6-FINAL-ARCHITECTURE-ACCEPTANCE.md`. P7 isolated direct OCR one-page script/protocol prepared, offline preflight next; no P7 paid request yet.
 
+- **DS-LV-02/P7 original offline preflight PASS and owner UX decision (2026-11-18):** WSL `py_compile`, `--self-test`, pinned PDF checksum all passed, 0 API calls/$0. Original script local SHA256 `43c889db1e4a2a5ef2729240eb6dd5ce50f4d7b86c1744644da62ef07a489024`. User explicitly requested removal of duplicate `Enter P...-APPROVED` prompts. Architecture accepted and removed P7's exact gate, keeping hidden key, TTY, one-attempt marker, no retries, SHA pin and spending limits. Decision `docs/decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md`. **Re-run new offline preflight only**, no paid P7 yet; P8/P9 to follow same UX policy.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

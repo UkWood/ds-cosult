@@ -150,8 +150,6 @@ def execute():
         pdf=pinned_pdf()
     except Exception as err:
         raise SystemExit("STOP: invalid pinned local synthetic PDF: "+type(err).__name__)
-    if input("One P7 OCR POST under general P6-P9 owner GO. Type P7-APPROVED: ")!="P7-APPROVED":
-        raise SystemExit("STOP: confirmation not entered; no network.")
     key=getpass.getpass("DeepSeek API key (hidden, WSL only): ")
     if not key.strip():
         raise SystemExit("STOP: empty API key.")

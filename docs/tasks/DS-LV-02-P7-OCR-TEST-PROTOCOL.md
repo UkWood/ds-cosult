@@ -1,7 +1,7 @@
 # DS-LV-02/P7 — Direct OCR One-Page Conformance Test
 
 **Date:** 2026-11-18  
-**State:** **PLANNED / OWNER BLANKET GO ACTIVE / OFFLINE PREFLIGHT NOT YET RUN**  
+**State:** **ORIGINAL OFFLINE PREFLIGHT PASS; P7 UX-REVISED SCRIPT NEW OFFLINE PREFLIGHT REQUIRED; PAID NOT EXECUTED**  
 **Precedent:** P6 Files API Text/Rich accepted with review notes; P6 budget 9/9 used.  
 **Stage allowance:** **$0.010 organizational / 1 HTTP POST max**; no retries; no provider-enforced monetary cap.
 
@@ -39,3 +39,6 @@ Source: https://api-docs.deepseek.com/guides/ocr/ and https://api-docs.deepseek.
 4. Only afterward consider P8.
 
 No Merge, DS-02, production, NEW RAG or Saturn source writes.
+
+## P7 original offline PASS + removal of redundant confirmation prompt (2026-11-18)
+Owner WSL successfully compiled and self-tested the original pinned script (SHA256 `43c889db1e4a2a5ef2729240eb6dd5ce50f4d7b86c1744644da62ef07a489024`), 0 API calls / $0, PDF SHA OK. Evidence `../evidence/DS-LV-02-P7-OCR-ORIGINAL-OFFLINE-PREFLIGHT.md`. Owner requested that further scripts omit `Enter P...-APPROVED` phrases; accepted decision `../decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md`. P7 script has only the two lines for the redundant `input(...)` removed: now local `getpass` follows the TTY+fixture checks directly. No other protections removed. **New source SHA requires new zero-network preflight before the one paid P7 OCR request**; blanket GO / 1 HTTP / $0.01 organizational cap unchanged. P8/P9 will implement no typed confirmation gate.

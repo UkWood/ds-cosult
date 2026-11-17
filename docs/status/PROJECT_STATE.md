@@ -159,3 +159,8 @@
 - RICH 567 prompt+69 completion =636 tokens, 5,179 ms, peak estimate $0.0004779. TEXT 184+96=280 tokens, peak estimate $0.0003954. **P6 total peak estimate $0.0008733; actual provider debit unknown**.
 - **P6 PASS WITH REVIEW NOTES**, all **9/9 HTTP** (TEXT4 + cleanup list1 + RICH4), no P6 rerun. Reports `docs/evidence/DS-LV-02-P6-RICH-RESULT.json` and `docs/acceptance/DS-LV-02-P6-FINAL-ARCHITECTURE-ACCEPTANCE.md`. Scope only simple synthetic PDF, no complex Saturn diagram accuracy established.
 - **P7 one-page OCR is next and only offline prep approved for immediate execution** (owner's blanket GO supports ≤1 paid OCR POST after offline acceptance). `scripts/validation/ds_lv_02_p7_ocr.py`, `docs/tasks/DS-LV-02-P7-OCR-TEST-PROTOCOL.md`. P8/P9 remain stage gated.
+
+## DS-LV-02/P7 OCR original offline preflight + simplified operator input — 2026-11-18
+- Owner WSL P7 original Python `py_compile` PASS; `--self-test` PASS, pinned synthetic PDF checksum OK, 0 network/$0. Original pinned commit `21c47b020b0951a3109c72b3d1cae8df4e5bb6af` local script SHA256 `43c889db1e4a2a5ef2729240eb6dd5ce50f4d7b86c1744644da62ef07a489024`. Evidence `docs/evidence/DS-LV-02-P7-OCR-ORIGINAL-OFFLINE-PREFLIGHT.md`.
+- Owner explicitly requested **remove redundant `Enter P...-APPROVED` confirmation prompts** in future scripts, retaining permission/limit controls. Decision `docs/decisions/DS-LV-02-OPERATOR-INPUT-POLICY.md` applies P7–P9.
+- P7 script changed only to drop the typed consent gate, retaining `getpass` for key, one-post marker, SHA pinning, no retries or redirects. **New pinned script SHA changes; new offline preflight REQUIRED before paid P7**. No live P7 API calls yet. P8/P9 remain stage-gated.
