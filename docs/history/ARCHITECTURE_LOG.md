@@ -41,5 +41,7 @@
 
 - **DS-LV-02/P3 Paid GO (2026-11-17):** пользователь явно разрешил 1 прямой Chat Completions вызов `deepseek_read_url` с лимитом расходов $0.01 и принял, что он организационный, а не hard cap провайдера. Запись в `docs/tasks/DS-LV-02-P3-OWNER-GO.md`; P3 пока НЕ ИСПОЛНЕН. P4..P9 не разрешены.
 
+- **DS-LV-02/P3 execution/acceptance (2026-11-17 19:16:47 UTC):** one owner-authorized `deepseek-flash` URL-reading call, HTTP 200, completed `read_link`, signature present, 419 tokens, `tool_fetch=1`, 1709 ms, estimated $0.0009207, billing unverified. `example.com` current HTML has no H1 and only `<title>Example Domain</title>`; DeepSeek Chinese answer denied H1 and correctly named title, consistent with source. Original expected positive H1 and substring-only scorer flawed. Architecture result **PASS for tool capability, WITH REVIEW NOTES for fixture and language**. P3 GO exhausted; P4 draft only.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

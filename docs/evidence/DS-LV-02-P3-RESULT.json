@@ -1,0 +1,88 @@
+{
+  "schema": "ds-lv-02.p3.redacted-observation.v0.2",
+  "source": "Owner-provided local WSL stdout from scripts/validation/ds_lv_02_p3_url_read.py",
+  "source_validation": "Architecture independent public-web and HTML extraction; not original fetched page bytes",
+  "test_id": "DS-LV-02-P3",
+  "original_script_authorization_field": "P3_BUDGET_OWNER_GO_REQUIRED_BEFORE_EXECUTION",
+  "authoritative_owner_go_doc": "docs/tasks/DS-LV-02-P3-OWNER-GO.md",
+  "owner_approved_http_requests": 1,
+  "owner_approved_organizational_usd_limit": 0.01,
+  "authorization_exhausted": true,
+  "gateway": "direct",
+  "model_requested": "deepseek-flash",
+  "model_observed": "deepseek-flash",
+  "thinking_requested": "disabled",
+  "tools_declared": [
+    "deepseek_read_url"
+  ],
+  "target_url": "https://example.com/",
+  "max_tokens": 256,
+  "http_requests_attempted": 1,
+  "timestamp_utc": "2026-11-17T19:16:47.154096+00:00",
+  "http_status": 200,
+  "api_error_present": false,
+  "finish_reason": "stop",
+  "answer_preview": "根据所读取的 https://example.com/ 页面内容，该页面没有出现明确的 H1 标题行；页面标题（URL title）是“Example Domain”。因此，无法从给定内容中准确指出英文 H1 标题。",
+  "answer_language": "Chinese",
+  "prompt_language": "Russian",
+  "url_read_invoked": true,
+  "url_read_completed": true,
+  "url_read_call_count": 1,
+  "unexpected_tool_call_count": 0,
+  "read_calls": [
+    {
+      "type": "deepseek_read_url",
+      "kind": "read_link",
+      "status": "completed",
+      "target_host_match": true,
+      "page_title": "Example Domain",
+      "signature_present": true,
+      "error_code": null
+    }
+  ],
+  "annotations": [],
+  "usage": {
+    "prompt_tokens": 369,
+    "completion_tokens": 50,
+    "total_tokens": 419,
+    "tool_fetch": 1,
+    "tool_search": 0
+  },
+  "billed_tool_fetch": 1,
+  "billed_tool_search": 0,
+  "estimated_peak_cost_usd": 0.0009207,
+  "actual_billing_usd": null,
+  "latency_ms": 1709,
+  "script_result": "PASS",
+  "architecture_result": "PASS_WITH_REVIEW_NOTES",
+  "gate_results": {
+    "direct_chat_http": "PASS",
+    "model_directed_url_read": "PASS",
+    "source_fact_check": "CONSISTENT_WITH_LIVE_HTML_NO_H1",
+    "specific_h1_extraction_test": "INVALID_FIXTURE_H1_ABSENT",
+    "language_consistency": "DEVIATION_CHINESE_ON_RUSSIAN_PROMPT",
+    "offline_scorer_quality": "FALSE_POSITIVE_RISK_SUBSTRING_ONLY"
+  },
+  "external_verification": {
+    "target_opened": "https://example.com/",
+    "page_title": "Example Domain",
+    "observed_html_headings_h1_count": 0,
+    "observed_body_tag": "p",
+    "original_live_bytes_sha256": null,
+    "same_bytes_as_deepseek_tool": false,
+    "status": "INDEPENDENT_LIVE_SOURCE_SEMANTICS_CHECK_NO_BYTE_PIN",
+    "cross_check_urls": [
+      "https://example.com/",
+      "https://allrighttools.com/view-page-source/",
+      "https://heade.rs/example.com"
+    ]
+  },
+  "notes": [
+    "DeepSeek response denying H1 is consistent with the independently fetched contemporary HTML.",
+    "Older copies of example.com show an H1; do not infer old structure for the current page.",
+    "The pinned evaluation script mistakenly used substring 'example domain' as PASS for H1, without distinguishing page title from H1.",
+    "Tool capability PASS is independent of the stale question-specific H1 expectation.",
+    "P3 GO exhausted; no retries or additional paid calls authorized.",
+    "Pricing estimate not actual provider billing."
+  ]
+}

@@ -1,14 +1,14 @@
 # PROJECT STATE — DS-консультант
 
 **Обновлено:** 2026-11-17  
-**Текущий статус:** **DS-LV-02/P2 STANDALONE SEARCH PASS; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
+**Текущий статус:** **DS-LV-02/P3 URL READING PASS WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
 ## Решения владельца
 - DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 платный запуск разрешён — один HTTP POST, лимит $0.01; ещё не выполнен**. P4..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -31,7 +31,7 @@
 ## Remaining blockers
 1. `ds-cosult` PUBLIC: нельзя публиковать закрытый Core/GT, секреты и ограниченные источники.
 2. Нет expert-approved Ground Truth, DS-CORPUS-1.0 не frozen.
-3. Native DeepSeek **thinking = PASS for one smoke test**; standalone Search **P2 PASS / ACCEPTED**; web/URL/Files/OCR/Fetch/continuity **UNTESTED**.
+3. Native DeepSeek **thinking = PASS for one smoke test**; standalone Search **P2 PASS / ACCEPTED**; web/Files/OCR/standalone Fetch/continuity **UNTESTED**; native URL Reading **P3 PASS with review notes**.
 4. Из 12 запланированных документов лишь 3 byte-pinned по Linux-отчёту, 9 ожидают проверку.
 5. Независимый custody/audit локальных исходных PDF/PNG и манифеста не получен; billing не сверён.
 6. Технические отношения, версии оборудования и неоднозначные стрелки в ЕАСДКиУ требуют экспертной оценки.
@@ -59,13 +59,20 @@
 - Linux/WSL user report: `py_compile` clean; `--self-test` PASS; 0 network requests, $0 cost; local script SHA-256 `1de63e655bc84c19fce73076442280946ff099d06d5b3ae8898b4a8cd8fc26e2`.
 - Detailed provenance and limits: `docs/evidence/DS-LV-02-P3-OFFLINE-PREFLIGHT.md`. **No paid DeepSeek request executed at this status review; owner P3 GO now documented: 1 request / $0.01**.
 
+## P3 execution & architecture acceptance — 2026-11-17
+- **P3 CAPABILITY PASS (ACCEPTED WITH REVIEW NOTES)**: 1 direct Chat Completions, HTTP 200, `read_link` completed on `example.com` with signature present, 419 tokens, 1 tool_fetch, 0 search, 1709 ms.
+- Billing estimate $0.0009207, actual billed amount unverified. Owner GO exhausted; no repeat.
+- **Important fixture drift:** independently fetched live `example.com` HTML contains `<title>Example Domain</title>` but NO `<h1>`. DeepSeek answer in Chinese **noted absence of H1 and page title correctly for current page**; old expected H1 is stale. The pinned P3 script's substring-only `PASS` is not valid proof of H1 extraction. Source semantics consistency reviewed separately; not byte-pinned to DeepSeek tool payload.
+- Language continuity issue: Chinese response to Russian prompt. Evidence: `docs/evidence/DS-LV-02-P3-RESULT.json`, acceptance `docs/acceptance/DS-LV-02-P3-ARCHITECTURE-ACCEPTANCE.md`, quality `docs/quality/DS-LV-02-P3-FIXTURE-DRIFT.md`.
+- P4 model-directed `deepseek_web_search` draft at `docs/tasks/DS-LV-02-P4-WEB-SEARCH-PROPOSAL.md`; P4..P9 NOT AUTHORIZED.
+
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 OFFLINE PREFLIGHT PASS, OWNER GO 1 POST/$0.01 — NOT EXECUTED; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with fixture/language review notes; P4..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
 
 ## DS-LV-02/P3 owner paid GO — 2026-11-17
 - Пользователь ответил «Разрешаю» на прямой вопрос: «Подтверждаете GO для одного платного вызова `deepseek_read_url` с лимитом $0,01 USD?». **OWNER GO GRANTED: exactly one Chat Completions HTTP POST, $0.01 organizational limit**.
-- Официальный контракт URL-reading повторно сверён; script from SHA `4b6bdf5058946337021aade831d09cf34831ecaa` успешно прошёл WSL offline preflight. **P3 paid request NOT YET EXECUTED**.
+- Официальный контракт URL-reading повторно сверён; script from SHA `4b6bdf5058946337021aade831d09cf34831ecaa` успешно прошёл WSL offline preflight. **P3 paid request EXECUTED 2026-11-17 19:16:47 UTC**.
 - Статическая строка `authorization` внутри ранее закреплённого скрипта всё ещё содержит `P3_BUDGET_OWNER_GO_REQUIRED_BEFORE_EXECUTION`; это метка времени создания скрипта, а не действующее состояние разрешения. **Нормативный источник GO — запись в `docs/tasks/DS-LV-02-P3-OWNER-GO.md`**; при приёмке явно сверить обе записи и не делать повторов.

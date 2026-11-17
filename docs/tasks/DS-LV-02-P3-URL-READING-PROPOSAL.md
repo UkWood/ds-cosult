@@ -1,7 +1,7 @@
 # DS-LV-02/P3 — Native URL Reading Conformance (Proposal Only)
 
 **Дата:** 2026-11-17  
-**Статус:** **P3 PAID GO RECEIVED — 1 POST / $0.01 USD — NOT EXECUTED**
+**Статус:** **P3 EXECUTED — TOOL CAPABILITY PASS, FIXTURE/LANGUAGE REVIEW NOTES**
 **Основание:** DS-LV-02/P2 standalone Search PASS; следующее качественно иное свойство — **model-directed URL reading**.
 
 ## Goal
@@ -62,3 +62,6 @@ WSL client report: `python3 -m py_compile` completed, `--self-test` PASS, networ
 
 ## Paid execution authorization (2026-11-17)
 Владелец явно подтвердил один платный вызов P3 с лимитом $0.01. Запись разрешения и границы в `DS-LV-02-P3-OWNER-GO.md`. Дополнительных запросов, повторов и перехода к P4 нет. Ранее созданный локальный скрипт не изменялся; его статическая метка `authorization` относится ко времени до разрешения — уточнить её по GO-документу при анализе JSON.
+
+## Final closure — 2026-11-17
+One authorized call occurred and was accepted for tool availability. Current `example.com` page has **no H1**; its document title is `Example Domain`. DeepSeek answer recognized that distinction (in Chinese, a language deviation). Legacy positive-H1 assumption and substring scorer are not reusable. See `../acceptance/DS-LV-02-P3-ARCHITECTURE-ACCEPTANCE.md`. No P3 retry permitted.

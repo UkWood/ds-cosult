@@ -1,7 +1,7 @@
 # DS-LV-02/P3 — Formal Owner GO for URL Reading
 
 **Дата:** 2026-11-17  
-**Статус:** **OWNER GO — EXACTLY ONE PAID HTTP REQUEST AUTHORIZED; NOT YET EXECUTED**  
+**Статус:** **OWNER GO EXERCISED — 1 HTTP POST / P3 ACCEPTED WITH REVIEW NOTES**  
 **Проект:** DS-консультант, независимый от NEW RAG  
 **Цель:** P3 — native `deepseek_read_url` smoke, без Search/Files/OCR и последующих фаз.
 
@@ -31,3 +31,6 @@ As of 2026-11-17 official peak Flash token prices: input cache-miss $0.30 per mi
 ## Stop policy
 
 Once P3 script is executed once, **GO exhausted**, regardless of HTTP or model outcome. `logs/ds-lv-02-p3-attempted.marker` makes re-runs fail. P4–P9 **NOT AUTHORIZED**. No merge, production, DS-02 or benchmark freeze.
+
+## Actual result — 2026-11-17 19:16:47 UTC
+One permitted HTTP POST completed, tool `deepseek_read_url/read_link` invoked/completed, source title `Example Domain`, token total 419, fetch count 1, latency 1709 ms. Estimated billing $0.0009207 not reconciled. Architecture acceptance: `../acceptance/DS-LV-02-P3-ARCHITECTURE-ACCEPTANCE.md`. **GO exhausted, no retries.**
