@@ -1,5 +1,8 @@
 # DS-SEC-02 — Direct Visitor Prompt Injection / Goal Hijacking Threat Model
 
+
+**CURRENT APPROVAL UPDATE (2026-11-18):** The owner accepted the proposed defense-in-depth **architecture principles** by “Все твои предложения принимаются”; see `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. The original discussion draft and unresolved detailed implementation questions below are retained for audit. Nothing has been implemented, no paid calls authorized.
+
 **Recorded:** 2026-11-18  
 **Status:** **ARCHITECTURE DISCUSSION DRAFT — DEFENSIVE CONTROLS PROPOSED, NOT YET OWNER-ACCEPTED OR IMPLEMENTED**  
 **Context:** Next Entity-Centric RAG, using trusted Saturn website, trusted Saturn PDFs, and provenance-bound entity dossiers.  
