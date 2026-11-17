@@ -30,5 +30,7 @@
 
 - **DS-LV-02/P1 выполнен и принят (17.11.2026 18:46:55 UTC):** один прямой запрос `deepseek-flash` с `thinking.type=enabled` (лимит $0.01): HTTP 200, ответ 9.8, `reasoning_content_present=true`, `reasoning_tokens=65`, total 118 tokens, latency 1443 мс; расчетный модельный тариф $0.0000975, actual billing не подтверждён. Acceptance: `docs/acceptance/DS-LV-02-P1-ARCHITECTURE-ACCEPTANCE.md`. Следующая платная фаза P2 пока НЕ РАЗРЕШЕНА.
 
+- **DS-LV-02/P2 GO (17.11.2026):** владелец согласовал один прямой DeepSeek Search API HTTP POST c $0.01 ceiling; формализованы `count=1`, `need_content=false`, оценка $0.00075 и Python WSL скрипт с `getpass`/no retry/atomic marker. На момент записи P2 НЕ ИСПОЛНЕН; P3..P9 не разрешены.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

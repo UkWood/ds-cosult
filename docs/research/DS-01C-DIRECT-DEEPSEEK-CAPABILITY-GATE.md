@@ -13,7 +13,7 @@
 | Web search | `tools:[{"type":"deepseek_web_search"}]` | DOCUMENTED | UNTESTED |
 | Deep thinking search | thinking + web tool | DOCUMENTED | UNTESTED |
 | URL read | `tools:[{"type":"deepseek_read_url"}]` | DOCUMENTED | UNTESTED |
-| Managed Search & Fetch | `POST /v1/tools/search`, `POST /v1/tools/fetch` | DOCUMENTED | UNTESTED |
+| Managed Search & Fetch | `POST /v1/tools/search`, `POST /v1/tools/fetch` | DOCUMENTED | **Search: P2 GO/UNTESTED; Fetch: UNTESTED** |
 | PDF / Word / PPT | `POST /files`, `purpose=text_recognition` or `rich_layout_recognition` | DOCUMENTED | UNTESTED |
 | PDF file reference | user content part `{"type":"file","file_id":"..."}` | DOCUMENTED | UNTESTED |
 | OCR independent | `POST /v1/tools/ocr` | DOCUMENTED | UNTESTED |
