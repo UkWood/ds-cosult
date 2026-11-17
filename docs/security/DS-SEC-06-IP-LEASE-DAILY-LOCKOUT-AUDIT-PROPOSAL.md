@@ -1,5 +1,8 @@
 # DS-SEC-06 — Proposed Architecture: One Active Session per IP, Daily Lockout, Private Conversation Audit
 
+
+**CURRENT APPROVAL UPDATE (2026-11-18):** Owner accepted the design defaults and implementation direction from this proposal: one active anonymous session per IP, 15-minute idle lease, fixed calendar-day 20 billable requests/IP, complete private IP/Q&A audit with 30-day raw retention, and server-side atomic quota/budget controls. Binding record: `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Deployment-specific timezone, organization global USD budget, trusted proxies, contact data and privacy review remain required. Original proposal text below preserved as rationale. No implementation authorized.
+
 **Recorded:** 2026-11-18  
 **Status:** **TECHNICAL DESIGN PROPOSAL / OWNER NUMERIC APPROVAL AND IMPLEMENTATION PENDING**  
 **Accepted behavior:** `docs/decisions/DS-SEC-05-ANONYMOUS-IP-LOCK-DAILY-LIMIT-LOGGING.md`. Do not reinterpret the accepted IP-lock requirement as authenticated user tracking.
