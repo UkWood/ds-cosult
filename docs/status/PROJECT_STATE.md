@@ -16,20 +16,20 @@
 ## Выполнено
 - Исходные 438 Markdown-записей проинвентаризированы по коллекциям.
 - 60 Core кандидатов уникальны (5×12), 12 Pilot, 8 диалогов, 24 документных задачи. 17 atomic fact candidates; **0 expert approved**.
-- Публичный PDF preflight: СОС-95 195 физ. страниц; СЛДКС-1 83; ЕАСДКиУ 79 — данные из PDF reader, нет bytes SHA-256.
+- Повторный PDF preflight: СОС-95 195, СЛДКС-1 83, ЕАСДКиУ 79; **визуально проверены выбранные таблицы и схемы на физических страницах 9 / 7,18 / 3,4,12**; 11 evidence seeds, Pilot P09/P10 уточнены. **Исходные bytes SHA-256 не получены**.
 - Проверена официальная документация прямого DeepSeek API: native web search, deep thinking search, URL reading, Files API (text/rich), Search/Fetch, OCR. Подготовлен DSAPI-01..12 conformance gate без оплачиваемых вызовов.
 - Долговременная архитектурная документация ведётся в Draft PR #1, без Merge.
 
 ## Blockers
 1. Репозиторий PUBLIC: закрытые Core/GT, реальные секреты и ограниченные документы не публиковать.
 2. **Нет authenticated Direct DeepSeek API conformance**: владелец подключает прямой API; фактические вызовы, поддержка инструментов и лимит расходов ещё не утверждены.
-3. **PDF SHA-256 отсутствует**, физические страницы по веб-просмотру не равны pinned file bytes; 24 doc tasks blocked.
+3. **PDF SHA-256 отсутствует**: визуальные web evidence seeds не являются pinned file bytes; 24 doc tasks всё ещё blocked, независимая экспертиза GT не пройдена.
 4. Инженерные отношения и некоторые import fields требуют экспертизы.
 5. 0 expert-approved GT; DS-CORPUS-1.0 не заморожен; DS-02 coding НЕ разрешён.
 6. Предложенные ранее лимиты $20/$100 и актуальную стоимость DeepSeek проверить и утвердить перед реальными платными прогонами.
 
 ## Следующее
 1. DS-API-CONFORMANCE DSAPI-01..12: модель, thinking, native tools, Files/OCR, Search/Fetch, безопасность, стоимость — только после отдельного разрешения.
-2. CF-00/CF-04: скачать/хешировать PDF, разметить physical pages, проверить отношения, принять GT.
+2. CF-00/CF-04: выполнить `docs/tasks/DS-01C-LINUX-PDF-BYTE-PIN.md`, сопоставить SHA-256 и выбранные страницы с веб-просмотром, проверить отношения, принять GT.
 3. После приёмки prepare DS-02 minimal harness; затем Pilot calibration и Final Freeze, после которого Core.
 4. PR #1 оставить Draft до владельческой проверки. NO MERGE. NO PRODUCTION.
