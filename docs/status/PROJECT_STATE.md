@@ -184,3 +184,11 @@
 - По просьбе владельца подготовлен самостоятельный документ `docs/handoffs/DS-ARCHITECTURE-SESSION-HANDOFF-2026-11-18.md` с проектными решениями, GO/лимитами, P1–P7 итого, P8 точкой возобновления, источниками и правилами передачи.
 - Последняя известная в чате P8-стадия: **OFFLINE PREFLIGHT PASS**, TURN-1 команда выдана, но платный JSON **не получен**. При переходе перед новым вызовом исключить повтор по локальному marker/report/private state; готовый JSON просмотреть вместо повторного POST.
 - P6 9/9 и P7 1/1 paid HTTP использованы, P8 максимум 4 под $0.02 organizational, P9 offline; новый PR HEAD меняется только от docs handoff. No Merge, DS-02 или prod.
+
+## DS-LV-02/P8 TURN-1 independent live acceptance — 2026-11-18
+- Owner returned WSL JSON for exactly **one** Chat Completions request, timestamp **2026-11-17 22:07:31 UTC**, HTTP200, `deepseek-flash`, `thinking.disabled`, no tools or reasoning, finish `stop`, 1097ms, no errors.
+- Correct synthetic answer: **ЛИРА-17: 12 В, RS-485**. SHA256 `bd4b441fac779bf5525f830aacb1092bb042772885d5b93732e5504afe71a6e3` independently recomputed from full short answer.
+- Usage 123 input + 19 completion = **142 tokens**, 0 cache hits; peak estimate **$0.0000597** (actual billing unknown). **P8 HTTP 1/4 consumed**, 3 calls remain within P8 $0.02 organizational allowance; no replay of TURN-1.
+- Architecture **TURN-1 PASS WITH REVIEW NOTES / ACCEPTED** for this isolated synthetic factual query. Does NOT yet prove contextual continuity, reference resolution, update handling, or absence-based abstention; WSL private history is locally kept, not independently available to Architecture.
+- Evidence `docs/evidence/DS-LV-02-P8-TURN-1-RESULT.json`; independent decision `docs/acceptance/DS-LV-02-P8-TURN-1-ARCHITECTURE-ACCEPTANCE.md`.
+- **Next allowed: TURN-2 only**, via pinned source/hash and one local WSL command; answer must resolve «А у второй?» to ОРБИТА-5 24 В Ethernet. Review/record before TURN-3; P9 offline only. No Merge, DS-02, production or real Saturn/GT uploads.
