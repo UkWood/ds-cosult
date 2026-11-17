@@ -58,5 +58,7 @@
 
 - **DS-LV-02/P5 paid GO (2026-11-17):** владелец ответил «Да» на прямой вопрос об одном платном вызове P5 с организационным бюджетом **$0.05**, явно принимая риск его превышения. Нет подтверждённого технического hard cap для внутренних вызовов Deep Search. Разрешение `docs/tasks/DS-LV-02-P5-OWNER-GO.md`, pinned script локально self-test PASS, **PAID NOT YET EXECUTED**. P6–P9 и Merge запрещены.
 
+- **DS-LV-02/P5 completed and accepted (2026-11-17 20:07:23 UTC):** owner-approved one paid direct DeepSeek POST HTTP 200, `thinking enabled` observed reasoning_tokens 856, 2 deep_search steps: 1 search with 4 billable queries plus 4 open_page actions, all completed, 0 billed fetch. Three citation spans structurally valid, overlap true; 14,645 prompt (5,760 cached) + 1,418 completion = 16,063 total tokens; 9,245ms. Peak estimate $0.00740166; applicable offpeak $0.00520083; actual billing unknown. Zero Fetch billing is compatible with provider rules for pages whose content is already available or repeated. Full 1,259-char answer not supplied; `factual_answer_gate=NEEDS_SOURCE_REVIEW`. Architecture **P5 TOOL-CAPABILITY PASS WITH REVIEW NOTES**, see `docs/acceptance/DS-LV-02-P5-ARCHITECTURE-ACCEPTANCE.md` and `docs/evidence/DS-LV-02-P5-RESULT.json`. **P5 GO EXHAUSTED**; P6 design proposal only, no paid GO.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

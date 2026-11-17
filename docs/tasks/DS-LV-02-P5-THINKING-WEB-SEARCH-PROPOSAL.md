@@ -1,7 +1,7 @@
 # DS-LV-02/P5 — Deep Thinking + Native Web Search (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P5 PAID OWNER GO RECEIVED — 1 POST / ORGANIZATIONAL $0.05; NOT EXECUTED**  
+**Status:** **P5 EXECUTED — TOOL CAPABILITY PASS WITH REVIEW NOTES / GO EXHAUSTED**  
 **Previous gates:** P1 thinking PASS, P2 standalone Search PASS, P3 URL-reading capability PASS WITH REVIEW NOTES, P4 model-managed Web Search PASS WITH REVIEW NOTES.
 
 ## Test objective
@@ -45,3 +45,6 @@ User-provided execution of pinned `scripts/validation/ds_lv_02_p5_thinking_searc
 
 ## Separate explicit paid owner GO (2026-11-17)
 Owner has replied «Да» to an exact proposal to allow one paid P5 POST at organizational USD $0.05, **acknowledging the risk of exceeding it**. See `DS-LV-02-P5-OWNER-GO.md`. No provider-enforced monetary cap has been proven; no retries permitted; P6..P9 and all production activity unauthorized. The P5 Python script is unchanged from its successful offline preflight. **P5 live NOT EXECUTED at this update.**
+
+## Live completion / closure — 2026-11-17
+Exactly one approved P5 Deep Thinking + Web Search call executed: observed reasoning + one search containing 4 queries + 4 completed open_page steps + 3 valid citation spans, 16,063 total model tokens. Source claim audit pending for full final answer, not for tool-capability acceptance. Read `../acceptance/DS-LV-02-P5-ARCHITECTURE-ACCEPTANCE.md` and `../evidence/DS-LV-02-P5-RESULT.json`. **P5 GO EXHAUSTED**, P6..P9 NOT AUTHORIZED.

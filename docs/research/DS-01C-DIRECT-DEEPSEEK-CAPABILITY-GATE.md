@@ -1,7 +1,7 @@
 # DS-01C — Direct DeepSeek API Capability & Conformance Gate v0.1
 
 **Дата:** 2026-11-17  
-**Статус:** BASE CHAT, THINKING basic, standalone Search, native URL Reading and model-directed native Web Search tool capabilities проверены; standalone Fetch and other tools UNTESTED; каждый платный вызов требует отдельного GO.  
+**Статус:** BASE CHAT, THINKING basic, standalone Search, native URL Reading, non-thinking native Web Search, and thinking+search `deep_search` capabilities проверены; standalone Fetch and other tools UNTESTED; каждый платный вызов требует отдельного GO.  
 **Источник:** официальная документация `api-docs.deepseek.com`.
 
 ## Endpoint matrix

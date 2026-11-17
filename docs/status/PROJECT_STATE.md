@@ -1,7 +1,7 @@
 # PROJECT STATE — DS-консультант
 
 **Обновлено:** 2026-11-17  
-**Текущий статус:** **DS-LV-02/P4 NATIVE WEB SEARCH PASS WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
+**Текущий статус:** **DS-LV-02/P5 DEEP THINKING + NATIVE WEB SEARCH PASS WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
 ## Решения владельца
 - DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
@@ -97,7 +97,7 @@
 - Primary official release `https://api-docs.deepseek.com/news/news261113/` independently verified (date 2026-11-13, native Search and Fetch features). Only first 480 chars of answer accessible: **factual_answer_gate=NEEDS_SOURCE_REVIEW** remains. Citation trace passed, full claim grounding unmeasured.
 - Peak fee estimate $0.0054315; off-peak cache-miss estimate $0.00384075 for 19:40 UTC. Actual billing unknown; $0.01 organizational limit not enforceable by current script. P4 authorization **exhausted**; no re-run.
 - Architecture result **PASS WITH REVIEW NOTES**. Evidence `docs/evidence/DS-LV-02-P4-RESULT.json`; acceptance `docs/acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`.
-- P5 thinking+search **offline preparation approved; paid testing NOT AUTHORIZED**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5 single paid request now authorized with $0.05 organizational ceiling and overspend risk; P6..P9 not authorized.
+- P5 thinking+search **offline preparation approved; paid testing NOT AUTHORIZED**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5 single paid request executed 2026-11-17 20:07:23 UTC; GO exhausted; P6..P9 not authorized.
 
 ## P5 OFFLINE preparation authorized — 2026-11-17
 - Owner reply «Разрешаю» interpreted as approval for **free research and offline script**, as the proposal explicitly calls for a separate numerical GO before a paid test.
@@ -110,4 +110,12 @@
 
 ## P5 explicit paid GO — 2026-11-17
 - Owner answered «Да» to explicit **one paid P5 POST / organizational $0.05 USD with risk of exceeding this amount**. Authoritative record: `docs/tasks/DS-LV-02-P5-OWNER-GO.md`.
-- **P5 NOT YET EXECUTED**, pinned WSL script unchanged after offline PASS; one attempt only, no retry. The monetary limit is NOT a hard API cost cap; server-side Search/Fetch and input/output charges may exceed it. P6..P9, Merge, DS-02 and production not authorized.
+- **P5 EXECUTED AND ACCEPTED FOR TOOL CAPABILITY; GO exhausted**, pinned WSL script unchanged after offline PASS; one attempt only, no retry. The monetary limit is NOT a hard API cost cap; server-side Search/Fetch and input/output charges may exceed it. P6..P9, Merge, DS-02 and production not authorized.
+
+## P5 live Deep Thinking + native search / Architecture Acceptance — 2026-11-17
+- Owner-authorized **1 direct paid POST** completed at 2026-11-17 20:07:23 UTC, HTTP 200, model `deepseek-flash`, thinking enabled, `reasoning_tokens=856`, 3122 reasoning chars reported (**raw reasoning not retained**).
+- `deep_search` 2 tool steps; actions 1 search / 4 `open_page` / 0 `find_in_page`, all 5 completed; 4 individual search queries billed, 24 sources reported, 3 structurally valid citations (all spans valid), source overlap.
+- 14,645 prompt (5,760 cache hit + 8,885 miss) + 1,418 completion = 16,063 tokens; latency 9,245ms; peak estimate $0.00740166, applicable off-peak estimate $0.00520083; actual billing unknown.
+- **4 open_page and 0 billed fetch is consistent with official DeepSeek billing rules** (page content already in search results/cached or page navigation can be free). Exact underlying source per action cannot be reconstructed from redacted JSON.
+- Source verification: initial answer preview and official docs consistent; **full 1,259-character answer NOT independently examined**, `factual_answer_gate=NEEDS_SOURCE_REVIEW`. Full answer stored locally only; no reasoning text persisted. This is tool-capability PASS, not verified claim-by-claim correctness.
+- Acceptance **P5 PASS WITH REVIEW NOTES**: `docs/acceptance/DS-LV-02-P5-ARCHITECTURE-ACCEPTANCE.md`; evidence `docs/evidence/DS-LV-02-P5-RESULT.json`. **P5 authorization EXHAUSTED; no repeat**. P6 synthetic Files text/rich proposal only `docs/tasks/DS-LV-02-P6-FILES-PREPARATION-PROPOSAL.md`; P6..P9 NOT AUTHORIZED.

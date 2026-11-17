@@ -1,7 +1,7 @@
 # DS-LV-02/P5 — Owner GO for One Paid Deep Thinking + Web Search Call
 
 **Дата:** 2026-11-17  
-**Статус:** **PAID OWNER GO CONFIRMED — EXACTLY ONE HTTP POST; NOT YET EXECUTED**  
+**Статус:** **PAID OWNER GO EXERCISED — EXACTLY ONE HTTP POST; P5 CAPABILITY ACCEPTED WITH REVIEW NOTES**  
 **Лимит расходов:** **$0.05 USD — organizational, NOT technically enforced**  
 **Проект:** DS-консультант, independent from NEW RAG
 
@@ -47,3 +47,6 @@ This expressly authorizes one billable attempt under the above organizational sp
 ## What is NOT approved
 
 No P5 rerun, P6–P9, DS-02 coding, benchmark freeze, merge, production deployment, edits to NEW RAG or Saturn-Main-Site. Draft PR #1 remains open.
+
+## Execution closure — 2026-11-17 20:07:23 UTC
+Single permitted request completed, HTTP 200, tool search and thinking observed, latency 9,245 ms, 16,063 tokens, 4 billed search queries and 0 billed fetch. Estimated peak $0.00740166; offpeak $0.00520083. Actual billed amount unverified. Architecture report `../acceptance/DS-LV-02-P5-ARCHITECTURE-ACCEPTANCE.md`. **Owner GO fully EXHAUSTED.** `owner_go_verified_by_script:false` in local JSON is a static flag and does not negate documented explicit approval.
