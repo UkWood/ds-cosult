@@ -28,5 +28,7 @@
 
 - **DS-LV-02 / P1 GO (2026-11-17):** владелец ответил «Разрешаю, продолжай» на предложение одной Deep Thinking проверки с лимитом $0.01. Подготовлен безопасный Python smoke test с getpass, без tools, max_tokens=512, без повторов, с редактированным JSON-отчётом. На момент фиксации API-вызов ещё не выполнен; все остальные P2..P9 НЕ РАЗРЕШЕНЫ.
 
+- **DS-LV-02/P1 выполнен и принят (17.11.2026 18:46:55 UTC):** один прямой запрос `deepseek-flash` с `thinking.type=enabled` (лимит $0.01): HTTP 200, ответ 9.8, `reasoning_content_present=true`, `reasoning_tokens=65`, total 118 tokens, latency 1443 мс; расчетный модельный тариф $0.0000975, actual billing не подтверждён. Acceptance: `docs/acceptance/DS-LV-02-P1-ARCHITECTURE-ACCEPTANCE.md`. Следующая платная фаза P2 пока НЕ РАЗРЕШЕНА.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

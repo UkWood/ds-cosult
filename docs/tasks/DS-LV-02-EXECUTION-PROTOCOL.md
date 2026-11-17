@@ -2,7 +2,7 @@
 
 **Дата:** 2026-11-17  
 **Проект:** DS-консультант | Architecture Session A  
-**Статус:** READY FOR OWNER APPROVAL OF EXECUTION — **NO PAID CALL AUTHORIZED**  
+**Статус:** P1 **COMPLETED PASS** (one authorized call); P2..P9 **NOT AUTHORIZED**  
 **Заменяет как детализация:** DS-LV-02 draft v0.1 (сохранён в Git-истории)
 
 ## 1. Основание
@@ -22,7 +22,7 @@
 | Фаза | Проверки | Режим | Верхняя граница числа HTTP-запросов (предлагаемая) | Статус |
 |---|---|---|---:|---|
 | P0 | окружение, синтаксис и цены, fixtures, безопасное хранение ключа | офлайн, без отправки данных | 0 | подготовлено |
-| P1 | DSAPI-03 thinking enabled + контроль без web tools | 1 Chat Completion | 1 | НЕ РАЗРЕШЕНО |
+| P1 | DSAPI-03 thinking enabled + контроль без web tools | 1 Chat Completion | 1 | **PASS / ACCEPTED 2026-11-17** |
 | P2 | DSAPI-07 managed Search (raw JSON) | 1 Search request | 1 | НЕ РАЗРЕШЕНО |
 | P3 | DSAPI-06 native `deepseek_read_url` | 1 Chat Completion | 1 | НЕ РАЗРЕШЕНО |
 | P4 | DSAPI-04 `deepseek_web_search`, thinking disabled | 1 Chat Completion | 1 | НЕ РАЗРЕШЕНО |
@@ -32,7 +32,7 @@
 | P8 | DSAPI-11 4-turn short dialogue | 4 Chat Completions | 4 | НЕ РАЗРЕШЕНО |
 | P9 | DSAPI-12 faults/billing/summary | офлайн анализ + по отдельному запросу диагностика | 0 по умолчанию | НЕ РАЗРЕШЕНО |
 
-**Ни один последующий subgate не начинается, пока предыдущий не проверен Architecture Session A и владелец не разрешил соответствующую платную фазу и бюджет.** Старое GO на $0.01 и один вызов полностью использовано в LV-API-01. Предварительное число вызовов **не является разрешённым лимитом расходов**.
+**P1 уже проверен и принят; никаких платных P2..P9 без нового явного GO и бюджета.** Старое GO на $0.01 и один вызов полностью использовано в LV-API-01. Предварительное число вызовов **не является разрешённым лимитом расходов**.
 
 ## 3. Официальный Chat Completions контракт
 

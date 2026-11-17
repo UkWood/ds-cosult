@@ -1,7 +1,7 @@
 # DS-LV-02 / P1 — Owner-Authorized Deep Thinking Smoke Check
 
 **Дата решения:** 2026-11-17  
-**Статус:** **OWNER GO FOR ONE P1 REQUEST ONLY — NOT YET EXECUTED**  
+**Статус:** **OWNER GO EXERCISED — P1 EXECUTED / PASS / ACCEPTED 2026-11-17**  
 **Разрешённый лимит:** **$0.01 USD**, один прямой DeepSeek Chat Completions вызов.  
 **Основание:** владелец ответил «Разрешаю, продолжай» на предложение одной P1-проверки с лимитом $0.01.  
 **Задание Linux/WSL:** `scripts/validation/ds_lv_02_p1_thinking.py` — публичный код без ключа.
@@ -50,3 +50,6 @@
 - https://api-docs.deepseek.com/quick_start/pricing/
 
 No Merge / No DS-02 / No production.
+
+## Result addendum
+Один разрешённый вызов выполнен и принят Architecture Session A. Никаких повторов или нового GO нет. Acceptance: `../acceptance/DS-LV-02-P1-ARCHITECTURE-ACCEPTANCE.md`, redacted evidence: `../evidence/DS-LV-02-P1-RESULT.json`.
