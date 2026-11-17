@@ -1,0 +1,31 @@
+{
+  "test_id": "DS-LV-02-P8-TURN-4",
+  "turn": 4,
+  "timestamp_utc": "2026-11-17T22:16:41.604425+00:00",
+  "model_requested": "deepseek-flash",
+  "thinking_requested": "disabled",
+  "tools_declared": [],
+  "max_tokens": 192,
+  "http_requests_attempted": 1,
+  "http_status": 200,
+  "response_model": "deepseek-flash",
+  "finish_reason": "stop",
+  "reasoning_present": false,
+  "tool_calls_present": false,
+  "question": "Сравни интерфейсы обеих моделей и назови рабочую температуру ОРБИТА-5. Если температура не указана, сообщи об отсутствии данных.",
+  "answer_preview": "Интерфейсы: у ЛИРА-17 — Ethernet, у ОРБИТА-5 — Ethernet (совпадают). Рабочая температура ОРБИТА-5 в карточке не указана — данных нет.",
+  "answer_sha256": "1554ceea51d7353087704121c9d57d740a16ae2ca58bae49b66af841a6302b50",
+  "usage": {
+    "prompt_tokens": 276,
+    "completion_tokens": 52,
+    "total_tokens": 328,
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 148
+  },
+  "peak_estimate_usd": 0.000107568,
+  "cumulative_peak_estimate_usd": 0.000319968,
+  "actual_billing_usd": null,
+  "status": "TURN_COMPLETE_REVIEW_NEEDED",
+  "error_type": null,
+  "latency_ms": 1416
+}
