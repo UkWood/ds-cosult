@@ -8,7 +8,7 @@
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. Нет разрешения на DS-02 coding, production, новый платный вызов или Corpus Freeze.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **Разрешён ровно один платный вызов DS-LV-02/P1 Deep Thinking с бюджетом $0.01** (ещё не выполнен); остальные P2..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -42,8 +42,12 @@
 - Сформирован `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`: 11 открытых кандидатов с точными SHA/page/scope, статус подписей специалистов **0/11**.
 - Тарифы DeepSeek на дату подготовки: model tokens + отдельные Search/Fetch + PDF/OCR; фиксированный бюджет и hard stop для multi-search не доказаны. Для paid subgate требуется отдельный GO владельца.
 
+## Owner GO — DS-LV-02 P1
+- 17.11.2026 владелец ответил «Разрешаю, продолжай» на предложение P1: 1 платный вызов, максимум $0.01. Это разрешение записано в `docs/tasks/DS-LV-02-P1-OWNER-GO.md`; скрипт в `scripts/validation/ds_lv_02_p1_thinking.py`.
+- **Статус P1: AUTHORISED, NOT EXECUTED.** Ключ у владельца; исполнение только в Linux/WSL. Без повторов и без автоматического перехода к P2.
+
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 no-charge preflight ready; P1+ paid NOT AUTHORIZED). Historical draft kept unchanged.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 one call explicitly authorized, NOT EXECUTED**, P2..P9 still NOT AUTHORIZED.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**

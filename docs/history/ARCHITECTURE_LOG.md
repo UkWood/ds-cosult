@@ -26,5 +26,7 @@
 
 - **DS-LV-02 / CF-04 documentation refinement (2026-11-17):** current official DeepSeek Web Tools, Files API, Search/Fetch, OCR and pricing contracts reviewed. Staged P0..P9 conformance protocol prepared; HTTP 200 errors, `server_tool_calls`, tool billing and 1-hour file expiry/DELETE included. Public CF-04 review packet prepared for 11 pinned-source PDF assertions. All 11 still require independent specialist signatures, no new paid calls, no hidden Core publication.
 
+- **DS-LV-02 / P1 GO (2026-11-17):** владелец ответил «Разрешаю, продолжай» на предложение одной Deep Thinking проверки с лимитом $0.01. Подготовлен безопасный Python smoke test с getpass, без tools, max_tokens=512, без повторов, с редактированным JSON-отчётом. На момент фиксации API-вызов ещё не выполнен; все остальные P2..P9 НЕ РАЗРЕШЕНЫ.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
