@@ -36,8 +36,14 @@
 5. Независимый custody/audit локальных исходных PDF/PNG и манифеста не получен; billing не сверён.
 6. Технические отношения, версии оборудования и неоднозначные стрелки в ЕАСДКиУ требуют экспертной оценки.
 
+## DS-LV-02/CF-04 readiness update (2026-11-17)
+- Официальные контракты нативных Web Tools, Files API, OCR, Search/Fetch и актуальная тарифная страница повторно изучены.
+- Подготовлен исполнимый **по стадиям** протокол DS-LV-02 v0.2 с отдельными subgates P0..P9, наблюдаемой проверкой `server_tool_calls`, обработкой ошибок HTTP 200 и учётом billed tool units; **никаких новых API-вызовов не было**.
+- Сформирован `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`: 11 открытых кандидатов с точными SHA/page/scope, статус подписей специалистов **0/11**.
+- Тарифы DeepSeek на дату подготовки: model tokens + отдельные Search/Fetch + PDF/OCR; фиксированный бюджет и hard stop для multi-search не доказаны. Для paid subgate требуется отдельный GO владельца.
+
 ## Next stage
-- **CF-01/CF-04:** independently inspect source evidence and expert-review technical facts, particularly 11 public PDF evidence seeds and relation provenance; remaining PDFs staged separately.
-- **DS-LV-02:** Draft native DeepSeek capability conformance in `docs/tasks/DS-LV-02-NATIVE-API-CONFORMANCE.md`; **not authorized**, needs paid-call budget and new GO.
+- **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 no-charge preflight ready; P1+ paid NOT AUTHORIZED). Historical draft kept unchanged.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**

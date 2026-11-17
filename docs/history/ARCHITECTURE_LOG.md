@@ -24,5 +24,7 @@
 - **DS-LV-01 — Architecture Session A Acceptance:** ACCEPTED WITH REVIEW NOTES, только в выполненном scope. PDF и манифест остаются на локальной машине Linux; независимый пересчёт SHA архитектурной сессией не выполнен. Advanced API, экспертные Ground Truth, DS-02 и Freeze НЕ разрешены. Отчёт и опубликованные SHA-256: `docs/acceptance/DS-LV-01-ARCHITECTURE-ACCEPTANCE.md`, `docs/evidence/DS-LV-01-PDF-MANIFEST-REPORTED.json`.
 - **DS-LV-02 draft:** сформирован план конформанс-проверок нативных DeepSeek tools, без разрешения на новый платный вызов.
 
+- **DS-LV-02 / CF-04 documentation refinement (2026-11-17):** current official DeepSeek Web Tools, Files API, Search/Fetch, OCR and pricing contracts reviewed. Staged P0..P9 conformance protocol prepared; HTTP 200 errors, `server_tool_calls`, tool billing and 1-hour file expiry/DELETE included. Public CF-04 review packet prepared for 11 pinned-source PDF assertions. All 11 still require independent specialist signatures, no new paid calls, no hidden Core publication.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
