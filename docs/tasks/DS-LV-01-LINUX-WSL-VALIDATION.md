@@ -2,7 +2,7 @@
 
 **Проект:** DS-консультант — МНПП «Сатурн»  
 **Репозиторий долговременной памяти:** https://github.com/UkWood/ds-cosult  
-**Рабочая документация:** Draft PR #1, ветка \`docs/ds-01c-benchmark-memory\`  
+**Рабочая документация:** Draft PR #1, ветка `docs/ds-01c-benchmark-memory`  
 **Дата:** 17 ноября 2026  
 **Исполнитель:** отдельная Linux/WSL Validation Session через команды, выполняемые владельцем  
 **Архитектура и независимая приёмка:** Architecture Session A  
@@ -14,7 +14,7 @@
 Владелец подтвердил, что **прямой DeepSeek API key уже имеется**, но сам ключ никому не передавал. ADR-0004 определяет **прямой DeepSeek API**, без AI Tunnel. Цели этой Linux/WSL-сессии:
 
 1. **LV-PDF-01:** скачать три публичных оригинала технических PDF, закрепить их SHA-256 и физические страницы, сверить выборочные таблицы/рисунки с предварительным веб-просмотром;
-2. **LV-API-01:** при отдельном явном разрешении владельца на минимальный платный запрос проверить прямое подключение к DeepSeek API и модель \`deepseek-flash\`.
+2. **LV-API-01:** при отдельном явном разрешении владельца на минимальный платный запрос проверить прямое подключение к DeepSeek API и модель `deepseek-flash`.
 
 Треки независимы: отсутствие подтверждённого ключа не блокирует PDF, а неудачная загрузка PDF не мешает отдельной проверке chat API. **Никакое выполнение DSAPI-01 не означает проверку native Search, Deep Thinking, Files API, OCR или всего DS-02.**
 
@@ -22,31 +22,31 @@
 
 - Давать владельцу **только один безопасный логический блок команд за раз**; после каждой команды/пакета запросить результат и анализировать его прежде следующего шага. Не требовать выполнить весь документ одним копированием.
 - Нельзя спрашивать, просить показать или вставить DeepSeek API key в ChatGPT. Ключ вводится **только в интерактивном Linux/WSL терминале без эха**, не сохраняется в файлы, history, GitHub, отчёты, логи.
-- Не использовать \`set -x\`, \`curl -v\`, echo переменной с ключом, \`.env\` в репозитории, скриншоты терминала с ключом, автоповторы платных запросов.
-- Все материалы в отдельном каталоге \`$HOME/ds-consult-validation\` в Linux FS, **не** в \`/mnt/c/\` и **не** в Git clone. \`umask 077\`.
-- Не изменять \`UkWood/Saturn-Main-Site\`, \`UkWood/LLM-RAG-chat-bot\` или \`main\` проекта. Рабочие scripts допускаются только временно в изолированной Linux папке.
+- Не использовать `set -x`, `curl -v`, echo переменной с ключом, `.env` в репозитории, скриншоты терминала с ключом, автоповторы платных запросов.
+- Все материалы в отдельном каталоге `$HOME/ds-consult-validation` в Linux FS, **не** в `/mnt/c/` и **не** в Git clone. `umask 077`.
+- Не изменять `UkWood/Saturn-Main-Site`, `UkWood/LLM-RAG-chat-bot` или `main` проекта. Рабочие scripts допускаются только временно в изолированной Linux папке.
 - PDF/PNG не пушить в PUBLIC GitHub без отдельной проверки прав. В GitHub позже можно перенести только согласованный redacted manifest.
-- Любой unexpected HTTP/JSON/PDF error: \`BLOCKED\`, ничего не заменять молча и не менять provenance.
+- Любой unexpected HTTP/JSON/PDF error: `BLOCKED`, ничего не заменять молча и не менять provenance.
 - Обязательный **отдельный GO/NO-GO владельца** перед **каждым** новым классом платных DeepSeek-вызовов. Текущий LV-API-01 предусматривает только *один* короткий базовый Chat Completions вызов, без tools, uploads и retrieval; согласовать потолок расходов и права аккаунта до выполнения.
 
 ## 3. Контрольные ссылки и baselines
 
 ### Git
-- Memory repo \`UkWood/ds-cosult\`, Draft PR #1.
-- Trusted site \`UkWood/Saturn-Main-Site\`, commit candidate \`084d759487bfab6e111549c9b5469711ac5fc13e\`, tree \`a5297822bf3a5e071b10cc1dca553481c1b84d47\`. Site — READ-ONLY.
-- Evidence seeds: \`docs/research/DS-01C-PDF-EVIDENCE-SEEDS.md\`.
+- Memory repo `UkWood/ds-cosult`, Draft PR #1.
+- Trusted site `UkWood/Saturn-Main-Site`, commit candidate `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`. Site — READ-ONLY.
+- Evidence seeds: `docs/research/DS-01C-PDF-EVIDENCE-SEEDS.md`.
 
 ### Public PDF originals (no DeepSeek upload on LV-PDF-01)
 | File | URL | Page-count reference (unverified bytes) |
 |---|---|---|
-| \`sos95_re.pdf\` | \`https://www.mnppsaturn.ru/ftp/public/doc/sos-95/re%20SOS-95.pdf\` | 195 |
-| \`sldks1_re2011_p1.pdf\` | \`https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf\` | 83 |
-| \`easdkiu_re.pdf\` | \`https://www.mnppsaturn.ru/ftp/public/doc/iis/re_iis.pdf\` | 79 |
+| `sos95_re.pdf` | `https://www.mnppsaturn.ru/ftp/public/doc/sos-95/re%20SOS-95.pdf` | 195 |
+| `sldks1_re2011_p1.pdf` | `https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf` | 83 |
+| `easdkiu_re.pdf` | `https://www.mnppsaturn.ru/ftp/public/doc/iis/re_iis.pdf` | 79 |
 
 Numbers are observations in a prior web PDF viewer, **not a frozen identity**. If a download differs, report drift, do not substitute.
 
 ### DeepSeek
-- \`https://api.deepseek.com/chat/completions\`, Bearer authentication, \`model: deepseek-flash\` (official alias to V4.1 Flash at preparation date).
+- `https://api.deepseek.com/chat/completions`, Bearer authentication, `model: deepseek-flash` (official alias to V4.1 Flash at preparation date).
 - Official docs: https://api-docs.deepseek.com/en/ , https://api-docs.deepseek.com/guides/web_tools/ , https://api-docs.deepseek.com/guides/files_api/ .
 - W/A/B/C0 and B-text/B-entity experimental protocol unchanged. Actual direct API capabilities still UNTESTED.
 
@@ -54,7 +54,7 @@ Numbers are observations in a prior web PDF viewer, **not a frozen identity**. I
 
 Linux/WSL Validation Session must start with this block only:
 
-\`\`\`bash
+```bash
 umask 077
 mkdir -p "$HOME/ds-consult-validation"/{pdf,logs,evidence_png}
 chmod 700 "$HOME/ds-consult-validation"
@@ -65,10 +65,10 @@ python3 --version
 curl --version | head -n 1
 command -v pdfinfo || true
 command -v pdftoppm || true
-\`\`\`
+```
 
 If pdfinfo or pdftoppm is missing, ask owner before doing:
-\`sudo apt-get update && sudo apt-get install -y poppler-utils file\`.
+`sudo apt-get update && sudo apt-get install -y poppler-utils file`.
 Do not execute a package install speculatively if these tools already exist.
 
 **Exit criteria:** Linux identity, curl, Python, PDF tools present; permissions controlled.
@@ -77,7 +77,7 @@ Do not execute a package install speculatively if these tools already exist.
 
 After LV-ENV-01 PASS, execute:
 
-\`\`\`bash
+```bash
 set -euo pipefail
 cd "$HOME/ds-consult-validation/pdf"
 
@@ -99,15 +99,15 @@ for f in sos95_re.pdf sldks1_re2011_p1.pdf easdkiu_re.pdf; do
   echo "========== $f =========="
   pdfinfo "$f" | grep -E '^(Pages|Page size|PDF version|Encrypted|Title|CreationDate):'
 done
-\`\`\`
+```
 
-**Critical:** If curl fails halfway, save the error and stop before interpreting an incomplete PDF. Avoid changing filename/URL silently. After original bytes pinned, repeat \`sha256sum -c SHA256SUMS.txt\` on the same files, then keep files unchanged for the page checks.
+**Critical:** If curl fails halfway, save the error and stop before interpreting an incomplete PDF. Avoid changing filename/URL silently. After original bytes pinned, repeat `sha256sum -c SHA256SUMS.txt` on the same files, then keep files unchanged for the page checks.
 
 ## 6. LV-PDF-02 — Physical pages, tables and diagrams
 
 After hash and format PASS:
 
-\`\`\`bash
+```bash
 set -euo pipefail
 cd "$HOME/ds-consult-validation"
 pdftoppm -f 9  -l 9  -singlefile -scale-to 1600 -png pdf/sos95_re.pdf          evidence_png/sos95_p009
@@ -118,7 +118,7 @@ pdftoppm -f 4  -l 4  -singlefile -scale-to 1600 -png pdf/easdkiu_re.pdf       ev
 pdftoppm -f 12 -l 12 -singlefile -scale-to 1600 -png pdf/easdkiu_re.pdf       evidence_png/easdkiu_p012
 ls -lh evidence_png/
 (cd pdf && sha256sum -c SHA256SUMS.txt)
-\`\`\`
+```
 
 Compare visually; **do not OCR as a substitute for visual/source checking**:
 
@@ -126,7 +126,7 @@ Compare visually; **do not OCR as a substitute for visual/source checking**:
 - SLDKS-1, physical p.7, table 1: up to 255 address blocks for one master ray; cable ≤3 km coax, ≤1 km twisted pair without repeater. Physical p.18 has the named structure and table/figure, check variant conditions.
 - EASDKIU, p.3 purpose, p.4 table of meters/interfaces, p.12 architecture diagram, roles of PostgreSQL/LanMon; diagram arrows require independent review.
 
-For every evidence candidate return \`CONFIRMED\`, \`AMBIGUOUS\`, \`CONTRADICTED\` or \`NOT_CHECKED\` and the exact source page/table/figure. This **does not confer expert-approved GT**.
+For every evidence candidate return `CONFIRMED`, `AMBIGUOUS`, `CONTRADICTED` or `NOT_CHECKED` and the exact source page/table/figure. This **does not confer expert-approved GT**.
 
 Create a short manifest with URL, file name, bytes, SHA-256, physical pages, review timestamp, PDF tool/version, review status. Local report may include complete file paths; GitHub text report must not embed proprietary images/binaries.
 
@@ -134,9 +134,9 @@ Create a short manifest with URL, file name, bytes, SHA-256, physical pages, rev
 
 **Only after owner explicitly approves one low-cost API call and its spending limit.** Availability of a key is not this authorization. No key is needed for LV-ENV or LV-PDF.
 
-For maximum key safety, use a single interactive Python process: it asks for the key with terminal echo disabled using \`getpass\`, never places it on a shell command line, never writes it to \`.env\` and never prints it.
+For maximum key safety, use a single interactive Python process: it asks for the key with terminal echo disabled using `getpass`, never places it on a shell command line, never writes it to `.env` and never prints it.
 
-\`\`\`bash
+```bash
 umask 077
 cd "$HOME/ds-consult-validation"
 python3 - <<'PY'
@@ -201,19 +201,19 @@ finally:
     os.chmod(out, 0o600)
     print(json.dumps(status, ensure_ascii=False, indent=2))
 PY
-\`\`\`
+```
 
-**STOP after one call.** No automatic second invocation, no retries, no web search, no thinking test, no Files upload, no OCR. Record HTTP 401, 402, 403, 429, 5xx distinctly. A technical failure should not trigger silently repeated charges. A \`200\` baseline PASS validates only basic Chat Completions, **not** search/Files/Deep Thinking.
+**STOP after one call.** No automatic second invocation, no retries, no web search, no thinking test, no Files upload, no OCR. Record HTTP 401, 402, 403, 429, 5xx distinctly. A technical failure should not trigger silently repeated charges. A `200` baseline PASS validates only basic Chat Completions, **not** search/Files/Deep Thinking.
 
 ## 8. DSAPI advanced — design only, NOT in LV-API-01
 
 Future separately approved tests:
 - DSAPI-03: thinking on/off; preserve observed reasoning metadata;
-- DSAPI-04/05: \`deepseek_web_search\` and thinking+web; model decides whether to invoke and may use multiple tool calls;
-- DSAPI-06: \`deepseek_read_url\`;
+- DSAPI-04/05: `deepseek_web_search` and thinking+web; model decides whether to invoke and may use multiple tool calls;
+- DSAPI-06: `deepseek_read_url`;
 - DSAPI-07: Search & Fetch raw APIs;
-- DSAPI-08/09: \`POST /files\` PDF \`text_recognition\` / \`rich_layout_recognition\`;
-- DSAPI-10: OCR \`POST /v1/tools/ocr\`;
+- DSAPI-08/09: `POST /files` PDF `text_recognition` / `rich_layout_recognition`;
+- DSAPI-10: OCR `POST /v1/tools/ocr`;
 - DSAPI-11/12: continuity, errors, billing and safety.
 
 Uploads can incur parsing charges and persist on server; never upload the Saturn originals or restricted corpus until user authorizes transmission/retention and the cost limit. Test files should be public or synthetic.
@@ -222,7 +222,7 @@ Uploads can incur parsing charges and persist on server; never upload the Saturn
 
 Deliver **to Architecture Session A**, in a single self-contained message, not just terminal logs:
 
-\`\`\`text
+```text
 DS-LV-01 — Final Linux/WSL Validation Report
 Date and environment:
 Source repositories and pinned site SHA:
@@ -235,9 +235,9 @@ Public manifest files:
 Summary by BLOCKER / IMPORTANT / MINOR:
 Recommendation: ACCEPT PDF PIN / REQUEST CORRECTIONS / NEEDS EXPERT REVIEW
 NO MERGE / NO PRODUCTION / NO BENCHMARK FREEZE
-\`\`\`
+```
 
-Even if one track fails, report what was verified; do not replace with guessed values. Report *must* state explicitly that \`expert_approved\` is still pending and that no full DSAPI conformance or DS-02 was run.
+Even if one track fails, report what was verified; do not replace with guessed values. Report *must* state explicitly that `expert_approved` is still pending and that no full DSAPI conformance or DS-02 was run.
 
 ## 10. Acceptance criteria
 
