@@ -1,7 +1,7 @@
 # DS-LV-02/P6 — Synthetic Files API Text/Rich Parsing (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **PROPOSED ONLY — NO OWNER GO / NO UPLOAD / NO PAID EXECUTION**
+**Status:** **OWNER BLANKET GO APPROVED FOR SAFE SYNTHETIC P6; OFFLINE PREFLIGHT PENDING / NO PAID CALL YET**
 
 ## Objective
 Determine whether direct DeepSeek Files API can ingest a simple **synthetic public fixture** and make text- and rich-layout-parsed content available for model answers, with evidence of file lifetime, provenance and privacy controls. This is **not** a Saturn PDF corpus test and does not approve uploading company files.
@@ -22,3 +22,6 @@ Determine whether direct DeepSeek Files API can ingest a simple **synthetic publ
 4. Wait for owner approval before any upload or paid call. P7..P9, Merge, DS-02 and production not authorized.
 
 **P5 outcome:** tool-capability accepted with review notes. Full answer source correctness remains to be reviewed separately.
+
+## Controlled implementation under blanket owner GO (2026-11-17)
+The owner authorized phases P6–P9 with prudent limits. Formal `DS-LV-02-P6-P9-OWNER-BLANKET-GO.md` allocates **P6 total $0.02 organizational risk** and at most **8 external HTTP attempts** (4 per independent variant). Non-retry, no actual Saturn PDFs, one-hour retention + required DELETE/GET proof. Test script `scripts/validation/ds_lv_02_p6_files.py` generates a synthetic one-page PDF and has `--self-test`, `--execute-text`, `--execute-rich` (separate owner-controlled Linux invocations); **only --self-test may run until preflight is accepted**, even under blanket GO. The file includes fake FENIX-17/ORBIT-5 capacities and two unlabeled red/blue squares; rich detection of figures is not guaranteed. Do not treat color absence as tool failure without reviewing returned parse behavior.
