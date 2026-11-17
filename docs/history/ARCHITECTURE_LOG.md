@@ -68,5 +68,7 @@
 
 - **DS-LV-02/P6 list diagnostic OFFLINE PREFLIGHT PASS (2026-11-17):** user WSL compiled `scripts/validation/ds_lv_02_p6_list_check.py`, synthetic `--self-test` PASS, network 0 / API $0. Owner SHA256 `d12025ca26ddd24b981d4ac27a0e17469d33f50c66e0db0abffd7c9facf3ee57`. Verified official Files List endpoint/query/response shape; evidence `docs/evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md`. Next one read-only GET under already-allocated 9 P6 / 14 global HTTP cap; no additional DeepSeek call yet. P6-RICH remains STOP.
 
+- **DS-LV-02/P6-TEXT CR-P6-01 CLOSED (2026-11-17 20:52:28 UTC):** owner single read-only GET /files returned HTTP200, 0 records, has_more:false, target ID hash matched and target not listed before 21:34:56 UTC TTL. Independent cleanup gate PASS, alongside earlier DELETE200/deleted:true. Original GET400/evaluator report preserved as originally emitted; **P6-TEXT PASS WITH REVIEW NOTES**, `docs/acceptance/DS-LV-02-P6-TEXT-CLEANUP-CLOSURE.md`. P6 HTTP used 5/9; corrected **RICH-only** script prepared `scripts/validation/ds_lv_02_p6_rich_safe.py`, requires separate offline preflight before one authorized 4-HTTP Rich cycle. No P6-RICH calls yet.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

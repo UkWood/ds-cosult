@@ -143,3 +143,8 @@
 - Official `GET /files` query `limit=1000&order=desc&purpose=text_recognition` and fields `object:list`, `data`, `has_more` verified from DeepSeek Files List API. `docs/evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md` accepted.
 - **Next: exactly ONE read-only GET via unchanged pinned script `--check-target`**, under P6 limit 9 HTTP / P6–P9 max 14, budget still $0.05 total. **NOT YET EXECUTED**; P6-RICH remains BLOCKED until result reviewed.
 - P6-TEXT fixture expiry `2026-11-17T21:34:56Z`; if absence occurs after then, cannot separate DELETE vs expiration as causal source. Provider DELETE200 `deleted:true` previously acknowledged.
+
+## P6-TEXT independent full-list cleanup verification — 2026-11-17 20:52:28 UTC
+- One approved read-only GET /files (`purpose=text_recognition&limit=1000&order=desc`) HTTP 200; `data=[]`, `has_more=false`, target file ID hash matches original, target absent; **PASS_TARGET_NOT_IN_EXHAUSTIVE_LIST** before expiry at 21:34:56 UTC. 576ms, 0 raw file IDs logged.
+- Original DELETE200/`deleted:true` plus full-list absence before TTL -> **P6-TEXT PASS WITH REVIEW NOTES**, CR-P6-01 resolved. Original P6-TEXT JSON remains immutable with GET400/old evaluator FAIL. Separate evidence `docs/evidence/DS-LV-02-P6-TEXT-LIST-RESULT.json`, closing review `docs/acceptance/DS-LV-02-P6-TEXT-CLEANUP-CLOSURE.md`.
+- P6 now spent **5 HTTP** of allocated **9 max** (TEXT 4 + diagnostic 1). **P6-RICH retains 4 HTTP** and staged organizational ≤$0.01 within P6 overall $0.02. New corrected RICH-only script `scripts/validation/ds_lv_02_p6_rich_safe.py` is prepared; **offline preflight pending, NO P6-RICH paid calls yet**. P7–P9 remain blocked until P6 accepted.

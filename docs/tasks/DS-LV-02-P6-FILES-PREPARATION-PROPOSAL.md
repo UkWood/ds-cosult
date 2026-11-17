@@ -1,7 +1,7 @@
 # DS-LV-02/P6 — Synthetic Files API Text/Rich Parsing (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P6-TEXT PARTIAL — FILE PARSE PASS, DELETION ACK PASS, POST-DELETE ABSENCE INCONCLUSIVE; P6-RICH STOPPED**
+**Status:** **P6-TEXT PASS WITH REVIEW NOTES / CLEANUP CHECK VERIFIED BEFORE EXPIRY; P6-RICH SAFE OFFLINE PREFLIGHT NEXT**
 
 ## Objective
 Determine whether direct DeepSeek Files API can ingest a simple **synthetic public fixture** and make text- and rich-layout-parsed content available for model answers, with evidence of file lifetime, provenance and privacy controls. This is **not** a Saturn PDF corpus test and does not approve uploading company files.
@@ -33,3 +33,8 @@ Owner WSL outputs: `py_compile` PASS; `--self-test` PASS, 0 network/$0; fixture 
 Upload200 + Chat200 extractive facts PASS + DELETE200 `deleted:true` provider-confirmed + subsequent GET400, not the 404 our old test insisted on. The official API documents `deleted:true` as positive deletion but no guaranteed missing-file GET status code; do not silently call independent absence verified. Report `../acceptance/DS-LV-02-P6-TEXT-ARCHITECTURE-ACCEPTANCE.md`.
 
 New **one-call read-only filtered List Files diagnostic** to verify account state under general P6–P9 owner-approved prudent limit, with P6 HTTP allocation updated to 9 (total stages 14) but budgets unchanged. New script `scripts/validation/ds_lv_02_p6_list_check.py` must first pass **offline-only `--self-test`**. P6-RICH remains STOPPED until this result independently accepted.
+
+## P6-TEXT final closure and P6-RICH continuation — 2026-11-17
+One authorized filtered list GET at 20:52:28 UTC returned HTTP200, empty complete list, target absent and file ID hash matched, before server expiry 21:34:56 UTC. This closes CR-P6-01 with separate evidence and preserves the original P6-TEXT evaluator output. `../acceptance/DS-LV-02-P6-TEXT-CLEANUP-CLOSURE.md`.
+
+**P6-RICH**: corrected new script `scripts/validation/ds_lv_02_p6_rich_safe.py`, original P6-TEXT script unchanged. Run **`--self-test` offline first**. Following independent WSL acceptance, only one Rich cycle (upload/chat/delete/complete-list verification; max 4 HTTP) is permitted. No provider call for Rich yet.

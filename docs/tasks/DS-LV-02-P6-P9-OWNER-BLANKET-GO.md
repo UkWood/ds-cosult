@@ -58,3 +58,7 @@ Architecture allocates **one extra read-only `GET /files`** solely to verify tar
 
 ## Diagnostic offline-preflight acceptance (2026-11-17)
 `scripts/validation/ds_lv_02_p6_list_check.py --self-test` PASS in owner's WSL; compiler PASS, network 0, API cost $0, SHA256 `d12025ca26ddd24b981d4ac27a0e17469d33f50c66e0db0abffd7c9facf3ee57`. Recorded in `docs/evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md`. The pre-authorized single read-only metadata GET can now be executed; no extra uploads/chats or retries. P6-RICH continues blocked until architecture acceptance of the diagnostic result.
+
+## P6-TEXT cleanup gate closed, RICH preflight pending — 2026-11-17
+- One additional read-only GET /files completed, HTTP200, complete text_recognition list with zero records, target absent before 1-hour expiration. **P6-TEXT accepted with review notes**; original GET400 failure from old script retained as historical output.
+- P6 HTTP budget used **5/9**; P6-RICH still has **4/9** reserved, no change to P6 organizational $0.02 / total P6–P9 $0.05. P6-RICH code `scripts/validation/ds_lv_02_p6_rich_safe.py` is a new standalone version, not a rewrite of accepted script; it uses filtered full list after DELETE instead of expecting 404. **Only `--self-test` before acceptance**. P7–P9 remain stage-gated.

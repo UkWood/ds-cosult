@@ -68,3 +68,6 @@ Do not modify or rerun original P6-TEXT script; keep its output immutable. Do no
 
 ## Addendum: list-diagnostic preflight accepted (2026-11-17)
 Independent WSL diagnostic code compile and synthetic list tests PASS, 0 network/$0, owner SHA256 `d12025ca26ddd24b981d4ac27a0e17469d33f50c66e0db0abffd7c9facf3ee57`. See `../evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md`. This is **not** proof of file absence. Exactly one filtered `GET /files` metadata query is the next permitted operation; P6-RICH remains stopped. A complete list without target after expiry cannot distinguish explicit deletion from natural expiry, though provider DELETE acknowledgement is separately established.
+
+## Final resolution addendum — 2026-11-17 20:52:28 UTC
+CR-P6-01 independent absence **PASS** by separate complete filtered `GET /files`: 200, `data=[]`, `has_more=false`, target SHA match and absent **before** expiry. Evidence `../evidence/DS-LV-02-P6-TEXT-LIST-RESULT.json`; full resolution `DS-LV-02-P6-TEXT-CLEANUP-CLOSURE.md`. **P6-TEXT overall PASS WITH REVIEW NOTES.** Preserve original GET400 and `deletion_verified_absent=false` output without modification; this later read-only diagnostic is the accepted second proof. P6-RICH requires the standalone corrected script's offline preflight.
