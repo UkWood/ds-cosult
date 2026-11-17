@@ -47,3 +47,6 @@ Sources checked 2026-11-17:
 - https://api-docs.deepseek.com/quick_start/pricing/
 
 **NO MERGE, NO DS-02 PRODUCTION, NO NEW RAG MODIFICATION, SATURN SITE READ-ONLY.**
+
+## P6 offline preflight accepted — 2026-11-17
+Pinned WSL script `scripts/validation/ds_lv_02_p6_files.py` compiled, synthetically tested; source local SHA256 `35c2e9b8ca89b2de75395f8097b3061e1d4417e3b56c1855c99ee48f7808c0a4`. One-page PDF fixture SHA256 `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` validated via `sha256sum -c` and text extraction. `docs/evidence/DS-LV-02-P6-OFFLINE-PREFLIGHT.md`. **No P6 paid attempt has yet occurred. P6-TEXT is allowed as next isolated subgate under blanket GO; P6-RICH is not yet cleared.**

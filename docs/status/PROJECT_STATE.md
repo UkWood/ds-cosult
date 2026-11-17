@@ -125,3 +125,8 @@
 - Consent scope limited to **synthetic one-page documents**, no confidential Saturn PDFs/GT, production or training. Every stage/subgate requires offline preflight and independently reviewed output, strict stop after errors, cost uncertainty or failed Files cleanup.
 - Official file-contract check: `POST /files` purpose before file; expiry 3600 sec, upload parse on server even after disconnect; `file_id` Chat content block; `DELETE /files/{id}` response `deleted:true` then GET 404. P7 OCR does not store in Files API, billed by successful page.
 - Authorization/limits `docs/tasks/DS-LV-02-P6-P9-OWNER-BLANKET-GO.md`. P6 staged test code `scripts/validation/ds_lv_02_p6_files.py`. **No P6–P9 paid calls yet**.
+
+## P6 WSL offline preflight accepted — 2026-11-17
+- Owner reported successful `py_compile`, `--self-test` PASS, **0 DeepSeek network requests, $0 cost**. Script local SHA-256 `35c2e9b8ca89b2de75395f8097b3061e1d4417e3b56c1855c99ee48f7808c0a4`, pinned Git blob `3ef0b10108d8133ed4088c0adad4071aaea01ca4`.
+- Fixture local SHA-256 `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` checked `OK`, 1 page, `pdftotext` matches FENIX-17 12.4L TX-731 and ORBIT-5 6.8L RB-204. Evidence `docs/evidence/DS-LV-02-P6-OFFLINE-PREFLIGHT.md`.
+- **P6-TEXT now ready for one controlled upload + chat + delete + GET absence cycle (≤4 HTTP / $0.010 organizational first-variant budget), under general owner GO.** Not yet executed; P6-RICH and P7–P9 remain stage-gated.

@@ -62,5 +62,7 @@
 
 - **DS-LV-02 P6–P9 blanket GO (2026-11-17):** owner explicitly authorized all phases with prudent limits. Architecture fixed cumulative **USD $0.05 organizational** (not provider-enforced): P6 $0.02/8 HTTP max, P7 $0.01/1, P8 $0.02/4, P9 $0/0, total 13 HTTP attempts, zero retries. Only synthetic data. Each stage must pass offline and source/cleanup review before the next. `docs/tasks/DS-LV-02-P6-P9-OWNER-BLANKET-GO.md`. Prepared P6 synthetic one-page PDF generation and safe Files parsing script `scripts/validation/ds_lv_02_p6_files.py`; no paid P6 calls executed.
 
+- **DS-LV-02/P6 WSL OFFLINE PREFLIGHT PASS (2026-11-17):** pinned Python compiled, offline selftest PASS, 0 network / $0. PDF SHA256 `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` checked OK, pdfinfo 1 page, pdftotext FENIX-17 12.4L TX-731 and ORBIT-5 6.8L RB-204; owner script SHA256 `35c2e9b8ca89b2de75395f8097b3061e1d4417e3b56c1855c99ee48f7808c0a4`. Accepted offline-only evidence `docs/evidence/DS-LV-02-P6-OFFLINE-PREFLIGHT.md`. Official DeepSeek Files/Chat/Delete contracts rechecked. Next one permitted P6-TEXT cycle, no P6-RICH without deletion acceptance; NO PAID P6 executed so far.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
