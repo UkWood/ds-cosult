@@ -1,16 +1,16 @@
 # DS-01C — PDF Page Evidence Seeds v0.2 (public examples only)
 
-Дата: 2026-11-17. **Статус: WEB-VIEW VISUALLY VERIFIED, ORIGINAL BYTES NOT PINNED, EXPERT REVIEW PENDING.**  
-Данные из общедоступных технических документов. Не являются frozen Ground Truth. Сюда НЕ помещать закрытый Core и закрытые эталоны.
+Дата: 2026-11-17. **Статус: LINUX-REPORTED BYTE-PIN + VISUAL REVIEW, EXPERT REVIEW PENDING.**  
+После Linux Validation Session получены локальные SHA-256; проверить статус в `../evidence/DS-LV-01-PDF-MANIFEST-REPORTED.json` и независимое решение в `../acceptance/DS-LV-01-ARCHITECTURE-ACCEPTANCE.md`. Сами PDF/PNG и исходный локальный manifest сюда не передавались; независимый повторный пересчёт не выполнялся. Не являются frozen Ground Truth. Сюда НЕ помещать закрытый Core и закрытые эталоны.
 
 ## Source Registry (preliminary)
 | Doc ID | Название / редакция на титуле | Оригинальный URL | Physical pages observed | PDF bytes SHA-256 |
 |---|---|---|---:|---|
-| PDF-P01 | СОС-95, РЭ ЭСАТ.424359.001РЭ, 2002, Ред.1 | https://www.mnppsaturn.ru/ftp/public/doc/sos-95/re%20SOS-95.pdf | 195 | **null** |
-| PDF-P02 | СЛДКС-1, РЭ часть 1 ЕСАН.484457.001РЭ, 26.05.11 | https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf | 83 | **null** |
-| PDF-P03 | ЕАСДКиУ, РЭ ЕСАН.421449.001РЭ, 2006 | https://www.mnppsaturn.ru/ftp/public/doc/iis/re_iis.pdf | 79 | **null** |
+| PDF-P01 | СОС-95, РЭ ЭСАТ.424359.001РЭ, 2002, Ред.1 | https://www.mnppsaturn.ru/ftp/public/doc/sos-95/re%20SOS-95.pdf | 195 | `2dce9d7a2b4c2d0cbb222e4233c164523b2605d80ca20eb0abd2b5c1bd39a9ee` |
+| PDF-P02 | СЛДКС-1, РЭ часть 1 ЕСАН.484457.001РЭ, 26.05.11 | https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf | 83 | `f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f` |
+| PDF-P03 | ЕАСДКиУ, РЭ ЕСАН.421449.001РЭ, 2006 | https://www.mnppsaturn.ru/ftp/public/doc/iis/re_iis.pdf | 79 | `62de0ffad9f6a045c60f666d216385c5ba678ec5733be857aa2f6dea28b00486` |
 
-Источник: веб-читалка PDF подтвердила количество страниц, титулы и выбранные страницы с таблицами/схемами визуально. Это **не** подтверждает идентичность скачанного файла и веб-отображения.
+Источник: веб-читалка PDF подтвердила количество страниц, титулы и выбранные страницы с таблицами/схемами визуально. Локальная Linux Validation Session подтвердила скачанные байты SHA-256 и количество страниц; веб-отображение и байты не были независимо побайтово сравнены в архитектурной сессии.
 
 ## Physical ↔ printed page mapping (только выбранные страницы)
 | Doc | 0-based PDF index | Physical page (1-based) | Printed page | Evidence location |
@@ -51,7 +51,12 @@
 СОС-95 и СЛДКС-1 используют термин «луч ИПЛ» и одинаковый порядок некоторых чисел. Нельзя переносить **2 км СОС-95** на кабель СЛДКС-1: в РЭ СЛДКС-1 условия **3 км coax / 1 км twisted pair**. Контролируемая задача должна требовать явно определить систему, редакцию, кабель и наличие усилителя.
 
 ## Blocking issues
-- Original PDF byte download attempted from execution environment but network/DNS unavailable; no SHA-256 could be computed. Не придумывать хеш.
+- Повторное скачивание из среды архитектурной сессии не получилось (DNS недоступен), но Linux Validation Session **сообщила** локальные SHA-256 для трёх PDF. Для independent custody требуется получение артефактов или отдельная воспроизводимая повторная проверка. Не придумывать хеш.
 - Page count and visuals web-confirmed **only** for specific URL content at review time; future URL may change.
 - Reviewer-approved GT = 0.
 - Без bytes pin и экспертной проверки нельзя завершать Corpus Freeze.
+
+## Linux Validation Session acceptance — 2026-11-17
+- Local PDF byte hashes are reported/validated in WSL; six page PNG reviewed, see Acceptance Report.
+- В отчёте дополнительно подтверждены до 10 последовательно включённых усилителей СЛДКС-1 и наличие 4 уровней схемы ЕАСДКиУ; не добавлять эти значения в закрытый Core без экспертной ревизии.
+- Статус `expert_approved=false` для всех evidence seeds.

@@ -20,5 +20,9 @@
 
 - **DS-LV-01 задание для Linux/WSL:** владелец подтвердил наличие прямого DeepSeek API ключа. Подготовлен самостоятельный validation handoff на закрепление трёх PDF и отдельную минимальную проверку Chat Completions только после согласования бюджета; до запуска оба трека UNTESTED, ключ хранится исключительно у владельца. Задание сохранено в памяти проекта, PR #1 остаётся Draft.
 
+- **DS-LV-01 — Final Linux/WSL Validation Report:** 17.11.2026 представлен полный отчёт (534 строки). WSL2/Poppler — PASS; 3 PDF оригинала (195, 83, 79 стр.) закреплены локально через SHA-256 с двумя контрольными проверками — PASS по отчёту; 6 визуальных PNG — PASS WITH REVIEW NOTES (стрелки рис.1 ЕАСДКиУ AMBIGUOUS); один прямой платный вызов `deepseek-flash` с отдельным GO на $0.01 — HTTP 200, 21 token, 1064 ms. Billing не проверен.
+- **DS-LV-01 — Architecture Session A Acceptance:** ACCEPTED WITH REVIEW NOTES, только в выполненном scope. PDF и манифест остаются на локальной машине Linux; независимый пересчёт SHA архитектурной сессией не выполнен. Advanced API, экспертные Ground Truth, DS-02 и Freeze НЕ разрешены. Отчёт и опубликованные SHA-256: `docs/acceptance/DS-LV-01-ARCHITECTURE-ACCEPTANCE.md`, `docs/evidence/DS-LV-01-PDF-MANIFEST-REPORTED.json`.
+- **DS-LV-02 draft:** сформирован план конформанс-проверок нативных DeepSeek tools, без разрешения на новый платный вызов.
+
 ## Перед следующим этапом
-Нужны: реальные PDF SHA-256 и страницы, проверка отношений, экспертиза Ground Truth, решение о приватности репозитория, проверка прямого DeepSeek API на безопасных test fixtures и отдельное разрешение/бюджет для испытаний.
+Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

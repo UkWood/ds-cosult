@@ -1,36 +1,43 @@
 # PROJECT STATE — DS-консультант
 
-Обновлено: 2026-11-17. Статус: **DS-01C STRUCTURAL POPULATION PASS — GROUND TRUTH/PDF/PROVIDER GATES PENDING**.
+**Обновлено:** 2026-11-17  
+**Текущий статус:** **DS-LV-01 ACCEPTED WITH REVIEW NOTES; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
-## Принятые владельцем решения
-- DS-консультант независим от NEW RAG; `UkWood/Saturn-Main-Site` строго READ-ONLY.
-- `UkWood/ds-cosult` — долговременная память, история, ТЗ, исследования и код; PR/Merge после приёмки.
-- DS-01 Comparative Experiment Protocol v0.1 и последовательность DS-01A→DS-01B→DS-01C→DS-02/Pilot→Freeze→DS-04 утверждены.
-- **Прямой DeepSeek API — основной транспорт**: `https://api.deepseek.com`, модель `deepseek-flash` (по документации V4.1-Flash-1017), `DEEPSEEK_API_KEY` только в локальном окружении; **ADR-0004 ACCEPTED**.
-- **ADR-0003 (AI Tunnel) SUPERSEDED**: шлюз исключён из экспериментального контура, сохранён только как историческая запись.
-- Сравниваем W / A / B / C0; B-text/B-entity — диагностическая абляция. Возможности прямого API документированы, но **фактически ещё не проверены**.
+## Решения владельца
+- DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
+- `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
+- Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
+- DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. Нет разрешения на DS-02 coding, production, новый платный вызов или Corpus Freeze.
 
-## Source baseline кандидат
-`UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`; tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
+## Доказательный baseline сайта — кандидат
+`UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
 
-## Выполнено
-- Исходные 438 Markdown-записей проинвентаризированы по коллекциям.
-- 60 Core кандидатов уникальны (5×12), 12 Pilot, 8 диалогов, 24 документных задачи. 17 atomic fact candidates; **0 expert approved**.
-- Повторный PDF preflight: СОС-95 195, СЛДКС-1 83, ЕАСДКиУ 79; **визуально проверены выбранные таблицы и схемы на физических страницах 9 / 7,18 / 3,4,12**; 11 evidence seeds, Pilot P09/P10 уточнены. **Исходные bytes SHA-256 не получены**.
-- Проверена официальная документация прямого DeepSeek API: native web search, deep thinking search, URL reading, Files API (text/rich), Search/Fetch, OCR. Подготовлен DSAPI-01..12 conformance gate без оплачиваемых вызовов.
-- Готово самодостаточное задание **DS-LV-01** для отдельной Linux/WSL Validation Session: PDF bytes pin + ровно один условно разрешаемый API connectivity smoke check; **ни один шаг ещё не исполнен**.
-- Долговременная архитектурная документация ведётся в Draft PR #1, без Merge.
+## DS-01C benchmark
+- 60 Core candidates, 12 Pilot, 8 dialogue scenarios, 24 document tasks, 17 extracted fact candidates — структурный PASS.
+- **0 expert-approved GT**; технические отношения и утверждения по графам требуют отдельной экспертизы.
+- Три PDF имеют **Linux-reported locally checked SHA-256**, подробный JSON-manifest `docs/evidence/DS-LV-01-PDF-MANIFEST-REPORTED.json`.
+- Шесть физических страниц PNG визуально проверены **в Linux Validation Session**, другие девять PDF ещё не закреплены. ЕАСДКиУ рис.1 — частично неоднозначен.
+- Отчёт архитектурной приёмки: `docs/acceptance/DS-LV-01-ARCHITECTURE-ACCEPTANCE.md`.
 
-## Blockers
-1. Репозиторий PUBLIC: закрытые Core/GT, реальные секреты и ограниченные документы не публиковать.
-2. **Нет authenticated Direct DeepSeek API conformance**: владелец подтвердил, что ключ API у него имеется, но платные проверки, поддержка инструментов и лимит расходов ещё не утверждены; ключ не передавался.
-3. **PDF SHA-256 отсутствует**: визуальные web evidence seeds не являются pinned file bytes; 24 doc tasks всё ещё blocked, независимая экспертиза GT не пройдена.
-4. Инженерные отношения и некоторые import fields требуют экспертизы.
-5. 0 expert-approved GT; DS-CORPUS-1.0 не заморожен; DS-02 coding НЕ разрешён.
-6. Предложенные ранее лимиты $20/$100 и актуальную стоимость DeepSeek проверить и утвердить перед реальными платными прогонами.
+## DS-LV-01 acceptance
+- LV-ENV-01: PASS (Ubuntu WSL2, Poppler).
+- LV-PDF-01: PASS **по отчёту с локальными SHA256**.
+- LV-PDF-02: PASS WITH REVIEW NOTES (6 PNG).
+- LV-API-01: PASS — 1 direct API call (`deepseek-flash`), HTTP 200, 21 tokens, 1064 ms, no tools, no uploads.
+- Один платный запрос был **явно одобрен владельцем** с лимитом $0.01 USD. Денежное списание не проверено по billings.
+- **Оригинальные PDF/PNG и локальный evidence-manifest в Architecture Session A не поступили**; независимое побайтовое перепроверение не выполнено.
 
-## Следующее
-1. DS-API-CONFORMANCE DSAPI-01..12: модель, thinking, native tools, Files/OCR, Search/Fetch, безопасность, стоимость — только после отдельного разрешения.
-2. В отдельной Linux/WSL Validation Session выполнить **DS-LV-01** (см. `docs/tasks/DS-LV-01-LINUX-WSL-VALIDATION.md`): сначала бесплатное закрепление PDF, затем при отдельном GO владельца один платный smoke-запрос DeepSeek. Историческое задание PDF pin сохранено; DS-LV-01 — объединяющее актуальное.
-3. После приёмки prepare DS-02 minimal harness; затем Pilot calibration и Final Freeze, после которого Core.
-4. PR #1 оставить Draft до владельческой проверки. NO MERGE. NO PRODUCTION.
+## Remaining blockers
+1. `ds-cosult` PUBLIC: нельзя публиковать закрытый Core/GT, секреты и ограниченные источники.
+2. Нет expert-approved Ground Truth, DS-CORPUS-1.0 не frozen.
+3. Native DeepSeek thinking/web/URL/Files/OCR/Search/Fetch/continuity **UNTESTED**.
+4. Из 12 запланированных документов лишь 3 byte-pinned по Linux-отчёту, 9 ожидают проверку.
+5. Независимый custody/audit локальных исходных PDF/PNG и манифеста не получен; billing не сверён.
+6. Технические отношения, версии оборудования и неоднозначные стрелки в ЕАСДКиУ требуют экспертной оценки.
+
+## Next stage
+- **CF-01/CF-04:** independently inspect source evidence and expert-review technical facts, particularly 11 public PDF evidence seeds and relation provenance; remaining PDFs staged separately.
+- **DS-LV-02:** Draft native DeepSeek capability conformance in `docs/tasks/DS-LV-02-NATIVE-API-CONFORMANCE.md`; **not authorized**, needs paid-call budget and new GO.
+- **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
+- **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
