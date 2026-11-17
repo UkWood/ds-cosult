@@ -179,3 +179,8 @@
 - Owner WSL checked no private P8 state or prior markers/reports for turns 1–4; pinned Python source commit `49dba55308e83dcd136c5620c43322b4e186ba3e`, Git blob `28c22cad5b27a6a0e7063b7a3608dbd3aac0075a`, local SHA256 `6ca43fe2031a542700e46c8bd4f931115100934d9d0cbde0e5be47e76af19b3e`.
 - `py_compile` PASS, synthetic `--self-test` PASS with `deepseek-flash`, thinking disabled, no tools, four-turn history reconstruction; **0 API requests, $0**. Evidence `docs/evidence/DS-LV-02-P8-OFFLINE-PREFLIGHT.md`.
 - **P8 TURN-1 cleared for one client POST** under existing blanket GO (P8 max 4 HTTP across turns, organizational $0.02 total; 0/4 used so far). No `P8-APPROVED` prompt, only hidden API key. Each subsequent turn remains independently stage-gated by preceding result. No merge/production.
+
+## Передача Architecture Session A в новый чат — 2026-11-18
+- По просьбе владельца подготовлен самостоятельный документ `docs/handoffs/DS-ARCHITECTURE-SESSION-HANDOFF-2026-11-18.md` с проектными решениями, GO/лимитами, P1–P7 итого, P8 точкой возобновления, источниками и правилами передачи.
+- Последняя известная в чате P8-стадия: **OFFLINE PREFLIGHT PASS**, TURN-1 команда выдана, но платный JSON **не получен**. При переходе перед новым вызовом исключить повтор по локальному marker/report/private state; готовый JSON просмотреть вместо повторного POST.
+- P6 9/9 и P7 1/1 paid HTTP использованы, P8 максимум 4 под $0.02 organizational, P9 offline; новый PR HEAD меняется только от docs handoff. No Merge, DS-02 или prod.

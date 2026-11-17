@@ -82,5 +82,7 @@
 
 - **DS-LV-02/P8 WSL OFFLINE PREFLIGHT PASS (recorded 2026-11-18):** owner tested pinned `ds_lv_02_p8_dialogue.py` commit `49dba55308e83dcd136c5620c43322b4e186ba3e`, local SHA256 `6ca43fe2031a542700e46c8bd4f931115100934d9d0cbde0e5be47e76af19b3e`; Python compilation and `--self-test` PASS, no API calls/$0, no P8 markers/state. Source audited for 4 separate one-call flags, explicit history, no tools/Thinking, one-shot markers, no additional approval prompt. Evidence `docs/evidence/DS-LV-02-P8-OFFLINE-PREFLIGHT.md`. **P8 first turn may execute now** with max 1 HTTP under $0.02 organizational total; turn 2 awaits acceptance of turn 1. P9 offline only after P8.
 
+- **DS-консультант Architecture Session A transfer (2026-11-18):** owner requested a clean new chat due to latency. Handoff `docs/handoffs/DS-ARCHITECTURE-SESSION-HANDOFF-2026-11-18.md` created, project memory/budgets/last P8 source SHA and safe resume rules recorded. Verified existing PR#1 head before docs commit `eff0e74c3a5793476638a753994e58f057d882a7`; no P8 TURN-1 live result received in this chat. Do not retry if executed after command issued. No Merge/prod/NEW RAG changes.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.
