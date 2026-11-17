@@ -26,13 +26,13 @@
 | P2 | DSAPI-07 managed Search (raw JSON) | 1 Search request | 1 | **PASS / ACCEPTED 2026-11-17** |
 | P3 | DSAPI-06 native `deepseek_read_url` | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17** |
 | P4 | DSAPI-04 `deepseek_web_search`, thinking disabled | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17** |
-| P5 | DSAPI-05 deep thinking + search | 1 Chat Completion | 1 | **OFFLINE PREPARATION APPROVED; PAID NOT AUTHORIZED** |
+| P5 | DSAPI-05 deep thinking + search | 1 Chat Completion | 1 | **OFFLINE PREFLIGHT PASS; PAID OWNER GO 1 POST / $0.05 ORGANIZATIONAL, NOT EXECUTED** |
 | P6 | DSAPI-08/09 Files + text/rich recognition | отдельное разрешение на upload/parse+chat+delete | проектно 6 | НЕ РАЗРЕШЕНО |
 | P7 | DSAPI-10 OCR synthetic single page | 1 multipart OCR | 1 | НЕ РАЗРЕШЕНО |
 | P8 | DSAPI-11 4-turn short dialogue | 4 Chat Completions | 4 | НЕ РАЗРЕШЕНО |
 | P9 | DSAPI-12 faults/billing/summary | офлайн анализ + по отдельному запросу диагностика | 0 по умолчанию | НЕ РАЗРЕШЕНО |
 
-**P1, P2 и P3 tool capability приняты, каждое одноразовое разрешение исчерпано. P3 выявил fixture drift (нет H1) и language deviation (китайский ответ на русский вопрос); P4 executed and accepted within tool-capability scope: 1 POST generated 3 billed searches, 9696 total tokens. P4 GO exhausted; P5 OFFLINE PREPARATION ONLY approved; **P5 PAID / P6..P9 NOT AUTHORIZED**.** Старое GO на $0.01 и один вызов полностью использовано в LV-API-01. Предварительное число вызовов **не является разрешённым лимитом расходов**.
+**P1, P2 и P3 tool capability приняты, каждое одноразовое разрешение исчерпано. P3 выявил fixture drift (нет H1) и language deviation (китайский ответ на русский вопрос); P4 executed and accepted within tool-capability scope: 1 POST generated 3 billed searches, 9696 total tokens. P4 GO exhausted; P5 offline preflight passed and **ONE PAID P5 POST IS EXPLICITLY AUTHORIZED at organizational $0.05 USD**, not a hard cap; P6..P9 NOT AUTHORIZED.** Старое GO на $0.01 и один вызов полностью использовано в LV-API-01. Предварительное число вызовов **не является разрешённым лимитом расходов**.
 
 ## 3. Официальный Chat Completions контракт
 

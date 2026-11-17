@@ -1,7 +1,7 @@
 # DS-LV-02/P5 — Deep Thinking + Native Web Search (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **OWNER APPROVED OFFLINE PREPARATION ONLY — NO PAID GO; P5 UNTESTED**  
+**Status:** **P5 PAID OWNER GO RECEIVED — 1 POST / ORGANIZATIONAL $0.05; NOT EXECUTED**  
 **Previous gates:** P1 thinking PASS, P2 standalone Search PASS, P3 URL-reading capability PASS WITH REVIEW NOTES, P4 model-managed Web Search PASS WITH REVIEW NOTES.
 
 ## Test objective
@@ -42,3 +42,6 @@ P5 is not a comparative evaluation of quality and does not complete any Saturn G
 
 ## WSL Offline Preflight — PASS (2026-11-17)
 User-provided execution of pinned `scripts/validation/ds_lv_02_p5_thinking_search.py`: Python compilation and synthetic `--self-test` both PASS, **0 network / $0**. Local SHA256: `4a9dd93517ae09a1e0f1ec61415d1ab65666cdb127a2d0dd2681c43941882608`. Evidence record: `../evidence/DS-LV-02-P5-OFFLINE-PREFLIGHT.md`. This is not a paid-test GO. No paid execution or real P5 capability verification has occurred.
+
+## Separate explicit paid owner GO (2026-11-17)
+Owner has replied «Да» to an exact proposal to allow one paid P5 POST at organizational USD $0.05, **acknowledging the risk of exceeding it**. See `DS-LV-02-P5-OWNER-GO.md`. No provider-enforced monetary cap has been proven; no retries permitted; P6..P9 and all production activity unauthorized. The P5 Python script is unchanged from its successful offline preflight. **P5 live NOT EXECUTED at this update.**

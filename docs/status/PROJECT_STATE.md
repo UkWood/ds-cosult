@@ -97,7 +97,7 @@
 - Primary official release `https://api-docs.deepseek.com/news/news261113/` independently verified (date 2026-11-13, native Search and Fetch features). Only first 480 chars of answer accessible: **factual_answer_gate=NEEDS_SOURCE_REVIEW** remains. Citation trace passed, full claim grounding unmeasured.
 - Peak fee estimate $0.0054315; off-peak cache-miss estimate $0.00384075 for 19:40 UTC. Actual billing unknown; $0.01 organizational limit not enforceable by current script. P4 authorization **exhausted**; no re-run.
 - Architecture result **PASS WITH REVIEW NOTES**. Evidence `docs/evidence/DS-LV-02-P4-RESULT.json`; acceptance `docs/acceptance/DS-LV-02-P4-ARCHITECTURE-ACCEPTANCE.md`.
-- P5 thinking+search **offline preparation approved; paid testing NOT AUTHORIZED**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5 paid not authorized; P6..P9 not authorized.
+- P5 thinking+search **offline preparation approved; paid testing NOT AUTHORIZED**: `docs/tasks/DS-LV-02-P5-THINKING-WEB-SEARCH-PROPOSAL.md`. P5 single paid request now authorized with $0.05 organizational ceiling and overspend risk; P6..P9 not authorized.
 
 ## P5 OFFLINE preparation authorized — 2026-11-17
 - Owner reply «Разрешаю» interpreted as approval for **free research and offline script**, as the proposal explicitly calls for a separate numerical GO before a paid test.
@@ -106,4 +106,8 @@
 
 ## P5 Offline WSL preflight acceptance — 2026-11-17
 - Script from pinned commit `4009ad2d17d71c627deb61b0fca3c941f7a27e3a` compiled successfully and synthetic `--self-test` returned **PASS**. Owner-reported local SHA-256: `4a9dd93517ae09a1e0f1ec61415d1ab65666cdb127a2d0dd2681c43941882608`. `NETWORK REQUESTS: 0 | API COST: $0`.
-- Acceptance record: `docs/evidence/DS-LV-02-P5-OFFLINE-PREFLIGHT.md`. **Only offline preflight accepted**. Live Deep Thinking + native Web Search remains UNTESTED and **PAID P5 NOT AUTHORIZED** without numeric budget/risk consent; P6–P9 not authorized.
+- Acceptance record: `docs/evidence/DS-LV-02-P5-OFFLINE-PREFLIGHT.md`. **Only offline preflight accepted**. Live Deep Thinking + native Web Search remains UNTESTED and **PAID P5 OWNER GO APPROVED (1 POST / $0.05, not yet executed)**; P6–P9 not authorized.
+
+## P5 explicit paid GO — 2026-11-17
+- Owner answered «Да» to explicit **one paid P5 POST / organizational $0.05 USD with risk of exceeding this amount**. Authoritative record: `docs/tasks/DS-LV-02-P5-OWNER-GO.md`.
+- **P5 NOT YET EXECUTED**, pinned WSL script unchanged after offline PASS; one attempt only, no retry. The monetary limit is NOT a hard API cost cap; server-side Search/Fetch and input/output charges may exceed it. P6..P9, Merge, DS-02 and production not authorized.
