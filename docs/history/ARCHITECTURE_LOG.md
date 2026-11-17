@@ -66,5 +66,7 @@
 
 - **P6-TEXT live / CR-P6-01 (2026-11-17 20:34:54 UTC):** one owner-approved 4-HTTP file-cycle: upload200, chat200 with exact FENIX-17/ORBIT-5 facts, DELETE200 `deleted:true`, GET after deletion returned 400 (body discarded). Script `STOP_DELETION_VERIFICATION_UNCONFIRMED`; architecture **TEXT PASS, provider DELETE ACK PASS, independent absence INCONCLUSIVE**, no ungrounded assertion of failed deletion. Peak estimated $0.0003954, real billed unverified. Documented DELETE success is 200/deleted:true; GET=404 was our unfounded strict condition. Source `docs/acceptance/DS-LV-02-P6-TEXT-ARCHITECTURE-ACCEPTANCE.md`. Under blanket delegated limit-setting, max P6 HTTP amended 8→9 (one additional read-only list; total max 14), money unchanged; new script self-test before one diagnostic, P6-RICH blocked.
 
+- **DS-LV-02/P6 list diagnostic OFFLINE PREFLIGHT PASS (2026-11-17):** user WSL compiled `scripts/validation/ds_lv_02_p6_list_check.py`, synthetic `--self-test` PASS, network 0 / API $0. Owner SHA256 `d12025ca26ddd24b981d4ac27a0e17469d33f50c66e0db0abffd7c9facf3ee57`. Verified official Files List endpoint/query/response shape; evidence `docs/evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md`. Next one read-only GET under already-allocated 9 P6 / 14 global HTTP cap; no additional DeepSeek call yet. P6-RICH remains STOP.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

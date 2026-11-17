@@ -65,3 +65,6 @@ The new script has offline `--self-test`; **do not perform live `--check-target`
 **P6-TEXT processing: PASS**, **provider deletion acknowledgement: PASS**, **independent file absence: INCONCLUSIVE**. Overall **PARTIAL WITH REVIEW NOTES**, not a full clean P6 gate.
 
 Do not modify or rerun original P6-TEXT script; keep its output immutable. Do not bypass P6-RICH guard before explicit architecture re-review; neither P7 nor P8 should start early. No MERGE or production.
+
+## Addendum: list-diagnostic preflight accepted (2026-11-17)
+Independent WSL diagnostic code compile and synthetic list tests PASS, 0 network/$0, owner SHA256 `d12025ca26ddd24b981d4ac27a0e17469d33f50c66e0db0abffd7c9facf3ee57`. See `../evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md`. This is **not** proof of file absence. Exactly one filtered `GET /files` metadata query is the next permitted operation; P6-RICH remains stopped. A complete list without target after expiry cannot distinguish explicit deletion from natural expiry, though provider DELETE acknowledgement is separately established.

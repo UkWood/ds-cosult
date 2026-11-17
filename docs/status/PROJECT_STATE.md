@@ -137,3 +137,9 @@
 - **CR-P6-01:** vendor DELETE success is `HTTP 200 deleted:true`, but our stricter GET=404 success requirement is **not guaranteed in docs**. GET 400 is unclassified without body: cannot infer definite absence or delete failure. Provider deletion acknowledgement PASS, independent absence INCONCLUSIVE; no P6-RICH.
 - Architecture preserved original evidence `docs/evidence/DS-LV-02-P6-TEXT-RESULT.json`, review `docs/acceptance/DS-LV-02-P6-TEXT-ARCHITECTURE-ACCEPTANCE.md`.
 - Within owner's delegated prudent P6–P9 scope **HTTP cap adjusted P6 8→9, cumulative 13→14**, no budget increase (P6 $0.02, all phases $0.05). Extra 1 read-only filtered file-list request reserved solely for cleanup verification, only after zero-network self-test on new `scripts/validation/ds_lv_02_p6_list_check.py`. **No extra API request yet**.
+
+## P6-TEXT file-list diagnostic WSL offline preflight — 2026-11-17
+- Owner-reported `py_compile` PASS, `--self-test` PASS, 0 DeepSeek network requests, $0. Source script Git blob `ee630fe102de59d53fd98c8a0cedef64920fac96`; local WSL SHA256 `d12025ca26ddd24b981d4ac27a0e17469d33f50c66e0db0abffd7c9facf3ee57`.
+- Official `GET /files` query `limit=1000&order=desc&purpose=text_recognition` and fields `object:list`, `data`, `has_more` verified from DeepSeek Files List API. `docs/evidence/DS-LV-02-P6-LIST-DIAGNOSTIC-OFFLINE-PREFLIGHT.md` accepted.
+- **Next: exactly ONE read-only GET via unchanged pinned script `--check-target`**, under P6 limit 9 HTTP / P6–P9 max 14, budget still $0.05 total. **NOT YET EXECUTED**; P6-RICH remains BLOCKED until result reviewed.
+- P6-TEXT fixture expiry `2026-11-17T21:34:56Z`; if absence occurs after then, cannot separate DELETE vs expiration as causal source. Provider DELETE200 `deleted:true` previously acknowledged.
