@@ -1,0 +1,31 @@
+{
+  "test_id": "DS-LV-02-P8-TURN-3",
+  "turn": 3,
+  "timestamp_utc": "2026-11-17T22:13:49.221286+00:00",
+  "model_requested": "deepseek-flash",
+  "thinking_requested": "disabled",
+  "tools_declared": [],
+  "max_tokens": 192,
+  "http_requests_attempted": 1,
+  "http_status": 200,
+  "response_model": "deepseek-flash",
+  "finish_reason": "stop",
+  "reasoning_present": false,
+  "tool_calls_present": false,
+  "question": "Исправление учебной карточки: у ЛИРА-17 интерфейс Ethernet вместо RS-485, питание прежнее. Назови её актуальные параметры.",
+  "answer_preview": "ЛИРА-17: питание 12 В, интерфейс Ethernet.",
+  "answer_sha256": "275c1dd9fe00d69e46bc0554aa2dce1114037c529aa5dd0d3c14611712d8f8da",
+  "usage": {
+    "prompt_tokens": 215,
+    "completion_tokens": 17,
+    "total_tokens": 232,
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 215
+  },
+  "peak_estimate_usd": 0.0000849,
+  "cumulative_peak_estimate_usd": 0.0002124,
+  "actual_billing_usd": null,
+  "status": "TURN_COMPLETE_REVIEW_NEEDED",
+  "error_type": null,
+  "latency_ms": 1006
+}
