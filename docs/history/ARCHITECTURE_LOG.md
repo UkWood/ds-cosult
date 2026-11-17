@@ -48,5 +48,7 @@
 
 - **DS-LV-02/P4 offline Linux preflight (17.11.2026):** owner reported pinned script SHA256 `c10bd4a6b22aedb74f059a1d089c089e6686f70c6b247c993b315bd2710ba0bd`, Python compilation PASS, synthetic self-test PASS, 0 network requests and $0 DeepSeek cost. Accepted as preflight only; `docs/evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md`. Paid P4 has NO numeric GO; do not run until explicitly confirmed 1 POST/$0.01 with multi-search billing caveat.
 
+- **DS-LV-02/P4 explicit paid GO (2026-11-17):** «Подтверждаю» на 1 paid POST / $0.01 USD с предупреждением о нескольких billable server-side Search/Fetch operations; это организационный лимит, не технический hard cap. Записано в `docs/tasks/DS-LV-02-P4-OWNER-GO.md`. WSL self-test PASS и pinned script без изменений; платный запрос пока НЕ ИСПОЛНЕН. P5..P9 без GO.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

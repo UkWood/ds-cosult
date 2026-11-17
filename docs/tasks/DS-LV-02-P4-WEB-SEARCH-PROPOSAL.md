@@ -1,7 +1,7 @@
 # DS-LV-02/P4 — Native Web Search (Proposal Only)
 
 **Date:** 2026-11-17  
-**Status:** **P4 scope owner approved / offline preparation allowed; paid execution NOT AUTHORIZED until a numeric budget is confirmed**
+**Status:** **P4 OWNER GO FOR ONE PAID POST / $0.01 USD, NOT YET EXECUTED**
 
 ## Goal
 Test model-controlled `deepseek_web_search` through direct Chat Completions in `deepseek-flash` with thinking disabled. This is **not** the already verified standalone Search API (`POST /v1/tools/search`) and **not** P3 `deepseek_read_url`.
@@ -36,3 +36,6 @@ P5..P9 NOT AUTHORIZED. No Merge/DS-02/production.
 
 ## WSL Offline Preflight Acceptance — 2026-11-17
 Owner-provided output: `--self-test` PASS; `NETWORK REQUESTS: 0 | API COST: $0`; `py_compile` clean; local script SHA256 `c10bd4a6b22aedb74f059a1d089c089e6686f70c6b247c993b315bd2710ba0bd`. Source `../evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md`. This establishes offline script readiness **only**. **P4 paid call not authorized until explicit numeric owner GO of 1 POST / $0.01 USD with server-side billing risk acknowledgement**.
+
+## Paid owner GO after preflight — 2026-11-17
+User explicitly confirmed P4 single paid HTTP POST and organizational $0.01 spend limit with residual risk that provider server-side tool charges may exceed that organizational target. Authoritative GO document: `DS-LV-02-P4-OWNER-GO.md`. The earlier static script authorization field predates this GO; pinned code is unchanged. **One request only, no retries. P5..P9 not authorized.**

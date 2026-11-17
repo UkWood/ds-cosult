@@ -8,7 +8,7 @@
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4 scope/preflight согласован, **платный P4 ещё НЕ РАЗРЕШЁН без числового бюджета**; P5..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 и P2 PASS**, индивидуальные платные разрешения исчерпаны. **P3 выполнен и принят по tool-capability, один POST / $0.01; разрешение исчерпано**. P4 платный запуск **OWNER GO — 1 HTTP POST / $0.01 USD**, не выполнен; P5..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -68,7 +68,7 @@
 
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 OFFLINE PREFLIGHT PASS (paid GO needs $0.01 explicit confirmation); P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3 URL Reading PASS with review notes; P4 OFFLINE PREFLIGHT PASS + PAID OWNER GO (1 POST / $0.01), NOT EXECUTED; P5..P9 NOT AUTHORIZED**. P3: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**
 
@@ -86,3 +86,8 @@
 ## P4 offline preflight acceptance (2026-11-17)
 - WSL report: `py_compile` clean, `--self-test` PASS, network requests 0, API cost $0; local script SHA256 `c10bd4a6b22aedb74f059a1d089c089e6686f70c6b247c993b315bd2710ba0bd`.
 - Acceptance evidence `docs/evidence/DS-LV-02-P4-OFFLINE-PREFLIGHT.md`. **P4 PAID NOT YET EXECUTED; ONE POST / USD $0.01 remains a proposed, NOT approved numeric budget**. P5..P9 blocked.
+
+## P4 explicit paid GO — 2026-11-17
+- Owner reply «Подтверждаю» to a question proposing **one paid P4 Chat Completion** and **$0.01 USD organizational limit** with acknowledged risk of multiple billed server-side Search/Fetch operations. This is NOT a provider-enforced hard cap.
+- GO: `docs/tasks/DS-LV-02-P4-OWNER-GO.md`, pinned script `scripts/validation/ds_lv_02_p4_web_search.py` unchanged, WSL preflight accepted. **P4 NOT YET EXECUTED. P5..P9 NOT AUTHORIZED.**
+- Static `authorization=P4_NUMERIC_BUDGET_GO_REQUIRED_BEFORE_PAID_RUN` in the verified script predates the GO and is a historical metadata label; authoritative authorization is the owner GO document. Do not rewrite the tested script only to change this label.
