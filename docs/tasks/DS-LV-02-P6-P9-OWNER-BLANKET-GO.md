@@ -76,3 +76,6 @@ Owner directed removal of extra operator confirmation inputs `Enter P...-APPROVE
 
 ## P7 revised offline preflight gate passed — recorded 2026-11-18
 Owner-reported revised P7 Python SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c`, compile/self-test PASS, no network cost. Evidence `docs/evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. One P7 OCR POST now eligible; **1 HTTP / $0.01 organizational**, no budget or request-count increase; no redundant typed phrase, only hidden getpass key. P8/P9 await P7 outcome.
+
+## P7 final one-request closure — 2026-11-18
+P7 OCR one authorized POST completed at 2026-11-17 21:31:39 UTC, HTTP200, one successful page; expected OCR page charge $0.000225, invoice not verified. **P7 HTTP 1/1 exhausted; no retry.** P6 HTTP 9/9 already exhausted. P8 allowance remains 4 Chat Completions HTTP, organizational $0.02; P9 offline zero HTTP. **P8 offline only next**, no typed approval phrase. Global monetary risk target $0.05 unchanged.

@@ -1,7 +1,7 @@
 # DS-LV-02/P7 — Direct OCR One-Page Conformance Test
 
 **Date:** 2026-11-18  
-**State:** **P7 UX-REVISED OFFLINE PREFLIGHT PASS; SINGLE PAID OCR POST APPROVED, NOT EXECUTED**  
+**State:** **P7 LIVE PASS WITH REVIEW NOTES, 1/1 HTTP USED, NO RETRY**  
 **Precedent:** P6 Files API Text/Rich accepted with review notes; P6 budget 9/9 used.  
 **Stage allowance:** **$0.010 organizational / 1 HTTP POST max**; no retries; no provider-enforced monetary cap.
 
@@ -45,3 +45,6 @@ Owner WSL successfully compiled and self-tested the original pinned script (SHA2
 
 ## Revised script independently accepted offline — recorded 2026-11-18
 Revised `ds_lv_02_p7_ocr.py` commit `6779014bfd21e4749e1ff090ad4b52154530c342` owner SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c` passed `py_compile`, `--self-test`, fixture byte identity checks; DeepSeek requests 0 and API cost $0. Owner confirmation phrase removed as requested, getpass retained. `../evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. **Next one paid `--execute-once` call only** with P7 organizational $0.01, 1 HTTP limit. No retry; P8 gated until result reviewed.
+
+## P7 paid execution completed and accepted — recorded 2026-11-18
+One direct OCR POST success HTTP200, 1/1 page, finish stop, all six expected synthetic markers, 485 OCR usage tokens informational only, $0.000225 estimated page fee. Actual billing unknown; no Files API storage. `../evidence/DS-LV-02-P7-OCR-RESULT.json`; `../acceptance/DS-LV-02-P7-ARCHITECTURE-ACCEPTANCE.md`. **P7 CLOSED — 1/1 call consumed.** Next P8 four-turn synthetic Chat Completion dialogue offline preflight, no paid work yet.

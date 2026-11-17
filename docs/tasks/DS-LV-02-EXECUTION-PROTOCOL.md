@@ -2,7 +2,7 @@
 
 **Дата:** 2026-11-17  
 **Проект:** DS-консультант | Architecture Session A  
-**Статус:** P1 **PASS**, P2 **PASS**, P3 **PASS WITH REVIEW NOTES**, P4 **PASS WITH REVIEW NOTES**, P5 **PASS WITH REVIEW NOTES**, P6 **PASS WITH REVIEW NOTES (9/9 HTTP)**; P7–P9 **OWNER BLANKET GO STAGED ($0.05 organizational)**  
+**Статус:** P1 **PASS**, P2 **PASS**, P3 **PASS WITH REVIEW NOTES**, P4 **PASS WITH REVIEW NOTES**, P5 **PASS WITH REVIEW NOTES**, P6 **PASS WITH REVIEW NOTES (9/9 HTTP)**; P7 **PASS WITH REVIEW NOTES (1/1 HTTP)**; P8–P9 **OWNER BLANKET GO STAGED ($0.05 organizational)**  
 **Заменяет как детализация:** DS-LV-02 draft v0.1 (сохранён в Git-истории)
 
 ## 1. Основание
@@ -28,7 +28,7 @@
 | P4 | DSAPI-04 `deepseek_web_search`, thinking disabled | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17** |
 | P5 | DSAPI-05 deep thinking + search | 1 Chat Completion | 1 | **PASS WITH REVIEW NOTES / ACCEPTED 2026-11-17; GO EXHAUSTED** |
 | P6 | DSAPI-08/09 Files + text/rich recognition | Text 4 + read-only cleanup List Files 1 + Rich 4 | **9** | **PASS WITH REVIEW NOTES; ALL 9 USED / NO RETRY** |
-| P7 | DSAPI-10 OCR synthetic single page | 1 multipart OCR | 1 | **GENERAL OWNER GO; STAGED AFTER P6** |
+| P7 | DSAPI-10 OCR synthetic single page | 1 multipart OCR | 1 | **PASS WITH REVIEW NOTES / ALL 1 USED** |
 | P8 | DSAPI-11 4-turn short dialogue | 4 Chat Completions | 4 | **GENERAL OWNER GO; STAGED AFTER P7** |
 | P9 | DSAPI-12 faults/billing/summary | OFFLINE ONLY | **0** | **GENERAL OWNER GO; STAGED AFTER P8** |
 

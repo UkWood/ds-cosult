@@ -1,7 +1,7 @@
 # PROJECT STATE — DS-консультант
 
 **Обновлено:** 2026-11-17  
-**Текущий статус:** **DS-LV-02/P6 TEXT+RICH PASS WITH REVIEW NOTES; P7 OCR OFFLINE PREFLIGHT NEXT; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
+**Текущий статус:** **DS-LV-02/P7 DIRECT OCR PASS WITH REVIEW NOTES; P8 4-TURN DIALOGUE OFFLINE PREFLIGHT NEXT; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
 ## Решения владельца
 - DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
@@ -169,3 +169,8 @@
 - Owner ran Python syntax check and `--self-test` on revised pinned commit `6779014bfd21e4749e1ff090ad4b52154530c342`, Git blob `b2901a91df937999558a38b357b745c23f4f7f7a`; both PASS. User-reported local SHA256 `7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c`.
 - Pinned synthetic one-page PDF SHA `069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286` validated inside selftest; 0 DeepSeek network calls, $0. Typed `P7-APPROVED` gate gone; hidden key and one-shot safeguards remain.
 - Accepted evidence `docs/evidence/DS-LV-02-P7-REVISED-OFFLINE-PREFLIGHT.md`. **P7 next: exactly one OCR POST** max 1 HTTP / $0.01 organizational under prior blanket owner GO; paid P7 **NOT YET EXECUTED**. P8/P9 stage-gated.
+
+## P7 direct OCR live PASS / P8 synthetic dialogue preparation — 2026-11-18
+- Owner WSL one direct `POST /v1/tools/ocr` on 2026-11-17 21:31:39 UTC: HTTP200, `ocr.result` `text_recognition`, 1/1 page index0 `finish_reason=stop`, all 6/6 synthetic terms present; 226 OCR chars, 2,708ms. OCR usage 401 in/84 out/485 total **informational only, not token billing**.
+- OCR successful-page estimated fee **$0.000225**, actual invoice null; file not stored in Files API, no model chat. OCR does not identify colored geometric shapes here. Evidence `docs/evidence/DS-LV-02-P7-OCR-RESULT.json`; acceptance `docs/acceptance/DS-LV-02-P7-ARCHITECTURE-ACCEPTANCE.md`.
+- **P7 PASS WITH REVIEW NOTES; 1/1 HTTP authorization exhausted, no retry.** P8 next staged: `scripts/validation/ds_lv_02_p8_dialogue.py`, `docs/tasks/DS-LV-02-P8-FOUR-TURN-DIALOGUE-PROTOCOL.md`. First step **offline only**; future P8 budget ≤4 HTTP / $0.02 organizational, no repeated P...-APPROVED input prompts; only synthetic entities. P9 offline after P8.
