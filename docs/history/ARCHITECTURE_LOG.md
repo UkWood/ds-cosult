@@ -32,5 +32,8 @@
 
 - **DS-LV-02/P2 GO (17.11.2026):** владелец согласовал один прямой DeepSeek Search API HTTP POST c $0.01 ceiling; формализованы `count=1`, `need_content=false`, оценка $0.00075 и Python WSL скрипт с `getpass`/no retry/atomic marker. На момент записи P2 НЕ ИСПОЛНЕН; P3..P9 не разрешены.
 
+- **DS-LV-02/P2 completed + accepted (2026-11-17 19:00:23 UTC):** owner-authorized 1 standalone Search API HTTP POST returned 200 and 1 official-documentation result (`https://api-docs.deepseek.com/news/news261113/#1`), no content fetch, latency 862 ms, fee estimate $0.00075, actual billing unknown. P2 ACCEPTED; detailed report `docs/acceptance/DS-LV-02-P2-ARCHITECTURE-ACCEPTANCE.md`, evidence `docs/evidence/DS-LV-02-P2-RESULT.json`. Authorization exhausted.
+- **DS-LV-02/P3 proposal drafted:** model-directed `deepseek_read_url` on `https://example.com/`, explicitly NOT authorized and NOT executed; differentiate from managed Search/Fetch and `deepseek_web_search`.
+
 ## Перед следующим этапом
 Нужны: независимая экспертиза Ground Truth, проверка отношений, 9 оставшихся PDF, закрытое хранение тестов, безопасный custody-пакет локальных PDF и отдельное разрешение/бюджет на native DeepSeek tools.

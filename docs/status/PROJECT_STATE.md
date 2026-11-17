@@ -1,14 +1,14 @@
 # PROJECT STATE — DS-консультант
 
 **Обновлено:** 2026-11-17  
-**Текущий статус:** **DS-LV-02/P1 DEEP THINKING PASS; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
+**Текущий статус:** **DS-LV-02/P2 STANDALONE SEARCH PASS; DS-01C GROUND TRUTH & CORPUS FREEZE PENDING**
 
 ## Решения владельца
 - DS-консультант — независимый проект. `UkWood/Saturn-Main-Site` — READ-ONLY; NEW RAG не изменять.
 - `UkWood/ds-cosult` — долговременная память, история, решения, требования и код.
 - Основной API: **прямой DeepSeek** `https://api.deepseek.com`, `deepseek-flash`; ADR-0004, AI Tunnel ADR-0003 SUPERSEDED.
 - DS-01 protocol accepted: W/A/B/C0, B-text/B-entity; Pilot 12, Core 60 (по 5 на категорию), 8 диалогов и 24 document tasks.
-- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 выполнен и принят**, старое разрешение исчерпано. **P2 отдельно разрешён**: один Search API вызов, максимум $0.01; **не выполнен**. P3..P9, DS-02 coding, production и Corpus Freeze не разрешены.
+- Merge только после явного разрешения владельца; PR #1 остаётся Draft. **P1 выполнен и принят**, старое разрешение исчерпано. **P2 отдельно разрешён и ВЫПОЛНЕН/ПРИНЯТ**: один standalone Search API, лимит $0.01; разрешение исчерпано. P3..P9, DS-02 coding, production и Corpus Freeze не разрешены.
 
 ## Доказательный baseline сайта — кандидат
 `UkWood/Saturn-Main-Site` commit `084d759487bfab6e111549c9b5469711ac5fc13e`, tree `a5297822bf3a5e071b10cc1dca553481c1b84d47`.
@@ -31,7 +31,7 @@
 ## Remaining blockers
 1. `ds-cosult` PUBLIC: нельзя публиковать закрытый Core/GT, секреты и ограниченные источники.
 2. Нет expert-approved Ground Truth, DS-CORPUS-1.0 не frozen.
-3. Native DeepSeek **thinking = PASS for one smoke test**; standalone Search **P2 owner-authorized / UNTESTED**; web/URL/Files/OCR/Fetch/continuity **UNTESTED**.
+3. Native DeepSeek **thinking = PASS for one smoke test**; standalone Search **P2 PASS / ACCEPTED**; web/URL/Files/OCR/Fetch/continuity **UNTESTED**.
 4. Из 12 запланированных документов лишь 3 byte-pinned по Linux-отчёту, 9 ожидают проверку.
 5. Независимый custody/audit локальных исходных PDF/PNG и манифеста не получен; billing не сверён.
 6. Технические отношения, версии оборудования и неоднозначные стрелки в ЕАСДКиУ требуют экспертной оценки.
@@ -48,10 +48,10 @@
 
 ## DS-LV-02/P2 owner authorization
 - Владелец согласовал один прямой Search API вызов с бюджетом $0.01; `POST /v1/tools/search`, `count=1`, `need_content=false`. Published charge estimate $0.00075 for successful nonempty result, actual billing unverified.
-- Safe test script: `scripts/validation/ds_lv_02_p2_search.py`; scope & GO: `docs/tasks/DS-LV-02-P2-OWNER-GO.md`. **P2 authorized, NOT EXECUTED**; no automatic retries or P3 transition.
+- Safe test script: `scripts/validation/ds_lv_02_p2_search.py`; scope & GO: `docs/tasks/DS-LV-02-P2-OWNER-GO.md`. **P2 executed and accepted:** 2026-11-17 19:00:23 UTC, HTTP 200, `result_count=1`, valid official DeepSeek documentation URL, 862 ms, estimated $0.00075, actual billing UNKNOWN. Отчёт: `docs/acceptance/DS-LV-02-P2-ARCHITECTURE-ACCEPTANCE.md`, JSON: `docs/evidence/DS-LV-02-P2-RESULT.json`. Разрешение исчерпано, P3 не разрешён.
 
 ## Next stage
 - **CF-01/CF-04:** route 11 evidence seeds to two-person expert review using `docs/research/DS-01C-CF04-GT-EXPERT-PACKET.md`; don't publish hidden Core/GT, don't invent signatures; remaining PDF/relations still open.
-- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 completed PASS; P2 one Search API call authorized, not yet executed; P3..P9 NOT AUTHORIZED.**
+- **DS-LV-02:** staged conformance v0.2 `docs/tasks/DS-LV-02-EXECUTION-PROTOCOL.md` (P0 offline); **P1 PASS; P2 Search PASS; P3..P9 NOT AUTHORIZED**. P3 design only: `docs/tasks/DS-LV-02-P3-URL-READING-PROPOSAL.md`.
 - **DS-02 Minimal Harness / Pilot:** only after separate Architecture decision and approved gates; no implementation begun.
 - **Draft PR #1 remains OPEN, NO MERGE / NO PRODUCTION.**

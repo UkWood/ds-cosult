@@ -1,7 +1,7 @@
 # DS-LV-02/P2 — Controlled Direct Search API
 
 **Дата:** 2026-11-17  
-**Статус:** OWNER GO — **ONE API SEARCH REQUEST, NOT EXECUTED**  
+**Статус:** **OWNER GO EXERCISED — ONE SEARCH EXECUTED / P2 ACCEPTED PASS**  
 **Budget:** $0.01 USD as owner-approved organizational spending limit. Not a provider-enforced hard cap.  
 **Authority:** user replied «Согласованно продолжай» after explicit proposal for one DS-LV-02/P2 request, max $0.01. P3–P9 NOT AUTHORIZED.
 
@@ -29,3 +29,6 @@ A successful nonempty Search API call is billed $0.75/1,000 = **$0.00075** at th
 `FAIL/BLOCKED`: other errors, malformed response or non-200; never retry without another GO.
 
 **NO AUTO P3 / WEB TOOL / OCR / PDF UPLOAD / DS-02 / MERGE / PRODUCTION.**
+
+## Execution outcome, 2026-11-17
+Performed one authorized Search POST at 19:00:23 UTC: HTTP 200, 1 result, 862 ms, estimated charge $0.00075 (not independently billed). Acceptance report: `../acceptance/DS-LV-02-P2-ARCHITECTURE-ACCEPTANCE.md`; redacted evidence `../evidence/DS-LV-02-P2-RESULT.json`. **No more P2 calls authorized.**

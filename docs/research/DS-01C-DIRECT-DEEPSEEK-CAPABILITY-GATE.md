@@ -1,7 +1,7 @@
 # DS-01C — Direct DeepSeek API Capability & Conformance Gate v0.1
 
 **Дата:** 2026-11-17  
-**Статус:** BASE CHAT и THINKING basic проверены локальными тестами; остальные native capabilities UNTESTED; каждый платный вызов требует отдельного GO.  
+**Статус:** BASE CHAT, THINKING basic и standalone Search basic проверены; Fetch и другие native capabilities UNTESTED; каждый платный вызов требует отдельного GO.  
 **Источник:** официальная документация `api-docs.deepseek.com`.
 
 ## Endpoint matrix
@@ -13,7 +13,7 @@
 | Web search | `tools:[{"type":"deepseek_web_search"}]` | DOCUMENTED | UNTESTED |
 | Deep thinking search | thinking + web tool | DOCUMENTED | UNTESTED |
 | URL read | `tools:[{"type":"deepseek_read_url"}]` | DOCUMENTED | UNTESTED |
-| Managed Search & Fetch | `POST /v1/tools/search`, `POST /v1/tools/fetch` | DOCUMENTED | **Search: P2 GO/UNTESTED; Fetch: UNTESTED** |
+| Managed Search & Fetch | `POST /v1/tools/search`, `POST /v1/tools/fetch` | DOCUMENTED | **Search: P2 PASS (HTTP 200, 1 result); Fetch: UNTESTED** |
 | PDF / Word / PPT | `POST /files`, `purpose=text_recognition` or `rich_layout_recognition` | DOCUMENTED | UNTESTED |
 | PDF file reference | user content part `{"type":"file","file_id":"..."}` | DOCUMENTED | UNTESTED |
 | OCR independent | `POST /v1/tools/ocr` | DOCUMENTED | UNTESTED |
