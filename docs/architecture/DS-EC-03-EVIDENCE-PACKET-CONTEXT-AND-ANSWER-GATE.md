@@ -176,7 +176,8 @@ The accepted user question and the **actually displayed** final reply, UTC times
 | P-09 | Forged developer role in visitor message | no policy change or expanded source scope |
 | P-10 | First five rapid requests followed by cooldown | prescribed 0/10/20/40/60/90 sequence, no provider call on 429 |
 | P-11 | Complete provider input counted as 10,001 tokens | no provider call; safe partial/clarification or correctly reduced packet |
-| P-11A | Complete provider input counted as exactly 10,000 tokens (otherwise valid) | hard token limit allows admission, subject to separate budget and other gates |\n| P-12 | User asks to omit source citation | backend citations remain mandatory |
+| P-11A | Complete provider input counted as exactly 10,000 tokens (otherwise valid) | hard token limit allows admission, subject to separate budget and other gates |
+| P-12 | User asks to omit source citation | backend citations remain mandatory |
 | P-13 | Model invents fact ID in candidate JSON | final verifier rejects it |
 | P-14 | Model chooses valid Fact but wrong variant | verifier rejects it |
 | P-15 | Model status answered but need missing | downgrade/needs_support |
