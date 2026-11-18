@@ -70,7 +70,7 @@ Required logical fields:
 - `fact_id` XOR `relation_id` for technical assertions; metadata-only document navigation may use `document_id` with **no implied technical claim**;
 - `typed_value` and source units where applicable; never synthetic free-text value from the model;
 - `evidence_ids[]` (nonempty for technical claims), exact verified source applicability;
-- `proof_state` (`eligible`, `inapplicable`, `unsupported`, `conflict`, `not_indexed`, `source_error`, `internal_error`);
+- `proof_state` (`eligible`, `inapplicable`, `unsupported`, `conflict`, `not_indexed`, `source_error`, `internal_error`); **normative v0.3 interpretation:** `conflict` here is a *rejected/non-renderable truth-claim diagnostic*, not permission to emit either conflicted value; source-attributed conflict statements use the separate `ConflictPosition` type and position-specific citations (see §13.1);
 - `diagnostic_code` safe structured reason (no secrets/private logs);
 - `renderability` (boolean computed by server after all checks).
 
@@ -102,7 +102,7 @@ Once final-policy verification succeeds, the rendered `answer_text` must **not**
 
 | Gate | Owner | Required condition / fail behavior |
 |---|---|---|
-| G0 Eligibility + route-specific atomic admission | Server | Unpaid deterministic Saturn-domain/IP/body/series/day screen. For P1/P2 choose route and **verify complete <=10k prompt, <=450 output and USD affordability BEFORE charging visitor slot**, then atomically commit **one accepted turn + one provider POST reservation + global USD + exclusive IP fence**. For P0 commit only one visitor turn. Any preflight failure/out-of-domain => 0 visitor debit / 0 POST |
+| G0 Eligibility + route-specific atomic admission | Server | Unpaid deterministic Saturn-domain/IP/body/series/day screen. P1/P2 full <=10k input/<=450 output and USD preflight **before** debit; atomically commit 1 accepted turn + 1 **reserved provider call-slot (NOT a recorded POST)** + USD/IP fence; separate write-ahead **dispatch-intent** before network I/O controls counted attempted/at-risk POSTs. P0 commits turn only. Denial before admission => 0 turn / 0 POST |
 | G1 Source snapshot | Server | Exactly one pinned SourceBundle/policy revision, approved site/PDF provenance, no mixed versions |
 | G2 Entity and need resolution | Server + optional P1 model interpret | Entity/variant/QuestionNeeds via local resolver or one P1 QuestionInterpretationPlan call **ONLY after mandatory shared ProviderDispatchGuard preflight before any API POST**; no LLM classifier before G0 admission |
 | G3 Source and retrieval integrity | Server | Required source locator/checksum/parser state valid; distinguish unindexed corpus, unavailable source and factual absence |
@@ -112,7 +112,7 @@ Once final-policy verification succeeds, the rendered `answer_text` must **not**
 | G7 Atomic-claim verifier | Server | Verifies v0.2 EvidenceEligibilityDecision including exact locator, verified value/units/qualifiers, relation direction, evidence-to-need applicability and SourceCoverageReceipt; a valid fact ID/page number alone is insufficient |
 | G8 Conflict/coverage final policy | Server | Examines **all eligible applicable ledger assertions for each need independent of prompt selection**; status/reason mapping in normative v0.2 section below, no unsupported global absence or hidden source errors |
 | G9 Deterministic renderer | Server | Emits allowed factual template + citations only from approved VerifiedClaims; no unchecked LLM rewriting |
-| G10 Audit and accounting | Server | Crash-safe stage private exact question + **actual final output** with UTC/IP before emission; 30-day private retention; separately account accepted-turn debit (20/day incl local), 0/1 paid attempt, reserved/actual USD; idempotent request reply, never public IP/transcripts |
+| G10 Audit and accounting | Server | Crash-safe stage exact intended response text/bytes, question, UTC/IP privately (30d); distinct transport attempt/accepted/failed/unknown statuses, optional client ACK; never assert browser display merely from staging. Distinct 20/day admitted turns, reserved provider slots, dispatch-risk POST counts, USD reserve/billing and idempotent replay |
 
 **Error ordering:** any G0 denial returns a static reason, without technical fact retrieval or paid model call. A downstream G3/G7 internal error remains an **error status** even if some unverifiable candidate text sounds plausible. A validated subset of independently supported claims may be rendered as `partial` provided no error is disguised and all missing/conflicting needs are explicitly represented.
 
@@ -247,8 +247,8 @@ After source bundle, locale, variant or policy revision changes, invalidate cach
 | EC5-25 | Complete provider input exactly 10,000 tokens | admitted by token cap when all other guards satisfied |
 | EC5-26 | Complete provider input 10,001 tokens | reduce safely or return partial/error without paid over-limit call |
 | EC5-27 | Provider output `finish_reason=length` truncates plan | reject incomplete plan, no unchecked technical prose |
-| EC5-28 | 20 locally served questions on same IP/site day | 21st blocked, **0 model POSTs** |
-| EC5-29 | 9 local + 11 paid replies same IP/day | exactly 20 visitor slots and 11 provider POSTs, 21st blocked |
+| EC5-28 | 20 locally served questions same IP/site day in **two 10-question series separated by ≥30m inactivity** | 21st blocked, **0 model POSTs**; 11th question in same uninterrupted series never admitted |
+| EC5-29 | 9 local + 11 paid replies same IP/day: **series 1=9 local+1 paid; ≥30m idle; series 2=10 paid** | exactly 20 visitor slots and 11 recorded dispatch-intent POST attempts, 21st blocked |
 | EC5-30 | Concurrent duplicate request id from same anonymous session | one visitor slot, at most one POST and one answer transaction |
 | EC5-31 | 15-minute memory expiry; day and series counters active | new DialogState, preserved series/day, no transcript leak |
 | EC5-32 | 11th rapid-series turn before 30-minute reset | static support handoff, no paid inference or question-slot admission |
@@ -336,7 +336,7 @@ Replace a literal single-pass understanding of G0..G10 with **conditional P0/P1/
 
 **P1 unsupported mapping:** valid QuestionInterpretationPlan with `interpretation_status=unsupported` consumes its already-admitted question/one recorded provider dispatch attempt, maps to NeedResolution `ambiguous_question`, reason `interpretation_unsupported`, final `clarification`, without P2 retry or invented source facts. See DS-EC-03 §10.3.1 and DS-EC-04 §14.1.
 
-**Global USD breaker proposed operating policy:** global **paid-provider** budget exhaustion immediately prohibits P1/P2, but valid locally answerable P0 may remain available, subject to canonical IP active lease, 20 accepted turns/day including local, series/cooldown, global CPU/concurrency abuse guards and private logging. This is an explicit v0.2 recommended architecture choice under the owner's broad instruction to correct CR-I06; independent reviewer should confirm that this does not exceed owner approval. If owner prefers total chat outage on USD exhaustion, this alternative requires explicit owner decision. No dollar thresholds may be guessed.
+**Global USD breaker proposed operating policy — NOT OWNER APPROVED (R1-CR05 OPEN):** global **paid-provider** budget exhaustion immediately prohibits P1/P2, but valid locally answerable P0 may remain available, subject to canonical IP active lease, 20 accepted turns/day including local, series/cooldown, global CPU/concurrency abuse guards and private logging. This is an explicit v0.2 recommended architecture choice under the owner's broad instruction to correct CR-I06; independent reviewer should confirm that this does not exceed owner approval. If owner prefers total chat outage on USD exhaustion, this alternative requires explicit owner decision. No dollar thresholds may be guessed.
 
 ### 13.4 Atomic delivery/logging and public/private data (CR-I01/I08)
 
