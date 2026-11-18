@@ -37,7 +37,7 @@
 | AR-T18 | Provider-bound complete input 10,000 vs 10,001 tokens | Exactly 10,000 eligible if other gates pass; 10,001 blocked before paid POST; output max 450 |
 | AR-T19 | One known attribute with exact structured site field | Deterministic zero-model source-cited answer, one visitor slot, stable Russian wording |
 | AR-T20 | Durable exact staged answer/text and HTTP bytes, question/IP/UTC; response write success/failure/unknown; original-session replay | Private staff-only 30-day audit distinguishes staged bytes, server transport status, optional client ack; never claims browser display from HTTP success; no cross-session leakage |
-| AR-T21 | Operator global USD breaker exhausted; technical question locally answerable (P0) | **Proposed** policy: P0 remains within IP/20/day/series/CPU guard; P1/P2 zero paid calls; owner confirmation required before launch |
+| AR-T21 | Operator global **DeepSeek-paid** USD breaker exhausted; source-verified, safe P0 locally answerable | **OWNER APPROVED DS-SEC-10:** P0 admitted with all IP/session/20/day/series/cooldown/CPU/audit checks, +1 accepted question, +0 provider attempt/dispatch and +$0 model cost; P1/P2 blocked before admission |
 | AR-T22 | Source assertion conflict, valid P1 unsupported, malformed plan, document navigation, source missing/error, mixed partial | Deterministic NeedResolution→proof/publication role→final status/reason; attributed conflict positions are not VerifiedClaims; valid P1 unsupported → clarification with retained admission/POST |
 
 ## Additional R1 synthetic desk-check fixtures (NOT EXECUTED)
@@ -51,7 +51,10 @@
 | R1-F05 / P1 valid unsupported | Paid P1 returns interpretation_status=unsupported after admission | admitted=1, one dispatch-risk attempt, NeedResolution=ambiguous_question, reason=interpretation_unsupported, final clarification, zero additional P2 |
 | R1-F06 / AR-T20 | OUTPUT_STAGED exact bytes, HTTP transport failed/unknown | Audit exact staged bytes/UTC and truthful transport status; not proven visually displayed; replay only to original still-active session |
 | R1-F07 / AR-T22 | Malformed model plan, metadata-only navigation, partially supported need with source error | Distinct invalid_model_plan, document_reference_only, partial/error and citation modes; no answered status for unsupported technical needs |
-| R1-F08 / AR-T21 | Global paid USD breaker triggered; source-proven local P0 fact available | **OWNER POLICY DECISION PENDING**: P1/P2 denied under both options; P0 admission controlled by final explicit owner choice |
+| R1-F08 / AR-T21 | Global paid USD breaker triggered; source-proven local P0 fact available | **DS-SEC-10 OPTION A APPROVED:** admitted +1 question, 0 provider attempts/dispatch/reservation and 0 paid model cost; keep source/citation and IP/day/series/CPU/audit checks |
+| R1-F10 / AR-T21 | Same budget outage, P1/P2 required; no trustworthy P0 | static budget/support notice, 0 accepted-turn debit, 0 provider attempts/dispatch and 0 paid cost |
+| R1-F11 / AR-T21 | Global paid budget exhausted; valid P0 fact but IP/day=20, Q11 consecutive, or CPU breaker | denied by non-monetary limit; 0 new accepted-turn debit and no provider calls |
+| R1-F12 / AR-T21 | Cached LLM prose deceptively labeled local P0 | reject P0 provenance; no paid fallback under breaker and no invented fact |
 | R1-F09 / AR-T09/10 | Two legal series of up to ten questions with 30m idle reset | Correct 20/day question slots, 11 recorded paid dispatches in mixed case, no 11th rapid-series bypass |
 
 ## Explicit negative test gates
