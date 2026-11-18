@@ -223,3 +223,17 @@ def test_p0_offline_and_no_pdf_facts(pilot, monkeypatch):
     assert not result["verified_claims"]
     assert result["document_references"][0]["document_url"].endswith(".pdf")
     assert result["diagnostics"][0]["reason_code"] == "source_scope_not_indexed"
+
+
+def test_unknown_model_never_reuses_previous_entity(pilot):
+    pilot.ask("Какая масса БКД-ПК-RF.2?", "local", "q1", now=1000)
+    answer = pilot.ask("Какая масса БКД-ПК-RF.3?", "local", "q2", now=1010)
+    assert answer["status"] == "clarification"
+    assert not answer["verified_claims"]
+
+
+def test_compare_spans_cover_both_referents(pilot):
+    question = "Сравни массу БКД-ПК-RF.2 и СЛДКС-1"
+    answer = pilot.ask(question, "local", "q1")
+    assert answer["status"] == "partial"
+    assert all(need["span"] == [0, len(question)] for need in answer["question_needs"])

@@ -7,6 +7,7 @@ ALIASES = re.compile(
     r"(?<![\w-])(?:(?P<bkd>бкд[ -]*пк[ -]*(?:rf|рф)[ .-]*2|bkd[ -]*pk[ -]*rf[ .-]*2)"
     r"|(?P<sld>слдкс[ -]*1|sldks[ -]*1))(?![\w-]|\.\d)", re.I
 )
+UNSUPPORTED_MODEL = re.compile(r"(?<!\w)(?:бкд[ -]*пк|bkd[ -]*pk|слдкс|sldks)[ -]*[\w.-]+", re.I)
 POLICY = "loopback-v1"
 DICTIONARY = "russian-two-entity-v1"
 
@@ -83,7 +84,10 @@ def finalize(question, anchors, referent):
     for start, end in anchors:
         clause = normalized[start:end].strip()
         mentions = entities(clause)
-        if clause in {"если да", "если это так"}:
+        if UNSUPPORTED_MODEL.search(ALIASES.sub("", clause)):
+            needs.append(QuestionNeed(f"n{len(needs)+1}", (start, end), None, "unknown"))
+            continue
+        if clause in {"если да", "если это так"} and needs:
             continue
         # Corrections update referent selection without supplying technical facts.
         if mentions and re.fullmatch(r"(?:нет,?\s*)?(?:я )?спрашивал(?:а)? (?:про|о) .+", clause):
