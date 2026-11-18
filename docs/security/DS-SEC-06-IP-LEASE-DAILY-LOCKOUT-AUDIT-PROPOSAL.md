@@ -43,7 +43,7 @@ Proposed states:
 - Multi-session from same canonical IP never permits additional quota; same IP across days resets per-IP daily count, not global monetary/account quotas.
 - For user-facing fairness, allow same valid session to read its own previous replies after daily exhaustion; freeze the send control and avoid any further DeepSeek HTTP.
 
-**Proposed numeric values, still NOT accepted:** 20 billable requests/IP/calendar day, 15m inactivity to release active IP lock; 30m inactivity to reset progressive series; max 1200 chars, input ≤10000 tokens (full provider request, hard maximum), output ≤450, Q6–10 waits 10/20/40/60/90s. Global daily/monthly budget limits must be set before implementation.
+**Owner-approved pilot defaults (DS-SEC-07/08), not yet implemented:** 20 billable requests/IP/calendar day, 15m inactivity to release active IP lock; 30m inactivity to reset progressive series; max 1200 chars, input ≤10000 tokens (full provider request, hard maximum), output ≤450, Q6–10 waits 10/20/40/60/90s. Global daily/monthly budget limits must be set before implementation.
 
 ## 4. Private per-question audit record schema (proposal)
 
