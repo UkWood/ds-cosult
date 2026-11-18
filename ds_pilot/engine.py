@@ -1,10 +1,12 @@
 """Local turn admission, immutable question coverage and controlled rendering."""
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
+import fcntl
 from datetime import datetime
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 import time
@@ -12,17 +14,17 @@ import unicodedata
 from zoneinfo import ZoneInfo
 
 from .catalog import DocumentReference, Relation
-from .questions import DICTIONARY, POLICY, OVERRIDE, entities, finalize, normalize, spans
+from .questions import ALIASES, DICTIONARY, POLICY, OVERRIDE, entities, finalize, normalize, spans
 
 COOLDOWNS = (0, 0, 0, 0, 0, 10, 20, 40, 60, 90)
 MESSAGES = {
     "ambiguous_entity": "Уточните модель: БКД-ПК-RF.2 или СЛДКС-1.",
     "ambiguous_question": "Уточните интересующий параметр или задайте вопросы по отдельности.",
     "ambiguous_variant": "Уточните поколение и конфигурацию системы.",
-    "insufficient_evidence": "В двух проверенных файлах сайта недостаточно сведений для этой части вопроса.",
-    "source_scope_not_indexed": "Содержимое PDF не индексировалось. Доступны только ссылки из каталога.",
+    "insufficient_evidence": "В проверенных источниках недостаточно сведений для этой части вопроса.",
+    "source_scope_not_indexed": "Для этого утверждения нет подтверждённого фрагмента документа.",
     "interpretation_unsupported": "Уточните модель и интересующий параметр.",
-    "invalid_model_plan": "Тестовый режим не подтвердил эту часть запроса.",
+    "invalid_model_plan": "План модели не подтвердил эту часть запроса.",
     "applicable_source_conflict": "В применимых источниках указаны разные значения.",
     "verifier_internal_error": "Не удалось завершить проверку ответа.",
     "source_integrity_error": "Контроль источника не пройден.",
@@ -38,9 +40,33 @@ def deny(reason, text, status="blocked", **extra):
     return dict(status=status, reason_code=reason, text=text, **extra)
 
 
+def interpretation_options(question, needs, catalog):
+    """Bound a model suggestion to one original span and a checked scoped attribute."""
+    options = []
+    idioms = {
+        "mass": r"(?:сколько (?:он |она )?покажет на весах|насколько (?:он |она )?тяж[её]л(?:ый|ая)?)",
+        "dimensions": r"(?:сколько места (?:он |она )?занимает|каких (?:он |она )?габаритов)",
+        "purpose": r"(?:зачем (?:он |она )?нуж(?:ен|на)|для каких задач (?:он |она )?нуж(?:ен|на))",
+    }
+    for need in needs:
+        options.append(dict(need_id=need.id, entity=need.entity, attribute=need.attribute))
+        if need.attribute != "unknown" or not need.entity:
+            continue
+        left, right = need.span
+        phrase = " ".join(ALIASES.sub("", normalize(question[left:right])).split())
+        for attribute, pattern in idioms.items():
+            if re.fullmatch(pattern, phrase) and catalog.records.get((need.entity, attribute)):
+                options.append(dict(need_id=need.id, entity=need.entity, attribute=attribute))
+    return options
+
+
 class Pilot:
     def __init__(self, catalog, database, timezone="Europe/Moscow", mock=None,
-                 mock_budget=0, mock_input_tokens=1, mock_output_tokens=450):
+                 mock_budget=0, mock_input_tokens=1, mock_output_tokens=450, *, lab=False, live=None):
+        if live and (not lab or mock):
+            raise ValueError("Live requires isolated LAB mode")
+        self.lab = lab
+        self.live = live
         self.catalog = catalog
         self.database = Path(database)
         self.timezone = ZoneInfo(timezone)
@@ -81,6 +107,29 @@ class Pilot:
             db.close()
 
     def ask(self, question, session, request, *, now=None, mode="P0"):
+        # A process dying between admission and answer releases the OS lock.
+        with self.database.with_suffix(".turn.lock").open("a+b") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return deny("in_flight", "Другой запрос ещё выполняется.")
+            return self._ask(question, session, request, now, mode)
+
+    def history(self, session):
+        with self.tx() as db:
+            rows = db.execute("SELECT admitted,response FROM turns WHERE session=? AND response IS NOT NULL ORDER BY received,rowid", (session,))
+            return [{"question": json.loads(row["admitted"])["original_question_exact"],
+                     "answer": json.loads(row["response"])} for row in rows]
+
+    def reset(self, session):
+        if not self.lab:
+            raise ValueError("Сброс доступен только в лаборатории.")
+        with self.database.with_suffix(".turn.lock").open("a+b") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            with self.tx() as db:
+                db.execute("DELETE FROM turns WHERE session=?", (session,))
+
+    def _ask(self, question, session, request, now, mode):
         real_clock = now is None
         now = time.time() if real_clock else now
         if not isinstance(question, str) or not question.strip() or len(question) > 1200:
@@ -94,6 +143,8 @@ class Pilot:
         day = datetime.fromtimestamp(now, self.timezone).date().isoformat()
         with self.tx() as db:
             db.execute("DELETE FROM turns WHERE received <= ?", (now - 30 * 86400,))
+            interrupted = deny("interrupted", "Процесс прервался. Для продолжения задайте новый вопрос.", "error")
+            db.execute("UPDATE turns SET response=?, stage='INTERRUPTED', responded=? WHERE response IS NULL", (encode(interrupted), now))
             prior = db.execute("SELECT * FROM turns WHERE request=?", (request,)).fetchone()
             if prior:
                 if prior["session"] != session or json.loads(prior["admitted"])["original_question_exact"] != question or prior["mode"] != mode:
@@ -101,7 +152,9 @@ class Pilot:
                 if prior["response"]:
                     return json.loads(prior["response"])
                 return deny("in_flight", "Запрос уже принят.")
-            last = db.execute("SELECT * FROM turns ORDER BY received DESC, rowid DESC LIMIT 1").fetchone()
+            scope = "WHERE session=?" if self.lab else ""
+            last = db.execute(f"SELECT * FROM turns {scope} ORDER BY received DESC, rowid DESC LIMIT 1",
+                              (session,) if self.lab else ()).fetchone()
             series = 0
             referent = None
             if last and now - last["received"] < 1800:
@@ -116,22 +169,27 @@ class Pilot:
             if mode not in {"P0", "P1", "P2"}:
                 return deny("invalid_mode", "Неизвестный режим.")
             if mode != "P0":
-                if not self.mock or not 0 <= self.mock_input_tokens <= 10000 or not 1 <= self.mock_output_tokens <= 450:
+                if not self.live and (not self.mock or not 0 <= self.mock_input_tokens <= 10000 or not 1 <= self.mock_output_tokens <= 450):
                     return deny("provider_disabled", "Доступен локальный режим P0.")
                 reserved = db.execute("SELECT count(*) FROM turns WHERE mode != 'P0'").fetchone()[0]
-                if reserved >= self.mock_budget:
+                if not self.live and reserved >= self.mock_budget:
                     return deny("paid_budget_exhausted", "Тестовый лимит исчерпан. Доступен P0.")
                 if not entities(normalize(question)) and not referent:
                     return deny("domain_out_of_scope", "Назовите БКД-ПК-RF.2 или СЛДКС-1.")
             count = db.execute("SELECT count(*) FROM turns WHERE day=?", (day,)).fetchone()[0]
-            if count >= 20:
+            if not self.lab and count >= 20:
                 return deny("daily_limit", "Достигнут дневной лимит вопросов.")
-            if series >= 10:
+            if not self.lab and series >= 10:
                 return deny("series_limit", "Обратитесь к специалисту или вернитесь после 30 минут бездействия.")
-            cooldown = COOLDOWNS[series]
+            cooldown = 0 if self.lab else COOLDOWNS[series]
             if cooldown and last and now - last["received"] < cooldown:
                 return deny("cooldown", "Подождите перед следующим вопросом.",
                             retry_after=max(1, int(cooldown - (now - last["received"]) + 0.999)))
+            if self.live and mode != "P0":
+                try:
+                    self.live.reserve(request)
+                except ValueError as exc:
+                    return deny("paid_budget_blocked", str(exc))
             anchors = list(spans(question))
             admitted = dict(original_question_exact=question, anchors=anchors, referent=referent,
                             request_id=request, source=self.catalog.manifest(),
@@ -144,6 +202,11 @@ class Pilot:
         except Exception:
             answer = deny("verifier_internal_error", MESSAGES["verifier_internal_error"], "error")
             new_referent = referent
+        answer["route_used"] = mode
+        if mode != "P0" and self.live:
+            receipt = self.live.receipt(request)
+            answer["paid_receipt"] = receipt
+            answer["provider_attempts"] = receipt.get("attempts", 0)
         with self.tx() as db:
             db.execute("""UPDATE turns SET stage='READY', response=?, responded=?, referent=?
                           WHERE request=?""",
@@ -157,6 +220,8 @@ class Pilot:
             if updated.rowcount != 1:
                 raise RuntimeError("Provider attempt fence")
         try:
+            if self.live:
+                return self.live.dispatch(request, mode, payload)
             return self.mock(mode, payload)
         except (TimeoutError, ValueError):
             return None
@@ -165,19 +230,31 @@ class Pilot:
         request = admitted["request_id"]
         reason = None
         if mode == "P1":
-            plan = self.dispatch(mode, request, {"question": admitted["original_question_exact"]})
-            if not isinstance(plan, dict) or set(plan) != {"interpretation_status", "need_ids"} or (
+            preliminary, _ = finalize(admitted["original_question_exact"], admitted["anchors"], admitted["referent"])
+            options = interpretation_options(admitted["original_question_exact"], preliminary, self.catalog)
+            plan = self.dispatch(mode, request, {"question": admitted["original_question_exact"],
+                                                 "referent": admitted["referent"], "allowed_options": options})
+            if not isinstance(plan, dict) or set(plan) not in ({"interpretation_status", "need_ids"}, {"interpretation_status", "need_ids", "interpretations"}) or (
                 plan["interpretation_status"] not in ("supported", "unsupported")
                 or not isinstance(plan["need_ids"], list)
                 or any(not isinstance(item, str) for item in plan["need_ids"])
                 or len(set(plan["need_ids"])) != len(plan["need_ids"])
             ):
                 reason = "invalid_model_plan"
+            elif "interpretations" in plan and (not isinstance(plan["interpretations"], list) or any(item not in options for item in plan["interpretations"])):
+                reason = "invalid_model_plan"
             elif plan["interpretation_status"] == "unsupported":
                 reason = "interpretation_unsupported"
         needs, referent = finalize(admitted["original_question_exact"], admitted["anchors"], admitted["referent"])
         if mode == "P1" and reason is None and set(plan["need_ids"]) - {need.id for need in needs}:
             reason = "invalid_model_plan"
+        if mode == "P1" and reason is None:
+            suggestions = plan.get("interpretations", [])
+            selected = {item["need_id"]: item["attribute"] for item in suggestions}
+            if len(selected) != len(suggestions) or set(selected) - set(plan["need_ids"]):
+                reason = "invalid_model_plan"
+            else:
+                needs = [replace(need, attribute=selected.get(need.id, need.attribute)) for need in needs]
         frozen = [dict(asdict(need), span=list(need.span)) for need in needs]
         fingerprint = hashlib.sha256(encode([admitted, frozen]).encode()).hexdigest()
         with self.tx() as db:
@@ -191,6 +268,8 @@ class Pilot:
         selection = None
         if mode == "P2":
             plan = self.dispatch(mode, request, {
+                "question": admitted["original_question_exact"], "needs": frozen,
+                "evidence": {record.id: record.text for group in candidates.values() for record in group},
                 "question_needs_hash": fingerprint,
                 "candidates": {key: [record.id for record in records] for key, records in candidates.items()},
             })
@@ -219,10 +298,13 @@ class Pilot:
                 elif need.attribute == "ambiguous":
                     failure = "ambiguous_question"
                 elif not records:
-                    failure = ("source_scope_not_indexed" if need.attribute in {"pdf", "terminal"}
+                    failure = ("source_scope_not_indexed" if (need.attribute in {"pdf", "terminal"} or need.attribute.startswith("pdf_"))
                                else "insufficient_evidence")
-            conflict = (not failure and need.attribute not in {"composition", "generation", "manual", "power"}
-                        and len({encode(record.value) for record in records}) > 1)
+            values = {}
+            for record in records:
+                values.setdefault(record.attribute, set()).add(encode(record.value))
+            conflict = not failure and need.attribute not in {"composition", "generation", "manual", "feature"} and any(
+                len(items) > 1 for items in values.values())
             if conflict:
                 conflicted.add(need.id)
                 failure = "applicable_source_conflict"
@@ -247,6 +329,9 @@ class Pilot:
                 diagnostics.append(dict(need_id=need.id, reason_code=failure))
                 lines.append(MESSAGES[failure])
             else:
+                if selection is not None and records:
+                    by_id = {record.id: record for record in records}
+                    records = [by_id[key] for key in selection[need.id]]
                 for record in records:
                     if isinstance(record, DocumentReference):
                         self.bind(documents, lines, need, record, "document_reference_id")
@@ -256,7 +341,8 @@ class Pilot:
         if status in {"clarification", "error"}:
             positions.clear()
             lines = [MESSAGES[code]]
-        return dict(status=status, reason_code=code, text="\n".join(dict.fromkeys(lines)),
+        retrieval = self.catalog.search(admitted["original_question_exact"], limit=3)
+        return dict(status=status, reason_code=code, retrieval_candidates=retrieval, text="\n".join(dict.fromkeys(lines)),
                     question_needs=frozen, question_needs_hash=fingerprint, dependencies=dependencies,
                     verified_claims=claims, document_references=documents, conflict_positions=positions,
                     unresolved_need_ids=[item["need_id"] for item in diagnostics],
@@ -291,6 +377,10 @@ class Pilot:
             return [record for key in ("dc", "ac")
                     for record in self.catalog.records.get((need.entity, key), [])]
         records = self.catalog.records.get((need.entity, need.attribute), [])
+        if need.attribute == "composition":
+            configuration = {"m2": "M2 с АРМ диспетчера", "m2_standalone": "М2 без компьютера",
+                             "gen1": "1 поколение, аналоговый звук", "gen2": "2 поколение, серия М"}.get(need.variant)
+            return [r for r in records if r.configuration == configuration]
         if need.attribute == "generation" and need.variant == "m2":
             return [record for record in records if "серия М2" in record.text]
         return records

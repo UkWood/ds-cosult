@@ -3,13 +3,21 @@ from dataclasses import dataclass, replace
 import re
 import unicodedata
 
+from .discovery import pins
+
+# Only pinned product titles are aliases. In particular prefix matches cannot
+# turn a different hardware revision into an existing device.
+PRODUCT_NAMES = {f"device{i}": (s["key"], s["title"]) for i, s in enumerate(pins()["sources"])
+                 if s["type"] == "device" and s["key"] != "bkd"}
+product_aliases = "|".join(f"(?P<{group}>{re.escape(name)})"
+                           for group, (_, name) in PRODUCT_NAMES.items())
 ALIASES = re.compile(
     r"(?<![\w-])(?:(?P<bkd>бкд[ -]*пк[ -]*(?:rf|рф)[ .-]*2|bkd[ -]*pk[ -]*rf[ .-]*2)"
-    r"|(?P<sld>слдкс[ -]*1|sldks[ -]*1))(?![\w-]|\.\d)", re.I
+    r"|(?P<sld>слдкс[ -]*1|sldks[ -]*1)|" + product_aliases + r")(?![\w-]|\.\d)", re.I
 )
 UNSUPPORTED_MODEL = re.compile(r"(?<!\w)(?:бкд[ -]*пк|bkd[ -]*pk|слдкс|sldks)[ -]*[\w.-]+", re.I)
 POLICY = "loopback-v1"
-DICTIONARY = "russian-two-entity-v1"
+DICTIONARY = "russian-dossiers-v2"
 
 
 @dataclass(frozen=True)
@@ -24,9 +32,16 @@ class QuestionNeed:
 PATTERNS = (
     ("compatibility", r"совместим|подходит|использовать.+(?:в|с)\s|входит ли"),
     ("terminal", r"клемм|распинов|контакт|подключить|схем[ауеы]"),
+    ("humidity", r"влажност"),
+    ("lifetime", r"срок.{0,18}служб|срок эксплуатации|сколько лет.{0,22}(?:работ|служ)"),
+    ("ip", r"степен[ьи] защиты|класс защиты|защита корпуса"),
+    ("cold_start", r"холодн.{0,8}старт"),
+    ("input_resistance", r"входн.{0,10}сопротивлен|сопротивлен.{0,25}вход"),
+    ("ipl_length", r"длин.{0,20}(?:кабел|лини).{0,12}ипл"),
+    ("radio", r"радиоканал|сколько sim|сколько сим"),
     ("temperature", r"температур"),
-    ("mass", r"масс|вес"),
-    ("dimensions", r"габарит|размер"),
+    ("mass", r"\bмасс|\bвес"),
+    ("dimensions", r"габарит|размер|сколько (?:места|пространства).{0,12}займ"),
     ("ethernet", r"(?:скорост|уровень).*ethernet"),
     ("interfaces", r"интерфейс"),
     ("dc", r"постоянн"),
@@ -55,7 +70,8 @@ def normalize(text):
 
 
 def entities(text):
-    return tuple(dict.fromkeys(match.lastgroup for match in ALIASES.finditer(text)))
+    return tuple(dict.fromkeys(PRODUCT_NAMES.get(match.lastgroup, (match.lastgroup,))[0]
+                               for match in ALIASES.finditer(text)))
 
 
 def spans(question):
@@ -87,6 +103,8 @@ def finalize(question, anchors, referent):
         if UNSUPPORTED_MODEL.search(ALIASES.sub("", clause)):
             needs.append(QuestionNeed(f"n{len(needs)+1}", (start, end), None, "unknown"))
             continue
+        if needs and re.fullmatch(r"(?:поколение|серию|конфигурацию) (?:не знаю|не помню)", clause):
+            continue
         if clause in {"если да", "если это так"} and needs:
             continue
         # Corrections update referent selection without supplying technical facts.
@@ -102,6 +120,8 @@ def finalize(question, anchors, referent):
         matches = {key for key, regex in PATTERNS if re.search(regex, clause)}
         if matches & {"dc", "ac"}:
             matches.discard("power")
+        if "composition" in matches:
+            matches.discard("generation")
         if "purpose" in matches:
             matches.discard("feature")
         if "ethernet" in matches:
@@ -111,11 +131,23 @@ def finalize(question, anchors, referent):
             attribute = "manual"
         elif re.search(r"руководств|pdf|паспорт", clause) and attribute != "terminal":
             attribute = "pdf"
-        if re.search(r"блока питания|двигател|хранени|цвет|влажност|погрешност|мощност|антенн|парол|срок службы", clause):
+        if re.search(r"блока питания|двигател|хранени|цвет|погрешност|мощност|антенн|парол", clause):
             attribute = "unknown"
+        from .pdf_sources import requested_page
+        page = requested_page(clause)
+        if page and model in {"sld", "bkd"}:
+            attribute = page
         variant = None
         if attribute == "composition":
-            variant = "m2" if re.search(r"[мm]2", clause) and "без компьютер" not in clause else "unresolved"
+            variants = set()
+            if re.search(r"перв.{0,6} поколен|1[- ]*(?:го )?поколен|аналогов.{0,8}звук", clause):
+                variants.add("gen1")
+            if re.search(r"втор.{0,6} поколен|2[- ]*(?:го )?поколен|сери[ияю].{0,2}[мm]\b", clause):
+                variants.add("gen2")
+            if re.search(r"[мm]2\b|треть.{0,6} поколен|3[- ]*(?:го )?поколен", clause):
+                standalone = re.search(r"без (?:персонального )?(?:компьютер|арм|пк)|автономн", clause)
+                variants.add("m2_standalone" if standalone else "m2")
+            variant = next(iter(variants)) if len(variants) == 1 else "unresolved"
         elif attribute == "generation" and model == "sld" and re.search(r"[мm]2", clause):
             variant = "m2"
         elif model == "sld" and re.search(r"серии\s+[мm]|поколени[ея]\s*[123]", clause):
