@@ -25,7 +25,7 @@
 - Controlled renderer coverage vs linguistic quality; complex comparisons may need additional approved templates, not unchecked model paraphrases.
 - Exact supported typed attribute vocabulary and unit conversion/equivalence rules.
 - Input token counter for direct DeepSeek model and margin, plus how to gate packets where required evidence exceeds 10k.
-- 20 daily **billable provider attempts** versus **accepted user turns**, especially when a response is locally assembled at zero provider cost. Require explicit reconciliation before implementation, without changing DS-SEC-07 by inference.
+- **RESOLVED by owner DS-SEC-09 (2026-11-18):** 20 **accepted visitor questions** per canonical IP/operator-calendar day, including locally answered/cache questions, while actual provider POST attempts and USD spending are tracked separately. This supersedes the former billable-only reading of DS-SEC-07; idempotent admission/concurrency tests remain to be executed.
 - Operational values still unset: actual IANA reset timezone, global dollar budgets, support contacts, verified trusted proxy topology, privacy notice and log deletion policy implementation details.
 - Grounding: only 3/12 PDF byte-pinned by prior WSL reports, 0 expert-approved benchmark GT, P4/P5 full claim-level factual review open; **NO Corpus Freeze**.
 
