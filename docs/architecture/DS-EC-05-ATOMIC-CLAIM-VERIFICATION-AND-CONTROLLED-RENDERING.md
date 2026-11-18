@@ -102,7 +102,7 @@ Once final-policy verification succeeds, the rendered `answer_text` must **not**
 
 | Gate | Owner | Required condition / fail behavior |
 |---|---|---|
-| G0 Admission | Server | Deterministic, conservative **plausible Saturn-domain screen WITHOUT paid classifier**, max 1,200 visitor chars/8KiB body, IP ownership, session/series/day quota (20 accepted questions including local) and request-id atomic admission. For obviously outside-domain/unknown scope, static notice or clarification without debit/paid inference. Global USD budget guards paid dispatch, not automatically all zero-call local processing (v0.2 design) |
+| G0 Eligibility + route-specific atomic admission | Server | Unpaid deterministic Saturn-domain/IP/body/series/day screen. For P1/P2 choose route and **verify complete <=10k prompt, <=450 output and USD affordability BEFORE charging visitor slot**, then atomically commit **one accepted turn + one provider POST reservation + global USD + exclusive IP fence**. For P0 commit only one visitor turn. Any preflight failure/out-of-domain => 0 visitor debit / 0 POST |
 | G1 Source snapshot | Server | Exactly one pinned SourceBundle/policy revision, approved site/PDF provenance, no mixed versions |
 | G2 Entity and need resolution | Server + optional P1 model interpret | Entity/variant/QuestionNeeds via local resolver or one P1 QuestionInterpretationPlan call **ONLY after mandatory shared ProviderDispatchGuard preflight before any API POST**; no LLM classifier before G0 admission |
 | G3 Source and retrieval integrity | Server | Required source locator/checksum/parser state valid; distinguish unindexed corpus, unavailable source and factual absence |
@@ -198,7 +198,7 @@ Owner-approved hard runtime constraints remain **≤10,000 entire provider input
 
 Three disjoint paths:
 - **Local answer path (0 calls):** need/entity retrieval and deterministic full/partial/missing answer; no LLM. **Still consumes one of 20 accepted daily visitor questions** under DS-SEC-09.
-- **Model interpretation path (1 call):** only if natural-language intent/referent ambiguity needs constrained parsing. Then local source retrieval and deterministic rendering; **do not** call a second model for wording.
+- **Model interpretation path (1 call):** for plausibly in-domain text, select P1, prepare full bounded prompt and cost BEFORE admission; **atomically debit visitor turn and reserve single POST/USD/fence**, then request QuestionInterpretationPlan. Validate locally, retrieve and render deterministically; **never** make another paid call to polish wording.
 - **Model plan path (1 call):** local entity/need resolution succeeded; DeepSeek may choose ordered Fact/Relation IDs and display mode from bounded EvidencePacket; independent source/policy verifier gates final answer. No free-text technical explanation.
 - **Blocked path (0 calls):** IP/session/daily count, 11th-series support, global USD budget, overlength/out-of-scope, false system-role override, or over-10k unsafely irreducible packet returns static/safe server result.
 
@@ -208,7 +208,7 @@ After source bundle, locale, variant or policy revision changes, invalidate cach
 
 ## 9. Privacy-safe rendering, audit and state commit
 
-- On admitted visitor request, backend atomically reserves a daily question slot **once** using an idempotency key; if local answer chosen, provider POST count remains **0**, if one paid attempt dispatched, its own attempt counter increases once.
+- Route-eligible questions enter token/cost preflight before debit. P0 local: atomically commit 1 accepted visitor turn only. P1/P2: after full prompt/token/monetary preflight, **one transaction** commits a visitor turn, one provider attempt, USD reserve, and IP fence. Preflight-denied/overbudget questions consume 0 visitor turns and make 0 paid POSTs. After acceptance, later provider/verifier failure does not automatically refund the turn. Idempotent replay never double-charges.
 - Source-bound technical state changes happen only through DS-EC-04 typed `DialogState` transitions with CAS. Verified Fact/Relation IDs are stored, not arbitrary text or citation prose. Untrusted model output cannot mutate `policy_revision`, SourceBundle or server quota.
 - Private audit stores **exact accepted visitor question and actual final displayed answer**, UTC received/sent timestamps and canonical IP, source-bundle/citation IDs and status, provider usage/cost. Raw IP/question/answer retention default **30 days** under restricted access and applicable privacy legal review. Do not place real transcripts or IP in public GitHub.
 - If audit persistence fails, implementation needs a declared fail-closed/write-ahead procedure to avoid an unlogged accepted answer or phantom charged retry; reject/rate-block requests produce bounded security events.
@@ -334,7 +334,7 @@ Replace a literal single-pass understanding of G0..G10 with **conditional P0/P1/
 
 ### 12.4 Atomic delivery/logging and public/private data (CR-I01/I08)
 
-DS-EC-04 v0.2 defines request state machine RECEIVED→VALIDATED→ADMITTED→(LOCAL or PROVIDER_RESERVED→DISPATCHED→RESOLVED/UNCERTAIN)→VERIFYING→OUTPUT_STAGED→DELIVERED or DELIVERY_UNCERTAIN. ProviderDispatchGuard performs input/token/cost preflight before one durable provider attempt; no speculative retry on unknown bill. A deterministic answer is staged with durable **exact final text, question, UTC/IP audit** in private storage before delivery. A response transport failure may replay the stored final answer **only to the original authenticated anonymous session** without additional quota or paid call. If audit persistence fails, fail safely instead of silently claiming successful logged delivery.
+DS-EC-04 v0.2 defines request states RECEIVED→VALIDATED→ROUTE_READY (no debit)→ADMITTED (atomic turn debit and, for paid routes, provider+USD+IP fence)→PROVIDER_RESERVED/DISPATCHED/RESOLVED or local→VERIFYING→OUTPUT_STAGED→DELIVERED/DELIVERY_UNCERTAIN. ProviderDispatchGuard performs full input/token/cost preflight **before any accepted-turn debit on P1/P2**; impossible or exhausted paid inference is rejected without visitor turn debit. Deterministic final output is staged with private Q/A/IP/UTC audit before delivery; no speculative retry on unknown bill.
 
 Public VerifiedAnswerResult excludes private canonical IP/raw transcripts/cookies/API keys. Actual 30-day staff-only audit, legal basis/notice, tested trusted proxy topology, organizational IANA reset timezone, verified support contacts, real daily/monthly USD budgets and encryption/backup deletion settings remain **operator-provided launch gates**; no fictitious production values.
 
