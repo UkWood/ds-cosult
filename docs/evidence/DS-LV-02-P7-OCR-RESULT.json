@@ -1,0 +1,61 @@
+{
+  "test_id": "DS-LV-02-P7-OCR",
+  "source": "user-provided local WSL redacted stdout",
+  "source_timestamp_utc": "2026-11-17T21:31:39.068818+00:00",
+  "script_source_commit": "6779014bfd21e4749e1ff090ad4b52154530c342",
+  "script_git_blob_sha": "b2901a91df937999558a38b357b745c23f4f7f7a",
+  "script_sha256_owner_reported": "7829870d2fe42fb33f1ba7c70b3f739e899a5ab6c10fe076903d3f12e5b6c18c",
+  "owner_approval": "docs/tasks/DS-LV-02-P6-P9-OWNER-BLANKET-GO.md",
+  "purpose_requested": "text_recognition",
+  "fixture_sha256": "069a6f1192bd80b10315302a85bedb3f1c79f76973d4f504b25645385cc9c286",
+  "fixture_size_bytes": 1031,
+  "timestamp_utc": "2026-11-17T21:31:39.068818+00:00",
+  "http_requests_attempted": 1,
+  "max_http_requests": 1,
+  "file_uploaded_to_Files_API": false,
+  "external_url": "https://api.deepseek.com/v1/tools/ocr",
+  "actual_billing_usd": null,
+  "status": "OCR_PAGE_RETURNED_REVIEW_NEEDED",
+  "error_type": null,
+  "http_status": 200,
+  "api_error_present": false,
+  "ocr_object": "ocr.result",
+  "purpose_observed": "text_recognition",
+  "page_count": 1,
+  "pages_count": 1,
+  "page_indices": [
+    0
+  ],
+  "page_finish_reasons": [
+    "stop"
+  ],
+  "ocr_chars": 226,
+  "ocr_sha256": "a337f5e6d6bc2de64321c818985ef3cc1c696b8aa3a1b8f8e78649dd9e6c783f",
+  "ocr_preview": "DS-P6-SYNTHETIC-2026\n\nSYNTHETIC DEMO - NO PRIVATE INFORMATION\n\nDevice FENIX-17; Capacity 12.4 L; Code TX-731\n\nDevice ORBIT-5; Capacity 6.8 L; Code RB-204\n\nGraphic: an unlabeled colored shape is below.\n\nEND OF SYNTHETIC FIXTURE",
+  "contains_layout_tokens": false,
+  "expected_terms_found": {
+    "FENIX-17": true,
+    "12.4": true,
+    "TX-731": true,
+    "ORBIT-5": true,
+    "6.8": true,
+    "RB-204": true
+  },
+  "all_expected_terms_found": true,
+  "usage": {
+    "input_tokens": 401,
+    "output_tokens": 84,
+    "total_tokens": 485
+  },
+  "provider_invoice_usd": null,
+  "estimated_success_page_cost_usd": 0.000225,
+  "latency_ms": 2708,
+  "architecture_result": "PASS_WITH_REVIEW_NOTES",
+  "limitations": [
+    "Standalone OCR on one synthetic one-page PDF; not proof of performance on real Saturn technical PDFs.",
+    "Returned text does not describe graphical square colors; text_recognition is primarily text, compare P6-RICH for simple colors.",
+    "OCR 485 usage tokens reported for reference and not billed at chat token rates.",
+    "Actual provider invoice not obtained.",
+    "Only owner-provided redacted result was inspected; no direct API replay."
+  ]
+}

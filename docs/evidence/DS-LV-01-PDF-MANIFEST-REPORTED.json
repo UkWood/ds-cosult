@@ -1,0 +1,71 @@
+{
+  "schema": "ds-lv-01.pdf-manifest.reported.v0.1",
+  "date": "2026-11-17",
+  "source": "Submitted DS-LV-01 Final Linux/WSL Validation Report (user-provided)",
+  "verification_level": "LINUX_REPORTED_LOCAL_SHA256_CHECK_PASS",
+  "independent_binary_rehash_performed_by_architecture": false,
+  "local_reported_manifest": "/home/uk/ds-consult-validation/logs/pdf-evidence-manifest.json",
+  "local_manifest_received_by_architecture": false,
+  "site_commit_candidate": "084d759487bfab6e111549c9b5469711ac5fc13e",
+  "documents": [
+    {
+      "id": "PDF-P01",
+      "name": "СОС-95",
+      "filename": "sos95_re.pdf",
+      "url": "https://www.mnppsaturn.ru/ftp/public/doc/sos-95/re%20SOS-95.pdf",
+      "sha256": "2dce9d7a2b4c2d0cbb222e4233c164523b2605d80ca20eb0abd2b5c1bd39a9ee",
+      "size_bytes": 3624002,
+      "physical_pages": 195,
+      "pdf_version": "1.5",
+      "selected_pages": [
+        9
+      ],
+      "sha256_verification": "PASS_REPORTED",
+      "page_review": "PASS_WITH_REVIEW_NOTES_REPORTED",
+      "expert_approved": false
+    },
+    {
+      "id": "PDF-P02",
+      "name": "СЛДКС-1",
+      "filename": "sldks1_re2011_p1.pdf",
+      "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf",
+      "sha256": "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f",
+      "size_bytes": 5017331,
+      "physical_pages": 83,
+      "pdf_version": "1.4",
+      "selected_pages": [
+        7,
+        18
+      ],
+      "sha256_verification": "PASS_REPORTED",
+      "page_review": "PASS_WITH_REVIEW_NOTES_REPORTED",
+      "expert_approved": false
+    },
+    {
+      "id": "PDF-P03",
+      "name": "ЕАСДКиУ",
+      "filename": "easdkiu_re.pdf",
+      "url": "https://www.mnppsaturn.ru/ftp/public/doc/iis/re_iis.pdf",
+      "sha256": "62de0ffad9f6a045c60f666d216385c5ba678ec5733be857aa2f6dea28b00486",
+      "size_bytes": 2623376,
+      "physical_pages": 79,
+      "pdf_version": "1.4",
+      "selected_pages": [
+        3,
+        4,
+        12
+      ],
+      "sha256_verification": "PASS_REPORTED",
+      "page_review": "PASS_WITH_REVIEW_NOTES_REPORTED",
+      "expert_approved": false
+    }
+  ],
+  "total_original_bytes": 11264709,
+  "notes": [
+    "Only published URL and hash metadata stored here, no PDF/PNG bytes.",
+    "Physical pages in selected_pages are 1-based.",
+    "Review status does not imply independently approved Ground Truth.",
+    "API billing in USD not independently verified.",
+    "No restricted benchmark included."
+  ]
+}

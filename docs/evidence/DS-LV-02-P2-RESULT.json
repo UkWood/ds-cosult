@@ -1,0 +1,45 @@
+{
+  "schema": "ds-lv-02.p2.redacted-observation.v0.1",
+  "source": "Owner-provided terminal JSON from local Linux/WSL ds_lv_02_p2_search.py",
+  "independent_api_replay_by_architecture": false,
+  "independently_opened_returned_url": true,
+  "test_id": "DS-LV-02-P2",
+  "authorization": "OWNER_GO_2026-11-17_ONE_SEARCH_USD_0.01",
+  "provider": "direct DeepSeek",
+  "endpoint": "https://api.deepseek.com/v1/tools/search",
+  "query": "DeepSeek API Search Fetch site:api-docs.deepseek.com",
+  "count_requested": 1,
+  "need_content": false,
+  "http_requests_attempted": 1,
+  "model_invoked": false,
+  "fetch_invoked": false,
+  "files_uploaded": false,
+  "timestamp_utc": "2026-11-17T19:00:23.340770+00:00",
+  "result_count": 1,
+  "search_results": [
+    {
+      "title": "The full DeepSeek App experience, now via API | DeepSeek API Docs - The full suite of DeepSeek application APIs is now available: web search, file input, URL reading, model safety, ASR, TTS and mo...",
+      "url": "https://api-docs.deepseek.com/news/news261113/#1",
+      "valid_url": true,
+      "domain": "api-docs.deepseek.com",
+      "snippet_preview": "Search, Fetch, OCR, ASR, and TTS are also available as standalone APIs for custom workflows. ... Tool Price Search $ 0.75 / 1K requests Fetch $ 0.75 / 1K requests OCR $ 0.225 / 1K pages",
+      "rerank_score": 2.539104461669922,
+      "authority": 3,
+      "date": "2026-11-12T16:00:00+00:00",
+      "returned_content_empty": true
+    }
+  ],
+  "estimated_search_charge_usd": 0.00075,
+  "actual_billing_usd": null,
+  "status": "PASS",
+  "http_status": 200,
+  "api_error_present": false,
+  "latency_ms": 862,
+  "privacy_note": "No API key, raw response headers, or private benchmark data shared.",
+  "acceptance_limits": [
+    "Search API only, not model-driven deepseek_web_search",
+    "Returned result is untrusted retrieval until source verified",
+    "No billed amount verified; no owner GO remains for P2 or P3",
+    "Source URL opened independently in the architecture session; local Search API request not replayed"
+  ]
+}

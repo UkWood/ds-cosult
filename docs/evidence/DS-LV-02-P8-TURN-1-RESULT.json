@@ -1,0 +1,31 @@
+{
+  "test_id": "DS-LV-02-P8-TURN-1",
+  "turn": 1,
+  "timestamp_utc": "2026-11-17T22:07:31.158028+00:00",
+  "model_requested": "deepseek-flash",
+  "thinking_requested": "disabled",
+  "tools_declared": [],
+  "max_tokens": 192,
+  "http_requests_attempted": 1,
+  "http_status": 200,
+  "response_model": "deepseek-flash",
+  "finish_reason": "stop",
+  "reasoning_present": false,
+  "tool_calls_present": false,
+  "question": "Учебная карточка: ЛИРА-17 — питание 12 В, интерфейс RS-485; ОРБИТА-5 — питание 24 В, интерфейс Ethernet. Назови параметры ЛИРА-17.",
+  "answer_preview": "ЛИРА-17: питание 12 В, интерфейс RS-485.",
+  "answer_sha256": "bd4b441fac779bf5525f830aacb1092bb042772885d5b93732e5504afe71a6e3",
+  "usage": {
+    "prompt_tokens": 123,
+    "completion_tokens": 19,
+    "total_tokens": 142,
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 123
+  },
+  "peak_estimate_usd": 0.0000597,
+  "cumulative_peak_estimate_usd": 0.0000597,
+  "actual_billing_usd": null,
+  "status": "TURN_COMPLETE_REVIEW_NEEDED",
+  "error_type": null,
+  "latency_ms": 1097
+}

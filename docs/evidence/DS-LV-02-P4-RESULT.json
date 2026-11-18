@@ -1,0 +1,103 @@
+{
+  "schema": "ds-lv-02.p4.redacted-observation.v0.1",
+  "source": "Owner-provided local WSL stdout from pinned scripts/validation/ds_lv_02_p4_web_search.py",
+  "provenance_limitations": [
+    "Architecture Session A did not replay paid DeepSeek request",
+    "Only 480-character answer_preview available, not full model answer",
+    "Search source list truncated to 8 URLs by P4 script, model reported 13 sources",
+    "Citation/source overlap is structural; not claim-by-claim grounding",
+    "Provider billing not independently verified",
+    "Outer HTTP request count does not equal billed internal searches"
+  ],
+  "test_id": "DS-LV-02-P4",
+  "script_authorization_field": "P4_NUMERIC_BUDGET_GO_REQUIRED_BEFORE_PAID_RUN",
+  "authoritative_owner_go_doc": "docs/tasks/DS-LV-02-P4-OWNER-GO.md",
+  "owner_approved_organizational_limit_usd": 0.01,
+  "approved_http_requests": 1,
+  "authorization_exhausted": true,
+  "gateway": "direct",
+  "requested_model": "deepseek-flash",
+  "thinking_requested": "disabled",
+  "declared_tools": [
+    "deepseek_web_search"
+  ],
+  "max_tokens": 400,
+  "http_requests_attempted": 1,
+  "timestamp_utc": "2026-11-17T19:40:03.830157+00:00",
+  "http_status": 200,
+  "api_error_present": false,
+  "model_observed": "deepseek-flash",
+  "finish_reason": "stop",
+  "answer_preview": "Официальный анонс DeepSeek от 13 ноября 2026 года действительно существует, и он подтверждает открытие возможностей **Search** и **Fetch** (наряду с другими функциями) для разработчиков.\n\nВот две запрошенные вами возможности, которые стали доступны как отдельные API:\n\n1.  **Search (Поиск)**: Позволяет выполнять поиск в интернете или по изображениям. В контексте диалога (при использовании инструмента `deepseek_web_search`) модель может автоматически инициировать поиск и отвеча",
+  "answer_preview_char_limit": 480,
+  "answer_has_cyrillic": true,
+  "search_tool_invoked": true,
+  "search_calls_total": 1,
+  "search_calls_completed": 1,
+  "search_queries_total": 3,
+  "unexpected_tool_calls": 0,
+  "search_call_observations": [
+    {
+      "status": "completed",
+      "query_count": 3,
+      "source_count": 13,
+      "error_code": null
+    }
+  ],
+  "source_urls": [
+    "https://api-docs.deepseek.com/updates/#1",
+    "https://api-docs.deepseek.com/updates",
+    "https://api-docs.deepseek.com/news/news261113/",
+    "https://api-docs.deepseek.com/zh-cn/updates.md#1",
+    "https://api-docs.deepseek.com/updates.md#1",
+    "https://api-docs.deepseek.com/updates/",
+    "https://api-docs.deepseek.com/zh-cn/news/news261113/",
+    "https://api-docs.deepseek.com/zh-cn/updates/#1"
+  ],
+  "citation_urls": [
+    "https://api-docs.deepseek.com/news/news261113/",
+    "https://api-docs.deepseek.com/zh-cn/updates.md#1",
+    "https://api-docs.deepseek.com/news/news261113/",
+    "https://api-docs.deepseek.com/zh-cn/updates.md#1",
+    "https://api-docs.deepseek.com/zh-cn/updates.md#1",
+    "https://api-docs.deepseek.com/zh-cn/news/news261113/",
+    "https://api-docs.deepseek.com/zh-cn/updates/#1",
+    "https://api-docs.deepseek.com/news/news261113/",
+    "https://api-docs.deepseek.com/zh-cn/news/news261113/"
+  ],
+  "citation_source_overlap": true,
+  "usage": {
+    "prompt_tokens": 9393,
+    "completion_tokens": 303,
+    "total_tokens": 9696,
+    "tool_search": 3,
+    "tool_fetch": 0
+  },
+  "billed_tool_search": 3,
+  "billed_tool_fetch": 0,
+  "estimated_peak_cost_usd": 0.0054315,
+  "estimated_offpeak_cache_miss_cost_usd": 0.00384075,
+  "actual_billing_usd": null,
+  "tool_gate": "PASS",
+  "citation_gate": "PASS",
+  "factual_answer_gate": "NEEDS_SOURCE_REVIEW",
+  "status": "PASS",
+  "latency_ms": 3638,
+  "independently_verified_primary_source": {
+    "url": "https://api-docs.deepseek.com/news/news261113/",
+    "article_title": "The full DeepSeek App experience, now via API",
+    "release_date": "2026-11-13",
+    "validates_general_announcement_and_search_fetch_availability": true,
+    "full_answer_claim_by_claim_verification": false,
+    "primary_source_access": "Independent official DeepSeek page web retrieval, no paid DeepSeek API calls"
+  },
+  "architecture_acceptance": "PASS_WITH_REVIEW_NOTES",
+  "quality_findings": [
+    "High prompt_tokens: 9393 despite max_tokens=400 limiting output only; model token costs and search-context amplification matter",
+    "One HTTP request performed three chargeable internal search queries and found 13 reported sources",
+    "Full response not retained: 480-character preview cannot support exhaustive accuracy claims",
+    "Citation overlap proves link coherence, not claim-level entailment",
+    "Peak rate estimate overestimates off-peak for timestamp 19:40 UTC under published pricing, assuming all input cache misses",
+    "Deprecated script authorization label predates later explicit owner GO"
+  ]
+}
