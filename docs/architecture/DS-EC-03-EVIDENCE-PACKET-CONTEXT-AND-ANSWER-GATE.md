@@ -198,27 +198,27 @@ Tests require deterministic fake source and mock provider first. No live API tes
 
 The backend first evaluates the **in-domain eligibility of the visitor text without paid LLM classification**. It may use validated canonical entity aliases, approved product/attribute vocabulary, the still-live typed comparison frame, and broad safe Saturn-domain recognition rules. Explicit outside-domain or policy-override-only requests get static out_of_scope/policy_blocked notices, **zero daily accepted-turn debit and zero model POSTs**. If there is no plausible supported domain anchor, return a local clarification without consuming a question slot or calling a model. This first-pilot conservative policy may over-clarify some natural questions; measure that risk offline.
 
-After deterministic eligibility, an otherwise plausible technical question can be admitted exactly once, charged one of 20 daily accepted turns, then **optionally** interpreted by the model. The model does not itself authorize admission or refund a turn. For a mixed technical need + injected command, retain only the legitimate scoped need, never the policy override. Legitimate “забудь прошлую тему” updates referent state, never changes system rules.
+After deterministic eligibility, a plausible in-domain question is **provisionally eligible, not yet debited**. For a paid P1/P2 path, full token/context and global-money preflight MUST pass **before** the accepted-turn debit. The backend then atomically commits **one visitor turn, one provider attempt, USD reserve and exclusive IP fence together**; a rejected preflight consumes no visitor turn. For local P0, it commits only one accepted visitor turn and uses zero paid attempts. The model never authorizes admission/refund, policy changes or source facts.
 
 Exclusive routes per accepted visitor turn:
 - P0: local entity/need → ledger → verified deterministic answer, 0 model calls;
-- P1: plausible scoped question → admitted turn → **guarded one model call to QuestionInterpretationPlan** → backend entity/need/evidence validation → local renderer, no model answer-plan call;
-- P2: scoped question → admitted turn → local retrieval/EvidencePacket → **guarded one model call to CandidateAnswerPlan** → independent verifier/renderer, no prior model interpret call;
+- P1: plausibly scoped technical question → prepare bounded interpretation prompt/cost preflight → **atomically admit 1 turn + reserve 1 POST/USD/fence together** → guarded one QuestionInterpretationPlan call → validate and locally render, no answer-plan call;
+- P2: scoped question → local retrieval/EvidencePacket → bounded prompt and cost preflight → **atomically admit 1 turn + reserve 1 POST/USD/fence together** → guarded one CandidateAnswerPlan call → verify/render, no preceding paid interpretation;
 - denied: IP busy/limit/unknown domain/policy override/overlength and other pre-admission blocks => no POST and no accepted-turn debit.
 
-Thus no call is made “for free” before the quota is consumed, and any later model classification is **not the deciding authority** for retroactive quota refund. User-visible support/clarification outcomes remain predictable.
+Thus paid POSTs require a **prior atomic question+provider+USD reserve transaction**, while a denied preflight remains uncounted. No extra paid domain classifier or retroactive model-directed quota refund exists.
 
 ### 10.2 ProviderDispatchGuard: required IMMEDIATELY BEFORE ANY PAID API POST (CR-B03)
 
 For **P1 AND P2**, the same backend-owned guard checks, in order:
-1. Validated active session/true canonical IP ownership, accepted turn + stable request ID, per-IP in-flight fencing, server policy/bundle revision and allowed one-call route. No provider action on an inadmissible turn.
+1. Validate active session/true canonical IP, **provisionally eligible** request_id with available visitor quota slot (20/day), IP fencing eligibility, fixed policy/bundle and one-call route. Do not debit a turn yet.
 2. Server-configured allowlisted model (initial deepseek-flash, thinking disabled, no native tools and tool_choice none), fixed generation configuration, max output tokens 450. Visitor controls none of these.
 3. Complete actual message serialization (true system prompt, current user text, typed state, selected evidence when any, output schema). Verified compatible tokenizer count of **the whole input <=10,000**. If exact preflight counting is unvalidated, use a tested conservative margin and refuse if unable to prove the limit. 1,200 user characters / 8KiB body remain separate caps.
-4. Conservatively calculate and **atomically** reserve one provider attempt and possible monetary spend (at prior fixed peak Flash model-only rates: 10,000 cache-miss input + 450 output = $0.00354). Global USD/day/month reservations include existing in-flight calls. No inference if budget would be exceeded or quota/lock store unavailable.
+4. Precompute conservative worst-case cost, verify global day/month budgets and outstanding reservations; **atomically commit one accepted visitor-turn debit, one paid-provider attempt, USD reservation and exclusive IP fence together** after token/cost preflight. Never accept/debit a request that cannot afford its selected paid route.
 5. Durably mark single in-flight provider-attempt identity and fence **before** dispatch. Only then POST once. On timeout/unknown billing do not retry; retain attempt and conservative cost reserve pending reconciliation.
 6. Strictly validate route-specific structured output and pass candidate only to server verification. Raw technical prose from LLM is never displayed.
 
-The **token/cost computation runs before attempt reservation**, followed by one atomic attempt+budget+fence commit. Every dispatch uses this preflight, including the early interpretation call formerly represented as G2. G5 is a *description of optional generation*, not an exemption or first/only location of guard checks.
+The **token/cost computation runs before question admission and provider reservation**. One atomic turn+attempt+budget+fence transaction precedes each paid P1 or P2 POST; P0 commits only the visitor-turn debit. On overlong/budget-blocked preflight, no paid POST and no accepted-turn debit. This applies also to early G2 P1 interpretation.
 
 ### 10.3 QuestionInterpretationPlan v0.2 (P1 only)
 
