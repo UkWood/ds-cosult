@@ -1,6 +1,8 @@
 # DS-SEC-05 — Owner-Accepted Anonymous Visitor Access, IP Lock, Daily Lockout and Dialogue Logging
 
 
+**LATER OWNER DS-SEC-10 (2026-11-18):** global DeepSeek-paid USD exhaustion blocks new paid P1/P2 calls but permits verified zero-provider P0 if all previously accepted IP/20-day/series/CPU/concurrency/private-audit restrictions pass. This is **not** a bypass of the daily visitor quota and not an exemption from a separate safety breaker. Source: `docs/decisions/DS-SEC-10-OWNER-APPROVED-PAID-BUDGET-BREAKER-LOCAL-P0.md`.
+
 **CURRENT NUMERIC APPROVAL NOTE (2026-11-18):** The owner has now approved numeric pilot defaults through `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`: 20 accepted visitor questions per canonical IP per configured calendar day (including local/cache replies; provider POST attempts separately tracked), 15-minute idle IP lease, 30-day private raw logs, plus accepted cooldown/character/token budgets. Exact operator timezone, global dollar budget, trusted proxy, support and privacy specifics must still be configured/reviewed before deployment. Original pending-decision list remains historical context.
 
 **Recorded:** 2026-11-18  
