@@ -1,7 +1,7 @@
 # DS-EC-05 — Atomic Technical Claim Verification, Citation Binding and Controlled Final Answer Assembly v0.1
 
 **Recorded:** 2026-11-18  
-**Status:** **ARCHITECTURE CONTRACT CANDIDATE — FOR INDEPENDENT OWNER REVIEW; NOT IMPLEMENTED**  
+**Status:** **ARCHITECTURE CONTRACT CANDIDATE v0.2 — AUTHOR CORRECTIONS TO CONSOLIDATED REVIEW; NEW INDEPENDENT REVIEW REQUIRED; NOT IMPLEMENTED**  
 **Scope:** independent `DS-консультант`, existing Draft PR #1 `UkWood/ds-cosult`.  
 **Inputs:** DS-EC-01–04, approved DS-SEC-01 (explicit no-fabrication), DS-SEC-07 and owner amendments DS-SEC-08 (10,000 total input tokens), DS-SEC-09 (15-minute memory expiry and 20 accepted visitor questions/IP/operator calendar day including local/cache answers).
 
@@ -102,17 +102,17 @@ Once final-policy verification succeeds, the rendered `answer_text` must **not**
 
 | Gate | Owner | Required condition / fail behavior |
 |---|---|---|
-| G0 Admission | Server | Legitimate source-domain input, max 1,200 visitor chars / 8KiB body, IP ownership/one in-flight, cooldown, **20 accepted visitor questions/IP/operator-calendar day including locally answered turns**, global budget. Admission and request-id idempotency atomic. Denied request invokes **no paid API** |
+| G0 Admission | Server | Deterministic, conservative **plausible Saturn-domain screen WITHOUT paid classifier**, max 1,200 visitor chars/8KiB body, IP ownership, session/series/day quota (20 accepted questions including local) and request-id atomic admission. For obviously outside-domain/unknown scope, static notice or clarification without debit/paid inference. Global USD budget guards paid dispatch, not automatically all zero-call local processing (v0.2 design) |
 | G1 Source snapshot | Server | Exactly one pinned SourceBundle/policy revision, approved site/PDF provenance, no mixed versions |
-| G2 Entity and need resolution | Server + optional one model parse call | Unique canonical identity/variant or typed ambiguity/clarification; split comparisons into atomic needs |
+| G2 Entity and need resolution | Server + optional P1 model interpret | Entity/variant/QuestionNeeds via local resolver or one P1 QuestionInterpretationPlan call **ONLY after mandatory shared ProviderDispatchGuard preflight before any API POST**; no LLM classifier before G0 admission |
 | G3 Source and retrieval integrity | Server | Required source locator/checksum/parser state valid; distinguish unindexed corpus, unavailable source and factual absence |
-| G4 Evidence sufficiency | Server | Each need resolved as supported, insufficient_evidence, conflict, ambiguity, scope_not_indexed, source_unavailable or processing_error |
-| G5 Bounded generation | Optional DeepSeek | Entire serialized model input <=**10,000** counted tokens, output <=**450**; 0 or 1 paid API request per admitted user turn; no native tools |
+| G4 Evidence sufficiency | Server | Uses full applicable eligible ledger and SourceCoverageReceipt from DS-EC-02 v0.2; only complete_for_declared_scope may lead to insufficient_evidence, and prompt top-K cannot hide contradictions |
+| G5 Optional bounded planning | Optional DeepSeek P2 | **P2 only when P1 has NOT consumed the turn's one-call slot.** Shared ProviderDispatchGuard runs before **both early P1 at G2 and P2 at G5**, checking entire input <=10,000 tokens, output <=450, provider attempt/idempotency + global USD reservation and no native tools |
 | G6 Candidate schema | Server | Valid allowlisted structured plan; packet, request, bundle and need IDs correct; no extra arbitrary prose |
-| G7 Atomic-claim verifier | Server | Each selected fact/relation exists, source eligible, exact entity/variant applicable, scoped need proven, all required qualifiers/units preserved, evidence binding valid |
-| G8 Conflict/coverage final policy | Server | Cannot hide contradictory applicable source evidence, cannot assert answer status if unresolved need remains, cannot relabel processing errors as absence |
+| G7 Atomic-claim verifier | Server | Verifies v0.2 EvidenceEligibilityDecision including exact locator, verified value/units/qualifiers, relation direction, evidence-to-need applicability and SourceCoverageReceipt; a valid fact ID/page number alone is insufficient |
+| G8 Conflict/coverage final policy | Server | Examines **all eligible applicable ledger assertions for each need independent of prompt selection**; status/reason mapping in normative v0.2 section below, no unsupported global absence or hidden source errors |
 | G9 Deterministic renderer | Server | Emits allowed factual template + citations only from approved VerifiedClaims; no unchecked LLM rewriting |
-| G10 Audit and accounting | Server | Store accepted exact question and **actual final displayed answer** with UTC timestamps/IP in restricted 30-day audit; separately reconcile visitor turn counter, 0/1 provider attempts, and reserved/actual spend. Never send raw private IP or transcripts to public GitHub |
+| G10 Audit and accounting | Server | Crash-safe stage private exact question + **actual final output** with UTC/IP before emission; 30-day private retention; separately account accepted-turn debit (20/day incl local), 0/1 paid attempt, reserved/actual USD; idempotent request reply, never public IP/transcripts |
 
 **Error ordering:** any G0 denial returns a static reason, without technical fact retrieval or paid model call. A downstream G3/G7 internal error remains an **error status** even if some unverifiable candidate text sounds plausible. A validated subset of independently supported claims may be rendered as `partial` provided no error is disguised and all missing/conflicting needs are explicitly represented.
 
@@ -287,3 +287,60 @@ A future independent review must trace every final technical statement through `
 **Owner's current instruction `Делай следующий этап` authorizes this architecture specification and review, NOT coding a production stage.** A combined baseline DS-EC-02–05 may be prepared for owner architecture acceptance after reviewing this document. Only then define narrowly scoped offline coding assignments under explicit owner GO.
 
 **NO Merge, DS-02 coding, new paid DeepSeek API calls (DS-QV-01 GO exhausted 6/6), production, Corpus Freeze, NEW RAG changes or writes to trusted Saturn-Main-Site (READ-ONLY).**
+
+## 12. Normative v0.2 corrections — exact status mapping, final gate and output modes
+
+**Precedence:** this section supersedes ambiguous v0.1 status/gate wording above and resolves architecture-review CR-B01/B02/B03/B04, CR-I02/I04/I05/I06 and CR-M02 at **author-correction level** only. Independent acceptance is pending. Approved visitor/DeepSeek limits remain fixed.
+
+### 12.1 Canonical need → proof → output mapping (CR-I02)
+
+The source/trust model is DS-EC-02 v0.2. Every need has one NeedResolution and (when asserting source coverage) one SourceCoverageReceipt. Every visible technical statement has a VerifiedClaim and matching claim-specific CitationBinding.
+
+| NeedResolution | VerifiedClaim proof_state | Final status when no other supported needs | Mandatory user-facing reason |
+|---|---|---|---|
+| supported + eligible evidence | eligible | answered, **only if all required needs supported** | fully_supported |
+| insufficient_evidence + complete_for_declared_scope | unsupported | needs_support | insufficient_evidence; “в проверенном указанном объёме не указано”, not physical negation |
+| scope_not_indexed / partial_index | not_indexed | needs_support | source_scope_not_indexed; **do not** say the characteristic is absent |
+| source_unavailable | source_error | error | source_unavailable, source could not be inspected |
+| processing_error (checksum/parser/index or verifier malfunction) | internal_error or source_error | error | source_integrity_error / verifier_internal_error, never insufficient_evidence |
+| ambiguous_entity_or_variant | inapplicable pending choice | clarification | ambiguous_entity / ambiguous_variant |
+| conflict of applicable source assertions | conflict | needs_support | applicable_source_conflict, cite/list both applicable positions |
+| out_of_scope / policy_blocked at pre-admission | no claim | static service notice, not answered | domain_out_of_scope / policy_override_attempt |
+| supported metadata-only document navigation | eligible (source_reference_only) | answered **for navigation need only** | document_reference_only; no claim about contents |
+| Invalid LLM plan/ID/extra field | unsupported or internal_error based on cause | safe deterministic partial/needs_support/error | invalid_model_plan, no raw text echo |
+
+**Multiple needs:** if all required needs are verified eligible/non-conflicted => answered; if one or more verified claims and any unresolved need => partial with each unresolved need explicitly named and its typed reason; if no eligible claims and any internal/source error => error; if no eligible claims and ambiguous target => clarification; if no eligible claims and unsupported/conflict/incomplete scope => needs_support with exact source/status qualification. An internal exception is never downgraded to “source did not mention property.” If a supported subset is independent of a failing need, partial must clearly mark the failing need as **error**, never as negative data. Fail closed if dependency between needs means even the supported-looking subset may be wrong.
+
+**Conflict scan independent of LLM packet:** the verifier must query all eligible ledger assertions with the same canonical subject/variant, attribute/relation, qualifier and source bundle **before** deciding conflict or coverage status, not merely inspect the source excerpts selected by the model. If a required PDF is known but not pinned/indexed, return scope_not_indexed, not insufficient_evidence.
+
+### 12.2 Source-specific claim verification and rendering (CR-B02/I04/I05)
+
+The final verifier checks per-claim EvidenceEligibilityDecision, linked to a precisely scoped Need, before any VerifiedClaim may be rendered:
+- source body/commit and canonical structured field path, OR approved original PDF bytes SHA + 1-based physical page **plus exact table row/column or text/diagram region** and parser/interpretation revision;
+- fact value/type/source-unit/normalized-unit/inequality/tolerance/polarity, attribute dictionary revision and all applicability qualifiers;
+- relation pair/source-target direction, compatibility vs connects_to semantics, firmware/accessory requirements and explicit source relation, not matching protocols;
+- availability of every citation and claim-specific proof; an approved PDF link alone is not an eligibility check.
+- SourceCoverageReceipt exact scope completeness for absent-field claims and conflict checks, with prior-bundle cache receipts invalidated.
+
+Controlled modes: single_fact, multi_fact, comparison (each cell with scoped applicability), relation (only explicitly source-proven), document_reference (metadata-only), missing_data (only complete checked scope), conflict (show alternatives/conditions), clarification, partial, service_notice. A model may select allowed fact IDs/order and layout, **not freely write explanatory technical prose**. All technical verbs/units/comparisons are generated by deterministic reviewed grammar. “Не указано” cannot appear for a known unindexed PDF or internal retrieval error. All sources in visible answer are generated by backend, not DeepSeek. Do not send final assembled text through another LLM.
+
+**Readability acceptance:** future synthetic/approved factual question packet must be blindly rated for correct referent/variant, clear distinction between unavailable vs absent and conflict, preservation of conditional compatibility, adequate natural Russian, complete need coverage and false refusals. The criterion is source accuracy **and** acceptable user comprehension. Freeform LLM rewrite remains prohibited without a separately accepted claim checking design.
+
+### 12.3 One-call/turn domain and budget ordering (CR-B03/B04/I06)
+
+Replace a literal single-pass understanding of G0..G10 with **conditional P0/P1/P2 paths** from DS-EC-03 v0.2. G0 uses conservative **unpaid** domain recognition; P1 may occur at G2 after atomic admitted-turn debit, but must pass **ProviderDispatchGuard BEFORE the paid POST**; P2 may occur at G5, but only if P1 did not consume the sole paid attempt. One-call token cap ≤10,000 entire input, server output ≤450, no native tools, atomic provider_attempt + USD reserve and exclusive IP fencing apply to **both** calls. The model can never itself grant an unaccounted free classification call.
+
+**Global USD breaker proposed operating policy:** global **paid-provider** budget exhaustion immediately prohibits P1/P2, but valid locally answerable P0 may remain available, subject to canonical IP active lease, 20 accepted turns/day including local, series/cooldown, global CPU/concurrency abuse guards and private logging. This is an explicit v0.2 recommended architecture choice under the owner's broad instruction to correct CR-I06; independent reviewer should confirm that this does not exceed owner approval. If owner prefers total chat outage on USD exhaustion, this alternative requires explicit owner decision. No dollar thresholds may be guessed.
+
+### 12.4 Atomic delivery/logging and public/private data (CR-I01/I08)
+
+DS-EC-04 v0.2 defines request state machine RECEIVED→VALIDATED→ADMITTED→(LOCAL or PROVIDER_RESERVED→DISPATCHED→RESOLVED/UNCERTAIN)→VERIFYING→OUTPUT_STAGED→DELIVERED or DELIVERY_UNCERTAIN. ProviderDispatchGuard performs input/token/cost preflight before one durable provider attempt; no speculative retry on unknown bill. A deterministic answer is staged with durable **exact final text, question, UTC/IP audit** in private storage before delivery. A response transport failure may replay the stored final answer **only to the original authenticated anonymous session** without additional quota or paid call. If audit persistence fails, fail safely instead of silently claiming successful logged delivery.
+
+Public VerifiedAnswerResult excludes private canonical IP/raw transcripts/cookies/API keys. Actual 30-day staff-only audit, legal basis/notice, tested trusted proxy topology, organizational IANA reset timezone, verified support contacts, real daily/monthly USD budgets and encryption/backup deletion settings remain **operator-provided launch gates**; no fictitious production values.
+
+### 12.5 Review scenarios and explicit claim of limits
+
+Reviewers must trace AR-T01..AR-T22 from DS-EC-AR-01, especially early G2 provider 10,001-token input -> 0 POST (AR-T05), unknown-scope local clarification -> 0 accepted slots (AR-T07), 20 local questions -> 20 turns / 0 POST (AR-T09), wrong-source PDF row -> ineligible (AR-T03), conflict outside model prompt -> conflict (AR-T02), parser error -> error (AR-T17), no post-gate LLM rewrite, and 15m memory expiration distinct from 30m series.
+
+**Not an executable schema, tested product or accepted production release.** The original 45 synthetic EC5 tests remain proposed and MUST be extended by the AR-T matrix. No new paid API GO, implementation, Merge, Corpus Freeze or Saturn/NEW RAG changes.
+
