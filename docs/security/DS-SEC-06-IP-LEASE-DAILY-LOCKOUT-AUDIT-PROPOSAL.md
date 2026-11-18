@@ -1,7 +1,7 @@
 # DS-SEC-06 — Proposed Architecture: One Active Session per IP, Daily Lockout, Private Conversation Audit
 
 
-**CURRENT APPROVAL UPDATE (2026-11-18):** Owner accepted the design defaults and implementation direction from this proposal: one active anonymous session per IP, 15-minute idle lease, fixed calendar-day 20 billable requests/IP, complete private IP/Q&A audit with 30-day raw retention, and server-side atomic quota/budget controls. Binding record: `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Deployment-specific timezone, organization global USD budget, trusted proxies, contact data and privacy review remain required. Original proposal text below preserved as rationale. No implementation authorized.
+**CURRENT APPROVAL UPDATE (2026-11-18):** Owner accepted the design defaults and implementation direction from this proposal: one active anonymous session per IP, 15-minute idle lease, fixed calendar-day 20 accepted visitor questions/IP including zero-call local/cache answers, complete private IP/Q&A audit with 30-day raw retention, and server-side atomic quota/budget controls. Binding record: `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Deployment-specific timezone, organization global USD budget, trusted proxies, contact data and privacy review remain required. Original proposal text below preserved as rationale. No implementation authorized.
 
 **Recorded:** 2026-11-18  
 **Status:** **TECHNICAL DESIGN PROPOSAL / OWNER NUMERIC APPROVAL AND IMPLEMENTATION PENDING**  
@@ -14,7 +14,7 @@
 1. `VisitorIpResolver` — canonical client IP from network peer or verified trusted proxy chain; reject untrusted forwarded headers; normalize IPv4, IPv6 (including IPv4-mapped IPv6).
 2. `AnonymousSessionManager` — random opaque HttpOnly Secure SameSite cookie `consult_session`; stores server-side random session ID; no registration/account.
 3. `IpLeaseStore` — atomic key keyed by a server-secret HMAC of canonical IP, holding session-owner ID, lease expiry, last activity, and in-flight status. Raw IP must NOT be present in Redis key names. Full canonical IP can be encrypted and retained in **private audit store** for owner-authorized logging.
-4. `DailyIpQuota` — fixed per-IP counters unrelated to the cookie and previous session lease. Candidate **20 billable accepted questions / calendar day / canonical IP**, **NOT owner-approved**. Reset epoch fixed to site-operator timezone; output exact `resets_at` timestamp.
+4. `DailyIpQuota` — fixed per-IP counters unrelated to the cookie and previous session lease. Owner-approved **20 admitted visitor questions / calendar day / canonical IP**, including locally rendered/cached responses; provider POST attempts counted separately (DS-SEC-09). Reset epoch fixed to site-operator timezone; output exact `resets_at` timestamp.
 5. `SeriesCooldown` — separate per-IP continuous-series policy of 5 no added cooldown, Q6–Q10 progressive delay, Q11+ static support; idle reset previously proposed 30m, also unapproved numerically. Avoid treating session cookie rotation as new "series".
 6. `BudgetReservation` — independent global daily/monthly monetary envelopes, per-request token/context/output hard bounds and global concurrency. No model dispatch unless reservation is committed.
 7. `ConversationAuditStore` — private DB records each accepted visitor's question, final rendered answer, two timestamps, canonical full IP, opaque pseudonymous session correlator, source snapshot ID, token costs, policy status and errors. Only designated staff access; no public website endpoint to retrieve by IP.
@@ -31,19 +31,19 @@ Proposed states:
 
 **Atomicity:** acquisition, session ownership check, per-IP Q/day increment/reservation and in-flight flag are a single all-or-nothing shared-store operation. Enforce on **every** request; frontend disabled button is presentation only. Backend failure to read lock/quota must fail closed and log an availability event, not issue an ungated paid POST.
 
-**Lease release:** explicit `Завершить консультацию` can free IP to another visitor, but cannot reset today's question counter, and never exposes prior private chat. Proposed idle lease TTL **15m** (not yet accepted), with a separate 30m continuous-series reset; state model must ensure tabs renew lease only via authenticated anonymous cookie and bounded activity, not indefinite unauthenticated keepalive spam.
+**Lease release:** explicit `Завершить консультацию` can free IP to another visitor, but cannot reset today's question counter, and never exposes prior private chat. Owner-approved idle lease TTL **15m** (and technical dialogue memory invalidation), with a separate 30m continuous-series reset; state model must ensure tabs renew lease only via authenticated anonymous cookie and bounded activity, not indefinite unauthenticated keepalive spam.
 
 **IPv6 caveat:** exact-address quota can be evaded by frequently rotating temporary IPv6 addresses. A /64 grouping or separate network rate limit may be investigated for abuse defense but is **not** a universal identity; it can accidentally block legitimate neighbors. Preserve exact-IP primary invariant and add a separate measured network/global anti-abuse layer. VPN and NAT can share IP across different humans.
 
 ## 3. Daily quota semantics (proposal)
 
 - Choose an **explicit fixed business timezone** and one daily accounting unit, e.g. `YYYY-MM-DD` in that timezone. After quota exhausted, UI shows `Предел обращений за день достигнут. Консультант станет доступен <timestamp>.`; static support contacts remain available. Business timezone **TBD by owner**, do not silently assume UTC or browser local time.
-- Count one per **admitted, billable provider attempt**, reserved before POST. Timeout still counts, because provider may bill it. A known fail-before-send (validation/rate reject) does not count toward the paid quota.
+- Count one daily **visitor question** on atomic request admission, even if the answer is rendered locally or from cache. Count attempted provider POSTs independently just before dispatch; timeout still counts as an attempted model POST. A blocked validation/rate request is not an admitted visitor question (but may generate a bounded security event).
 - One user clicking repeatedly before next allowed time must not increment paid quota or dispatch multiple calls; still monitor nonpaid abuse attempts.
 - Multi-session from same canonical IP never permits additional quota; same IP across days resets per-IP daily count, not global monetary/account quotas.
 - For user-facing fairness, allow same valid session to read its own previous replies after daily exhaustion; freeze the send control and avoid any further DeepSeek HTTP.
 
-**Owner-approved pilot defaults (DS-SEC-07/08), not yet implemented:** 20 billable requests/IP/calendar day, 15m inactivity to release active IP lock; 30m inactivity to reset progressive series; max 1200 chars, input ≤10000 tokens (full provider request, hard maximum), output ≤450, Q6–10 waits 10/20/40/60/90s. Global daily/monthly budget limits must be set before implementation.
+**Owner-approved pilot defaults (DS-SEC-07/08), not yet implemented:** 20 accepted visitor questions/IP/calendar day (including local answers), separately counted paid POSTs, 15m inactivity to release active IP lock; 30m inactivity to reset progressive series; max 1200 chars, input ≤10000 tokens (full provider request, hard maximum), output ≤450, Q6–10 waits 10/20/40/60/90s. Global daily/monthly budget limits must be set before implementation.
 
 ## 4. Private per-question audit record schema (proposal)
 
@@ -82,7 +82,7 @@ Create an event for every received attempt (including length rejects and rate bl
 ## 5. Privacy and operational acceptance gate
 
 - Even with no registration, **IP plus exact technical questions and replies can be personal information**, and questions themselves can contain contacts, passwords or commercial secrets. Applicable privacy law and international transfer/provider-processing requirements must be reviewed before public launch. EU GDPR scope requires a case-specific assessment; GDPR specifically lists IP addresses as personal data when applicable.
-- Before implementation define **purposes** (security abuse prevention, operational analysis, quality), **lawful processing basis**, **visitor-facing privacy notice**, **data recipients**, **retention and deletion period**, staff roles and log access review. Raw full IP/transcripts should not be retained indefinitely. Suggested pilot **30 days private raw logs**, but **NOT owner-approved, not a legal determination**; aggregate anonymous counters can be retained longer if truly unidentifiable.
+- Before implementation define **purposes** (security abuse prevention, operational analysis, quality), **lawful processing basis**, **visitor-facing privacy notice**, **data recipients**, **retention and deletion period**, staff roles and log access review. Raw full IP/transcripts should not be retained indefinitely. Owner-approved default **30 days private raw logs** (subject to privacy/lawful-processing launch review), **not a legal determination**; aggregate anonymous counters can be retained longer if truly unidentifiable.
 - Apply encryption in transit/at rest, secret rotation, database access restrictions, no request-level logs in public repo, backup deletion alignment and log injection escaping/sanitization. Privacy notice does not by itself prove compliance.
 - Trusted proxy/CND topology must be pinned before relying on IP-keyed state. Verify original-client IP authenticity through actual network tests; no "I saw X-Forwarded-For" trust by itself.
 
