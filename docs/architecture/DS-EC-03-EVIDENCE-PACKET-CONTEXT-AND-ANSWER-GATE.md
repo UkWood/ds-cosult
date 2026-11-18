@@ -214,17 +214,39 @@ For **P1 AND P2**, the same backend-owned guard checks, in order:
 1. Validate active session/true canonical IP, **provisionally eligible** request_id with available visitor quota slot (20/day), IP fencing eligibility, fixed policy/bundle and one-call route. Do not debit a turn yet.
 2. Server-configured allowlisted model (initial deepseek-flash, thinking disabled, no native tools and tool_choice none), fixed generation configuration, max output tokens 450. Visitor controls none of these.
 3. Complete actual message serialization (true system prompt, current user text, typed state, selected evidence when any, output schema). Verified compatible tokenizer count of **the whole input <=10,000**. If exact preflight counting is unvalidated, use a tested conservative margin and refuse if unable to prove the limit. 1,200 user characters / 8KiB body remain separate caps.
-4. Precompute conservative worst-case cost, verify global day/month budgets and outstanding reservations; **atomically commit one accepted visitor-turn debit, one paid-provider attempt, USD reservation and exclusive IP fence together** after token/cost preflight. Never accept/debit a request that cannot afford its selected paid route.
-5. Durably mark single in-flight provider-attempt identity and fence **before** dispatch. Only then POST once. On timeout/unknown billing do not retry; retain attempt and conservative cost reserve pending reconciliation.
+4. Precompute conservative worst-case cost, verify global day/month budgets and outstanding reservations; **atomically commit one accepted visitor-turn debit, one `provider_attempt_slot_reserved` record, USD reservation and exclusive IP fence together** after token/cost preflight. This slot is **authorization/reservation only**, NOT proof that a network POST was attempted. Never accept/debit a request that cannot afford its selected paid route.
+5. Before any network I/O, durably commit a **separate** `provider_post_dispatch_recorded` write-ahead event, tied to the reserved slot, and then POST at most once. If failure occurs **before** this event and the transport layer proves no send, `provider_post_attempts_ip_day` remains **0**, while the accepted question slot remains **1**. If failure occurs **after** the durable event (including a crash before socket write), the outcome is `provider_outcome_unknown` until reconciled; conservatively count **one dispatch-risk attempt** and hold USD reserve, without asserting that packets reached DeepSeek. No automatic retry of this turn.
 6. Strictly validate route-specific structured output and pass candidate only to server verification. Raw technical prose from LLM is never displayed.
 
 The **token/cost computation runs before question admission and provider reservation**. One atomic turn+attempt+budget+fence transaction precedes each paid P1 or P2 POST; P0 commits only the visitor-turn debit. On overlong/budget-blocked preflight, no paid POST and no accepted-turn debit. This applies also to early G2 P1 interpretation.
+
+### 10.2.1 R1-CR02 — Reserve is NOT actual provider dispatch
+
+The three **distinct** backend records are:
+- `provider_attempt_slot_reserved`: one call-slot and maximum USD held with visitor debit in ADMITTED; does **not** increment the counted actual/at-risk HTTP POST metric.
+- `provider_post_dispatch_recorded`: write-ahead network-dispatch-intent committed before sending HTTP. Once this exists, `provider_post_attempts_ip_day` counts **1 conservatively**, including uncertain socket send; actual proven transmission is separately observable when possible, never inferred merely from a reservation.
+- `provider_outcome_unknown`: durable dispatch event exists but transport/remote billing confirmation is absent; hold monetary reservation, count attempt for abuse/spend conservatively, **never** repeat the POST. A later reconciliation may refine billed cost but cannot cause another call in this accepted turn.
+
+At crash **ADMITTED/PRE_NETWORK** without dispatch event and with proven no outbound send: admitted question=1, reserved slot may be closed, attempted POST=0, provider charge=0 or uncharged if externally proven; complete with local safe error and **no automatic retry**. After dispatch event but before/while sending: question=1, dispatch-risk attempt=1, billing unknown, no retry even if packet may never have left the host. After provider response: question=1, attempt=1, reconcile usage without rerunning. This is not a claim of exact transactional knowledge of network delivery; conservative accounting preserves budget safety.
+
+A pre-admission token/global-USD denial remains question=0, reservation=0, dispatch=0. Repeated same request_id must use stored terminal outcome, not reissue a POST. The server must enforce these transitions in a shared durable ledger, not ephemeral per-worker variables.
 
 ### 10.3 QuestionInterpretationPlan v0.2 (P1 only)
 
 Strict output schema/typed fields: contract_version='ec-question-interpret/0.2', request_id, turn_id, bundle_id, policy_revision, intent enum (attribute_lookup, compare, relation_lookup, document_lookup, clarify, explain), entity_candidate_ids[] from server allowlist or live comparison frame, selected_variant_candidate_ids[], attribute_key_candidates[] from dictionary, relation_type_candidates[] from dictionary, reference_anchor enum (first,second,current,system,none), unresolved_slots[], interpretation_status (resolved,ambiguous,unsupported). Max lengths and array sizes to be specified in executable JSON Schema, with reject-on-extra-field validation.
 
 Model **cannot** create Entity/Fact/Relation/Evidence IDs, arbitrary URLs, a new policy, role, source, or technical values in this schema. All IDs are validated by backend against the exact active bundle and typed state. Invalid/malformed P1 response -> safe local clarification/error, **no second provider call**. P1 does not produce CandidateAnswerPlan (which refers to retrieved Fact/Relation IDs), and model self-report “out_of_scope” cannot replace server's domain admission decision.
+
+### 10.3.1 R1-CR02 — Normative valid P1 interpretation_status=unsupported
+
+If the server plausibility screen admitted an in-domain candidate, one visitor question was atomically charged, and P1's **valid** schema returns `interpretation_status=unsupported`, the backend MUST:
+1. keep the accepted visitor-question debit and the already recorded provider attempt/possible cost; **no retroactive refund or reclassification to an unadmitted request**;
+2. perform **zero P2 or other LLM calls** for this turn;
+3. create `NeedResolution=ambiguous_question` with `reason_code=interpretation_unsupported` (not `insufficient_evidence`, not a missing physical field);
+4. return `FinalStatus=clarification` using static controlled Russian wording, e.g. “Уточните, о каком оборудовании «Сатурна» и характеристике идёт речь.”; do not claim that sources were fully checked or fabricated facts;
+5. preserve prior verified DialogState source handles, and create no unapproved new entity, relation or fact. Record sanitized diagnostic and original privacy-safe audit/outcome.
+
+The model's `unsupported` is **not** authoritative evidence that the visitor is out of Saturn domain; the server's earlier unpaid domain screen remains authoritative. If local schema validation of P1 fails, use `invalid_model_plan` and a safe `clarification` or `error` according to the common cause-mapping in DS-EC-05, never a second POST. This behavior is covered by the dedicated P1-UNSUPPORTED synthetic fixture (additional to AR-T01–22).
 
 ### 10.4 Evidence packet coverage and conflict boundary
 
