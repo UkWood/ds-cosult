@@ -1,6 +1,7 @@
 # DS-SEC-08 — Owner Amendment: Full LLM Input Context Ceiling 10,000 Tokens
 
-**Recorded:** 2026-11-18  
+**Recorded:** 2026-11-18
+**Later owner decision:** DS-SEC-09 takes precedence ONLY for 15-minute active-memory interpretation and **20 accepted visitor questions/IP/operator calendar day including zero-model local answers**. The original 20 billable-provider wording below is marked historical rather than silently rewritten; the 10,000-token input cap and all other approved boundaries remain effective.  
 **Status:** **OWNER ACCEPTED — AMENDS DS-SEC-07 (SINGLE PARAMETER)**  
 **Owner instruction (verbatim):** «Считаю необходимо расширить лимит входных токенов до 10000. Внимательно скорректируй советующие документы в связи с этим изменением.»
 
@@ -12,7 +13,7 @@ The owner **replaces the approved maximum full input context of 3,000 tokens wit
 
 This newer owner directive **supersedes only** the `3000` input-token value in `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`, its DS-SEC-04 proposal origins, and DS-EC-01/03 architectural drafts and checks. The old value was correctly approved earlier, and is retained as **historical context** in append-only project history and acceptance logs; it must not be presented as a current runtime requirement.
 
-**Unchanged owner-accepted requirements**: visitor message <= 1,200 Unicode characters; HTTP JSON body <= 8 KiB; LLM output <= 450 tokens; zero-or-one API request per accepted visitor turn; Saturn-only technical scope; explicit system `Не выдумывай недостающие технические характеристики.`; trusted site/PDF sources; deterministic source-bound answer gate; one anonymous active session/IP and one in-flight; 15-minute idle IP lease; 30-minute idle series reset; no added cooldown Q1–5, 10/20/40/60/90s for Q6–10, Q11+ support handoff; 20 billable provider POST attempts/IP/organization calendar day; private 30-day visitor IP/question/answer audit; global daily/monthly spend breaker.
+**Unchanged owner-accepted requirements**: visitor message <= 1,200 Unicode characters; HTTP JSON body <= 8 KiB; LLM output <= 450 tokens; zero-or-one API request per accepted visitor turn; Saturn-only technical scope; explicit system `Не выдумывай недостающие технические характеристики.`; trusted site/PDF sources; deterministic source-bound answer gate; one anonymous active session/IP and one in-flight; 15-minute idle IP lease; 30-minute idle series reset; no added cooldown Q1–5, 10/20/40/60/90s for Q6–10, Q11+ support handoff; 20 billable provider POST attempts/IP/organization calendar day **[HISTORICAL 2026-11-18 VALUE — SUPERSEDED BY DS-SEC-09: CURRENT HARD QUOTA IS 20 ACCEPTED VISITOR QUESTIONS/IP/OPERATOR CALENDAR DAY INCLUDING LOCAL P0; paid provider attempts and USD recorded separately]**; private 30-day visitor IP/question/answer audit; global daily/monthly spend breaker.
 
 ## Required backend behavior
 
