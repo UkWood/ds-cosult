@@ -41,6 +41,7 @@ class EvidenceRef:
     snippet: str
     url: str
     parser: str = "saturn-site-v1"
+    region: dict | None = None
 
 
 @dataclass(frozen=True)

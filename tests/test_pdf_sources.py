@@ -20,9 +20,10 @@ def fixture_bytes():
     grid = "20 620 200 100 re S 120 620 m 120 720 l S 20 670 m 220 670 l S\n"
     grid += text_at(32, 700, "Name") + text_at(132, 700, "Unit")
     grid += text_at(32, 650, "Reading") + text_at(132, 650, "Hours")
-    streams = [text_at(50, 700, "A synthetic text page."), grid, "20 20 m 80 80 l S"]
+    streams = [text_at(50, 700, "A synthetic text page."), grid, "20 20 m 80 80 l S",
+               text_at(50, 700, "A safe mixed-page paragraph.") + "20 20 m 80 80 l S"]
     objects = ["<< /Type /Catalog /Pages 2 0 R >>",
-               "<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>",
+               "<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R] /Count 4 >>",
                "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
     for i, content in enumerate(streams):
         objects.extend([
@@ -51,7 +52,7 @@ def test_verified_offline_physical_pages(tmp_path):
     args = SimpleNamespace(command="import-pdf", path=f, data=tmp_path, entity="bkd",
                            document=None, expected_sha256=digest)
     receipt = pdf.run_command(args, catalog)
-    assert receipt["page_count"] == 3 and receipt["sha256"] == digest
+    assert receipt["page_count"] == 4 and receipt["sha256"] == digest
     assert pdf.run_command(args, catalog) == receipt
     catalog = load_local(tmp_path)
     docs = pdf.load_pdfs(catalog, tmp_path)
@@ -72,6 +73,9 @@ def test_verified_offline_physical_pages(tmp_path):
     pages = pdf.extract(raw)
     assert pages[1]["tables"] == [[["Name", "Unit"], ["Reading", "Hours"]]]
     assert pages[2]["exclusion"]
+    assert pages[3]["blocks"][0]["text"] == "A safe mixed-page paragraph."
+    assert pages[3]["excluded_regions"]
+    assert catalog.records["bkd", "pdf_page_4"][0].evidence.region["bbox"]
     (tmp_path / "pdf" / (digest + ".pdf")).write_bytes(raw + b"tamper")
     with pytest.raises(ValueError, match="SHA-256"):
         pdf.load_pdfs(load_local(tmp_path), tmp_path)
@@ -106,3 +110,77 @@ def test_bounded_mime_redirect_and_signature(monkeypatch):
     monkeypatch.setattr(pdf, "MAX_PAGES", 2)
     with pytest.raises(ValueError):
         pdf.extract(fixture_bytes())
+
+
+SIM_QUESTION = "2 SIM карты могут работать одновременно?"
+DIV_QUESTION = "К какому разъему подключается дополнительная антенна 4G Div?"
+HOUSING_QUESTION = "Из какого материала выполнен корпус БКД-ПК-RF.2?"
+EXPECTED = [(SIM_QUESTION, 14, "программно"), (DIV_QUESTION, 12, "XW2 (SMA)")]
+
+
+def assert_pdf_answers(catalog, tmp_path, sha):
+    def select(mode, payload):
+        if mode == "P1":
+            return {"interpretation_status": "supported", "need_ids": ["n1"]}
+        return {"question_needs_hash": payload["question_needs_hash"], "selection": payload["candidates"]}
+
+    pilot = Pilot(catalog, tmp_path / "routed.sqlite", lab=True, mock=select, mock_budget=4)
+    for mode in ("P0", "P1", "P2"):
+        for question, page, fragment in EXPECTED:
+            # P0 establishes the local referent for subsequent offline model routes.
+            result = pilot.ask(question, "reader", f"{page}-{mode}", mode=mode)
+            assert result["status"] == "answered", result
+            assert fragment in result["text"]
+            proof = result["verified_claims"][0]["citation"]
+            assert proof["sha256"] == sha
+            assert proof["url"].endswith(f"#page={page}")
+            assert proof["region"]["bbox"] and proof["region"]["physical_page"] == page
+    assert pilot.ask(HOUSING_QUESTION, "reader", "housing")["status"] == "needs_support"
+
+
+def test_structured_pdf_claims_use_scoped_blocks_and_not_site_keyword(tmp_path, monkeypatch):
+    catalog = import_checkout(Path(os.environ["SATURN_SOURCE"]), tmp_path)
+    baseline = Pilot(catalog, tmp_path / "site.sqlite", lab=True)
+    assert baseline.ask(SIM_QUESTION, "reader", "sim")["status"] == "needs_support"
+    provenance = catalog.coverage["site_files"].copy()
+    raw = fixture_bytes()
+    sha = hashlib.sha256(raw).hexdigest()
+    monkeypatch.setattr(pdf, "BKD_PIN", sha)
+    # Synthetic extractor output exercises the typed resolver without distributing
+    # the vendor binary. Geometry itself is tested with the generated real PDF.
+    texts = {12: "Дополнительная антенна 4G Div подключается к разъему XW2 (SMA).",
+             14: "Одновременная работа SIM-карт не поддерживается. Переключение программное."}
+    pages = [{"physical_page": page, "blocks": [
+        {"text": text, "bbox": [20, 50, 280, 70], "kind": "selectable_text"}
+    ], "rows": [], "exclusion": None, "tables": [], "excluded_regions": []}
+        for page, text in texts.items()]
+    monkeypatch.setattr(pdf, "extract", lambda _: pages)
+    source = next(src for src in pdf.sources(tmp_path) if (src.entity, src.index) == ("bkd", 2))
+    pdf.stage(tmp_path, source, raw, sha)
+    pdf.load_pdfs(catalog, tmp_path)
+    assert catalog.coverage["site_files"] == provenance
+    assert_pdf_answers(catalog, tmp_path, sha)
+
+
+def test_pinned_manufacturer_originals(tmp_path):
+    bkd_path = os.environ.get("SATURN_BKD_PDF")
+    sld_path = os.environ.get("SATURN_SLD_PDF")
+    if not bkd_path or not sld_path:
+        pytest.skip("Set SATURN_BKD_PDF and SATURN_SLD_PDF to exact manufacturer originals")
+    catalog = import_checkout(Path(os.environ["SATURN_SOURCE"]), tmp_path)
+    provenance = catalog.coverage["site_files"].copy()
+    for entity, path, pin, count in (
+        ("bkd", bkd_path, pdf.BKD_PIN, 65), ("sld", sld_path, pdf.SLD_PIN, 83),
+    ):
+        source = next(s for s in pdf.sources(tmp_path)
+                      if s.entity == entity and s.index == pdf.PRIMARY[entity])
+        with open(path, "rb") as stream:
+            receipt = pdf.stage(tmp_path, source, pdf.read_bounded(stream), pin)
+        assert receipt["page_count"] == count
+    docs = {doc["entity"]: doc for doc in pdf.load_pdfs(catalog, tmp_path)
+            if doc["status"] == "included"}
+    assert docs["sld"]["accepted_blocks"] > 0
+    assert docs["bkd"]["accepted_blocks"] > 1
+    print({entity: doc["accepted_blocks"] for entity, doc in docs.items()})
+    assert catalog.coverage["site_files"] == provenance
+    assert_pdf_answers(catalog, tmp_path, pdf.BKD_PIN)

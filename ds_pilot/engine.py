@@ -303,7 +303,10 @@ class Pilot:
             values = {}
             for record in records:
                 values.setdefault(record.attribute, set()).add(encode(record.value))
-            conflict = not failure and need.attribute not in {"composition", "generation", "manual", "feature"} and any(
+            page_quote = need.attribute.startswith("pdf_page_")
+            conflict = not failure and not page_quote and need.attribute not in {
+                "composition", "generation", "manual", "feature",
+            } and any(
                 len(items) > 1 for items in values.values())
             if conflict:
                 conflicted.add(need.id)

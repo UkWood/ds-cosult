@@ -133,6 +133,20 @@ def finalize(question, anchors, referent):
             attribute = "pdf"
         if re.search(r"блока питания|двигател|хранени|цвет|погрешност|мощност|антенн|парол", clause):
             attribute = "unknown"
+        pdf_intents = []
+        if re.search(r"(?:sim|сим)[ -]*карт", clause) and re.search(r"одновременн|переключ", clause):
+            pdf_intents.append("pdf_sim_operation")
+        if re.search(r"4g\s*div", clause) and re.search(r"разъ[её]м|куда |подключ", clause):
+            pdf_intents.append("pdf_div_connector")
+        if re.search(r"материал\w*.*корпус|из чего.*корпус", clause):
+            pdf_intents.append("pdf_housing_material")
+        if pdf_intents:
+            attribute = pdf_intents[0] if len(pdf_intents) == 1 else "ambiguous"
+            # These two named intents belong to the sole cellular controller in scope.
+            if not model and not mentions and not explicit and attribute in {
+                "pdf_sim_operation", "pdf_div_connector",
+            }:
+                model = active = "bkd"
         from .pdf_sources import requested_page
         page = requested_page(clause)
         if page and model in {"sld", "bkd"}:
