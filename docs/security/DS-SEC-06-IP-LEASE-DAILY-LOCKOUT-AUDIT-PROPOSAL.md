@@ -15,7 +15,7 @@
 2. `AnonymousSessionManager` — random opaque HttpOnly Secure SameSite cookie `consult_session`; stores server-side random session ID; no registration/account.
 3. `IpLeaseStore` — atomic key keyed by a server-secret HMAC of canonical IP, holding session-owner ID, lease expiry, last activity, and in-flight status. Raw IP must NOT be present in Redis key names. Full canonical IP can be encrypted and retained in **private audit store** for owner-authorized logging.
 4. `DailyIpQuota` — fixed per-IP counters unrelated to the cookie and previous session lease. Owner-approved **20 admitted visitor questions / calendar day / canonical IP**, including locally rendered/cached responses; provider POST attempts counted separately (DS-SEC-09). Reset epoch fixed to site-operator timezone; output exact `resets_at` timestamp.
-5. `SeriesCooldown` — separate per-IP continuous-series policy of 5 no added cooldown, Q6–Q10 progressive delay, Q11+ static support; idle reset previously proposed 30m, also unapproved numerically. Avoid treating session cookie rotation as new "series".
+5. `SeriesCooldown` — separate per-IP continuous-series policy of 5 no added cooldown, Q6–Q10 progressive delay, Q11+ static support; idle reset 30m, owner-approved under DS-SEC-07. Avoid treating session cookie rotation as new "series".
 6. `BudgetReservation` — independent global daily/monthly monetary envelopes, per-request token/context/output hard bounds and global concurrency. No model dispatch unless reservation is committed.
 7. `ConversationAuditStore` — private DB records each accepted visitor's question, final rendered answer, two timestamps, canonical full IP, opaque pseudonymous session correlator, source snapshot ID, token costs, policy status and errors. Only designated staff access; no public website endpoint to retrieve by IP.
 8. `StaticNoticeRenderer` — server-owned strings for `ip_busy`, `cooldown`, `day_quota_reached`, `series_limit`, `global_budget_stop`, and verified static phone/email support from operator configuration. None go through DeepSeek.
@@ -35,7 +35,7 @@ Proposed states:
 
 **IPv6 caveat:** exact-address quota can be evaded by frequently rotating temporary IPv6 addresses. A /64 grouping or separate network rate limit may be investigated for abuse defense but is **not** a universal identity; it can accidentally block legitimate neighbors. Preserve exact-IP primary invariant and add a separate measured network/global anti-abuse layer. VPN and NAT can share IP across different humans.
 
-## 3. Daily quota semantics (proposal)
+## 3. Daily quota semantics (approved policy DS-SEC-09; implementation proposed)
 
 - Choose an **explicit fixed business timezone** and one daily accounting unit, e.g. `YYYY-MM-DD` in that timezone. After quota exhausted, UI shows `Предел обращений за день достигнут. Консультант станет доступен <timestamp>.`; static support contacts remain available. Business timezone **TBD by owner**, do not silently assume UTC or browser local time.
 - Count one daily **visitor question** on atomic request admission, even if the answer is rendered locally or from cache. Count attempted provider POSTs independently just before dispatch; timeout still counts as an attempted model POST. A blocked validation/rate request is not an admitted visitor question (but may generate a bounded security event).
