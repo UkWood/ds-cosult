@@ -200,7 +200,7 @@ Three disjoint paths:
 - **Local answer path (0 calls):** need/entity retrieval and deterministic full/partial/missing answer; no LLM. **Still consumes one of 20 accepted daily visitor questions** under DS-SEC-09.
 - **Model interpretation path (1 call):** for plausibly in-domain text, select P1, prepare full bounded prompt and cost BEFORE admission; **atomically debit visitor turn and reserve single POST/USD/fence**, then request QuestionInterpretationPlan. Validate locally, retrieve and render deterministically; **never** make another paid call to polish wording.
 - **Model plan path (1 call):** local entity/need resolution succeeded; DeepSeek may choose ordered Fact/Relation IDs and display mode from bounded EvidencePacket; independent source/policy verifier gates final answer. No free-text technical explanation.
-- **Blocked path (0 calls):** IP/session/daily count, 11th-series support, global USD budget, overlength/out-of-scope, false system-role override, or over-10k unsafely irreducible packet returns static/safe server result.
+- **Blocked path (0 calls):** IP/session/daily quota, 11th-series support, overlength/out-of-scope, policy override, unsafe over-10k paid packet or **global DeepSeek-paid USD exhaustion when P1/P2 is required and no verified local P0 is possible** returns static/safe server result. Under owner DS-SEC-10, the USD breaker does **not** block an otherwise eligible protected P0.
 
 At the previously checked **illustrative** peak Flash price rates ($0.30/M input cache misses + $1.20/M output), fully populated 10,000 input + 450 output tokens imply **$0.00354** model-only conservative reservation per attempt, not guaranteed provider billing/cap. The global daily/monthly dollar budgets are **operator-configurable and not yet set**. Maintain atomic cost reserve before any provider POST, release only on known usage; no automatic retry after unknown charge outcome.
 
@@ -255,7 +255,9 @@ After source bundle, locale, variant or policy revision changes, invalidate cach
 | EC5-33 | Missing source citation hash or PDF physical page | claim non-renderable; no invented URL/page |
 | EC5-34 | Browser requests answer without citations | backend enforces claim citations regardless of visitor override |
 | EC5-35 | Verified source-only document lookup | metadata/link permitted, **no arbitrary technical claim implied** |
-| EC5-36 | Global USD budget exhausted before dispatch | no model POST, safe service notice and static support |
+| EC5-36 | Global DeepSeek-paid USD budget exhausted before dispatch, P1/P2 required | no model POST, **zero new accepted-turn debit**, safe service notice/support |
+| EC5-36A | Global paid USD exhausted, eligible source-verified P0 with remaining 20/day and safety capacity | **one** accepted visitor turn, **zero** provider reservation/POST/USD, deterministic source-cited P0 reply |
+| EC5-36B | Global paid USD exhausted and P0 would need unsupported source or cached model prose | do not promote to P0; static no-paid-service notice, no accepted-turn debit |
 | EC5-37 | Input text over 1,200 chars / request body over 8 KiB | rejected before call/admission |
 | EC5-38 | Full answer logging fails before response emission | fail-safe handling; no invisible success/duplicate billed retry |
 | EC5-39 | Unverifiable detailed wiring recommendation | reject unsupported instruction; cite approved manual or offer support |
@@ -336,7 +338,7 @@ Replace a literal single-pass understanding of G0..G10 with **conditional P0/P1/
 
 **P1 unsupported mapping:** valid QuestionInterpretationPlan with `interpretation_status=unsupported` consumes its already-admitted question/one recorded provider dispatch attempt, maps to NeedResolution `ambiguous_question`, reason `interpretation_unsupported`, final `clarification`, without P2 retry or invented source facts. See DS-EC-03 §10.3.1 and DS-EC-04 §14.1.
 
-**Global USD breaker proposed operating policy — NOT OWNER APPROVED (R1-CR05 OPEN):** global **paid-provider** budget exhaustion immediately prohibits P1/P2, but valid locally answerable P0 may remain available, subject to canonical IP active lease, 20 accepted turns/day including local, series/cooldown, global CPU/concurrency abuse guards and private logging. This is an explicit v0.2 recommended architecture choice under the owner's broad instruction to correct CR-I06; independent reviewer should confirm that this does not exceed owner approval. If owner prefers total chat outage on USD exhaustion, this alternative requires explicit owner decision. No dollar thresholds may be guessed.
+**OWNER-ACCEPTED DS-SEC-10 — R1-CR05 POLICY DECISION RESOLVED:** global paid DeepSeek USD breaker prohibits **new P1/P2** model POSTs and performs **zero visitor-question debit** when paid preflight fails. A genuinely local, deterministic, source-verified P0 answer (including only honest source-qualified partial where all displayed claims pass verification) **MAY be admitted** despite exhausted DeepSeek USD budget and consumes **exactly one** of the per-IP/day 20 questions. It must pass active single-IP session/in-flight fencing, per-series/cooldown and 11th-series support handoff, local CPU/concurrency safeguards, complete source/variant/citation checks and private audit; no model, hidden classifier, paid tools, unchecked cached LLM prose or factual extrapolation allowed. If P0 cannot safely serve it, return a static budget/support notice with **no accepted-turn debit**. A separate non-monetary safety breaker may block P0. Amount and site-operator time zone remain unknown; do not invent them. Normative authority: `docs/decisions/DS-SEC-10-OWNER-APPROVED-PAID-BUDGET-BREAKER-LOCAL-P0.md`.
 
 ### 13.4 Atomic delivery/logging and public/private data (CR-I01/I08)
 
