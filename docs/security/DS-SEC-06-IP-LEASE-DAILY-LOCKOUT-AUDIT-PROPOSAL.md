@@ -7,6 +7,8 @@
 **Status:** **TECHNICAL DESIGN PROPOSAL / OWNER NUMERIC APPROVAL AND IMPLEMENTATION PENDING**  
 **Accepted behavior:** `docs/decisions/DS-SEC-05-ANONYMOUS-IP-LOCK-DAILY-LIMIT-LOGGING.md`. Do not reinterpret the accepted IP-lock requirement as authenticated user tracking.
 
+**LATEST OWNER APPROVAL (DS-SEC-08, 2026-11-18):** The complete LLM input cap is now **10,000 tokens**, superseding the original 3,000 figure. All per-IP limits, audit retention, cooldown and anonymous session policies remain unchanged. The budget reservation must be recalculated for 10,000 input + 450 output tokens, up to **$0.00354/call** at fixed current peak Flash token rates before cache discounts; not a provider invoice or hard dollar cap. This is a ceiling, not target prompt size.
+
 ## 1. Logical components (choice of technology open)
 
 1. `VisitorIpResolver` — canonical client IP from network peer or verified trusted proxy chain; reject untrusted forwarded headers; normalize IPv4, IPv6 (including IPv4-mapped IPv6).
@@ -41,7 +43,7 @@ Proposed states:
 - Multi-session from same canonical IP never permits additional quota; same IP across days resets per-IP daily count, not global monetary/account quotas.
 - For user-facing fairness, allow same valid session to read its own previous replies after daily exhaustion; freeze the send control and avoid any further DeepSeek HTTP.
 
-**Proposed numeric values, still NOT accepted:** 20 billable requests/IP/calendar day, 15m inactivity to release active IP lock; 30m inactivity to reset progressive series; max 1200 chars, input ≤3000 tokens, output ≤450, Q6–10 waits 10/20/40/60/90s. Global daily/monthly budget limits must be set before implementation.
+**Proposed numeric values, still NOT accepted:** 20 billable requests/IP/calendar day, 15m inactivity to release active IP lock; 30m inactivity to reset progressive series; max 1200 chars, input ≤10000 tokens (full provider request, hard maximum), output ≤450, Q6–10 waits 10/20/40/60/90s. Global daily/monthly budget limits must be set before implementation.
 
 ## 4. Private per-question audit record schema (proposal)
 
