@@ -1,6 +1,8 @@
 # DS-SEC-04 — Public Consultant Input, Throttling and Budget Guardrails (Proposal)
 
 
+**LATER OWNER POLICY DS-SEC-10 (2026-11-18):** exhaustion of the **paid DeepSeek USD budget** prevents all new paid P1/P2 calls but **does not deny verified zero-provider P0** by itself. P0 still needs active IP session, 20 accepted visitor questions/day, series/cooldown, CPU/concurrency and private audit, and consumes exactly one question if admitted. If a request needs P1/P2 and no safe P0 exists, reject before admission without question debit or paid POST. Safety/infrastructure breakers independently remain fail-closed. Normative: `docs/decisions/DS-SEC-10-OWNER-APPROVED-PAID-BUDGET-BREAKER-LOCAL-P0.md`.
+
 **CURRENT APPROVAL UPDATE (2026-11-18):** The owner accepted the numerical **pilot defaults** and budget-guard architecture; see `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Specifically the earlier *per-session rolling-24-hour* 20-request suggestion is **superseded** by the accepted **20 accepted visitor questions per canonical IP per configured operator-calendar day (including local/cached responses)**, with independent billable POST tracking. Exact timezone, organization USD budgets, contacts and privacy configuration must be supplied before deployment. Historical proposal text below is preserved, not binding where superseded.
 
 **Recorded:** 2026-11-18  
@@ -62,7 +64,7 @@ When a visitor presses Send:
 7. For an allowed call, atomically **reserve a conservative maximum possible cost** against global and daily budgets before any external API POST. Budget input estimate should include entire token envelope, output cap and any explicitly permitted paid tools. Initial example at **10,000 input/450 output** and known Flash peak `$0.30/M` input cache misses + `$1.20/M` output gives **$0.00354 per call** at those rates, not a hard financial guarantee (pricing, hidden tools and provider can change). Never assume prompt caching when reserving budget.
 8. Mark one accepted attempt and exclusive inflight lease before API call (single-flight); no automatic retry if outcome of charge is uncertain. On response, verify model/usage, release unused reserve, reconcile estimated actual token spend. If timeout or incomplete accounting, hold a conservative reservation until safe reconciliation rather than instantly retrying.
 9. Output must also pass server-side source/policy gate (DS-SEC-02) independent of LLM text. Log minimal redacted quota state and charge estimates; do not log raw user private text or provider secrets unnecessarily. Present a coherent user-facing error/support message.
-10. Enforce a **global circuit breaker**: when the organizational daily/monthly budget is exhausted, all new paid visitor calls are rejected, including the first five free-of-delay turns; show support contacts or an availability notice. Consider alerts at configurable 50%, 80%, 100% budget utilization.
+10. Enforce a **global paid-provider USD circuit breaker**: all new P1/P2 paid calls are denied before visitor-turn admission when monetary capacity is exhausted, including the first five free-of-delay turns. **DS-SEC-10 allows verified source-grounded zero-provider P0** under all IP/day/series/CPU/privacy guards, counting one visitor question. If no safe P0 is possible, show static support/availability without a new question debit. Consider alerts at configurable 50%, 80%, 100% budget utilization.
 
 ## 4. Session/identity evasion & usability
 
@@ -88,7 +90,7 @@ The previous 3,000 input + 450 output maximum was $0.00144 per call on the same 
 
 **Valid requests:** five rapid short technical questions without artificial wait; real time quotas still apply; sixth after proper wait; legitimate change of entity; correct known fact, safe missing fact and bounded context preservation.
 
-**Denied requests, no paid DeepSeek traffic:** over-1200-character question; 10,001 counted input tokens with no legal reduction to 10,000; >8 KiB body; total token envelope overflow; sixth submitted before wait; eleventh in continuous series; 21st in configured operator-calendar day; global budget depleted; too many concurrent same-session submissions; role spoof / fake admin demand to bypass budget.
+**Denied requests, no paid DeepSeek traffic:** over-1200-character question; 10,001 counted input tokens with no legal reduction to 10,000; >8 KiB body; total token envelope overflow; sixth submitted before wait; eleventh in continuous series; 21st in configured operator-calendar day; global **paid USD** budget depleted for P1/P2 **and no verified zero-provider P0**; too many concurrent same-session submissions; role spoof / fake admin demand to bypass budget.
 
 **Adversarial concurrency/identity:** two tabs race to submit sixth request; ten parallel attempts in a new session; deletion of visitor cookie; one office network with many independent legitimate sessions; high-volume bot creating fresh sessions; stale server process and losing the quota backing store (fail closed); uncertain timeout must not be retried.
 
