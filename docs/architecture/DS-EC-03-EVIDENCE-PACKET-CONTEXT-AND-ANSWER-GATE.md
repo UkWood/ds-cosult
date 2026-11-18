@@ -159,7 +159,7 @@ Suggested VerifiedAnswerResult:
 
 The accepted user question and the **actually displayed** final reply, UTC times and canonical client IP must be stored only in the **private encrypted audit backend**, with approved 30-day pilot retention and privacy notice/lawful-purpose assessment before launch. Do not include raw visitor chats or IPs in PUBLIC GitHub or general RAG document caches. A blocked request must produce limited safe audit metadata and **must not** cause a paid provider call.
 
-**Quota semantics open for precise implementation:** earlier approved policy says **20 billable provider POST attempts per canonical IP per configured operator-calendar day** whereas visitor UX says "20 вопросов в день". Maintain separate counters for **accepted visitor question turns** and **provider POST attempts**, and decide explicitly at implementation review whether a local/cached answer consumes the 20-question visitor quota. Do not bypass abuse control by using local cache.
+**Owner-resolved quota semantics (DS-SEC-09):** **20 accepted visitor questions per canonical IP per configured operator-calendar day**, including locally assembled or cached answers; paid provider POST attempts and USD reservations have separate counters. Each admitted question consumes exactly one visitor-turn slot (idempotent replays do not double-count), and at most one provider POST may be attempted. A blocked/invalid request is not an admitted visitor question.
 
 ## 9. Offline acceptance examples (new, not run)
 
@@ -193,7 +193,7 @@ Tests require deterministic fake source and mock provider first. No live API tes
 
 - Select exact supported Fact/Relation attribute vocabulary and casing/version normalization for the **first three demo entities**; choose a non-sensitive fixture, not an invented Saturn value.
 - Review planned output modes (simple fact / compare / qualified relation / missing data) and whether controlled templates are sufficient for the intended user experience.
-- Define precise per-user-turn versus billable-call accounting for daily quota without weakening existing DS-SEC-07 controls.
+- **RESOLVED under owner DS-SEC-09:** 20 accepted visitor question turns per IP/operator-calendar day, including zero-call responses, while provider POST attempts and cost are tracked separately; implementation must verify atomic idempotent counters.
 - Decide separate dialogue session state/history persistence and privacy boundaries as the next architecture step.
 - Confirm operator-specific timezone, support contacts, budgets, trusted proxies and privacy handling before any pilot.
 
