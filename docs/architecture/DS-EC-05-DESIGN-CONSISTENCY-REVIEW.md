@@ -50,7 +50,7 @@ All notes are **design/implementation acceptance gates**, not discovered code de
 
 ## 3. Reviewable contracts and deterministic gates
 
-The design has explicit conceptual contracts `CandidateAnswerPlan`, `VerifiedClaim`, `CitationBinding`, `VerifiedAnswerResult`; statuses and deterministic server-owned rendering modes; a 10-gate acceptance chain before displaying source-backed facts; 45 distinct prospective tests including forged roles, invented facts, model/tool behavior, partial corpus, conflict, versioned relations, PDF page provenance, 10,000/10,001 input boundary, 15m expiry, 30m series, 20 accepted turns and global USD breaker.
+The design has explicit conceptual contracts `CandidateAnswerPlan`, `VerifiedClaim`, `CitationBinding`, `VerifiedAnswerResult`; statuses and deterministic server-owned rendering modes; an 11-stage G0–G10 acceptance chain before displaying source-backed facts; 45 distinct prospective tests including forged roles, invented facts, model/tool behavior, partial corpus, conflict, versioned relations, PDF page provenance, 10,000/10,001 input boundary, 15m expiry, 30m series, 20 accepted turns and global USD breaker.
 
 A future coding assignment MUST transform this design into a versioned executable schema with negative/positive unit and integration tests. It must not replace the verifier with a model self-review, substring-only check, or "reasonable sounding" generated answer.
 
