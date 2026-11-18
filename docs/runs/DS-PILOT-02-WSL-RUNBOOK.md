@@ -9,10 +9,19 @@ git pull --ff-only
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
-git init ../saturn-pilot-source
-git -C ../saturn-pilot-source fetch --depth=1 https://github.com/UkWood/Saturn-Main-Site.git 084d759487bfab6e111549c9b5469711ac5fc13e
+```
+
+Из каталога `ds-cosult` подготовьте соседний репозиторий Saturn и импортируйте корпус. Команды связаны, поэтому ошибка Git остановит импорт.
+
+```bash
+git init ../saturn-pilot-source &&
+git -C ../saturn-pilot-source fetch --depth=1 https://github.com/UkWood/Saturn-Main-Site.git 084d759487bfab6e111549c9b5469711ac5fc13e &&
 python -m ds_pilot import ../saturn-pilot-source
-SATURN_SOURCE="$(realpath ../saturn-pilot-source)" python -m pytest -q
+```
+
+После успешного импорта можно запустить чат.
+
+```bash
 python -m ds_pilot serve --lab
 ```
 

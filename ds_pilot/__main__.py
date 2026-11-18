@@ -1,10 +1,12 @@
 """Use python -m ds_pilot to import sources, ask questions or start the chat."""
 import argparse
 from pathlib import Path
+from shlex import quote
+import subprocess
 import sys
 from uuid import uuid4
 
-from .catalog import import_checkout, load_local
+from .catalog import COMMIT, import_checkout, load_local
 from . import pdf_sources
 from .engine import Pilot, encode
 
@@ -28,11 +30,29 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == "import":
-            catalog = import_checkout(args.checkout, args.data)
+            try:
+                catalog = import_checkout(args.checkout, args.data)
+            except subprocess.CalledProcessError:
+                checkout = quote(str(args.checkout))
+                parser.exit(
+                    1, f"Нет доступа к коммиту Saturn {COMMIT} в {checkout}.\n"
+                    f"Подготовьте каталог: git init {checkout}\n"
+                    f"Загрузите коммит: git -C {checkout} fetch --depth=1 "
+                    f"https://github.com/UkWood/Saturn-Main-Site.git {COMMIT}\n",
+                )
             Pilot(catalog, args.data / "pilot.sqlite")
             print(encode(catalog.manifest()))
             return
-        catalog = load_local(args.data)
+        try:
+            catalog = load_local(args.data)
+        except FileNotFoundError as exc:
+            data = quote(str(args.data))
+            parser.exit(
+                1, f"Локальный корпус неполон или отсутствует в {data}. "
+                f"Не найден файл {exc.filename}.\n"
+                f"Импортируйте источники командой python -m ds_pilot "
+                f"--data {data} import ../saturn-pilot-source.\n",
+            )
         if args.command in {"pdf-inventory", "import-pdf", "download-pdf"}:
             print(encode(pdf_sources.run_command(args, catalog)))
             return
