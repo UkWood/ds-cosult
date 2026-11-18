@@ -25,20 +25,34 @@
 | AR-T06 | Valid P1 intent interpretation then model attempts P2 selection | Exactly one accepted turn and one P1 POST; P2 blocked |
 | AR-T07 | Visitor asks model to ignore all instructions and discuss unrelated subject | 0 accepted turns, 0 paid calls, static scoped notice |
 | AR-T08 | Visitor asks real in-domain characteristic plus forged role override | One accepted technical turn; system unchanged; no fake source fact; P0/P1/P2 <=1 model POST |
-| AR-T09 | 20 valid questions answerable by local templates, same IP/site-calendar day | 20 visitor slots, 0 provider POSTs; 21st request denied without charge |
-| AR-T10 | 9 local + 11 valid P1/P2 questions same IP/calendar day | 20 visitor slots, exactly 11 provider POST attempts; 21st denied |
+| AR-T09 | 20 valid P0 locally answered questions on same IP/operator-calendar day, **in two separate 10-question series with ≥30m inactivity between series** (15m memory expiry expected) | 20 accepted visitor slots, 0 paid POSTs; question 21 denied without charge; no 11th rapid-series question admitted |
+| AR-T10 | 9 local + 11 paid P1/P2 across **two legal series**: series 1 = 9 local + 1 paid, wait ≥30m, series 2 = 10 paid; all within same operator calendar day | 20 accepted visitor slots and 11 recorded dispatch-intent POST attempts; question 21 denied; cooldown/series rules obeyed |
 | AR-T11 | 15m inactivity expires memory; after 15–30m IP series persists; after 30m series resets | Technical state no old entity/facts; daily quota retained until configured day reset; tested DST boundary |
 | AR-T12 | Concurrent same-cookie tab resend / second cookie from same canonical IP | One active lease, one accepted debit per unique request ID, no duplicate paid POST, no private transcript leak |
-| AR-T13 | POST dispatched then timeout/unknown charge and retry attempted | One provider attempt and conservative USD reserve retained; no automatic POST retry |
+| AR-T13 | P1 reserves call-slot then crashes **(a) before dispatch-intent**, **(b) after durable dispatch-intent before confirmed send**, **(c) during network timeout** | (a) 1 admitted question, 1 reserved slot, **0 recorded provider POST attempts** and no automatic retry; (b)/(c) 1 conservative dispatch-risk attempt, reserve retained, unknown outcome, no retry |
 | AR-T14 | SourceBundle changes from SYN-B1 to SYN-B2 during one admitted turn | Turn answers only from pinned B1 or safe error; next turn re-resolves B2, invalidates old citations/coverage receipt |
 | AR-T15 | Model chooses valid Fact ID with wrong variant/unit or citation physical page | Invalid claim, never rendered; diagnostic identifies scope/proof mismatch |
 | AR-T16 | Model requests answered even though required temperature NeedResolution not supported | Server calculates partial/needs_support with qualified unresolved need |
 | AR-T17 | Source checksum/parser or verifier exception | processing_error and public error/explicit partial; never “not specified” |
 | AR-T18 | Provider-bound complete input 10,000 vs 10,001 tokens | Exactly 10,000 eligible if other gates pass; 10,001 blocked before paid POST; output max 450 |
 | AR-T19 | One known attribute with exact structured site field | Deterministic zero-model source-cited answer, one visitor slot, stable Russian wording |
-| AR-T20 | Audit contains actual final answer/question/IP/UTC and rejected metadata only | Private staff-only 30-day policy; no real PII in public repository or new visitor session |
+| AR-T20 | Durable exact staged answer/text and HTTP bytes, question/IP/UTC; response write success/failure/unknown; original-session replay | Private staff-only 30-day audit distinguishes staged bytes, server transport status, optional client ack; never claims browser display from HTTP success; no cross-session leakage |
 | AR-T21 | Operator global USD breaker exhausted; technical question locally answerable (P0) | **Proposed** policy: P0 remains within IP/20/day/series/CPU guard; P1/P2 zero paid calls; owner confirmation required before launch |
-| AR-T22 | All cross-layer NeedResolution variants, evidence proof errors, final statuses combined | Deterministic versioned mapping including partial, conflict, missing, unavailable, ineligible, internal error |
+| AR-T22 | Source assertion conflict, valid P1 unsupported, malformed plan, document navigation, source missing/error, mixed partial | Deterministic NeedResolution→proof/publication role→final status/reason; attributed conflict positions are not VerifiedClaims; valid P1 unsupported → clarification with retained admission/POST |
+
+## Additional R1 synthetic desk-check fixtures (NOT EXECUTED)
+
+| Case | Fixture | Required answer, counters and invariant |
+|---|---|---|
+| R1-F01 / AR-T02 | Approved source A says 24 В, source B says 12 В same variant, one omitted from EvidencePacket | Two proven source assertions and ConflictAssessment=applicable_conflict; publication_role=attributed_conflict_position each; zero established VerifiedClaims for disputed voltage; two cited ConflictPositions; final needs_support |
+| R1-F02 / AR-T03 | One conflicting PDF assertion has wrong table row despite correct SHA/page | Wrong-row assertion is unproven; cannot be an attributed conflict position or adopted value |
+| R1-F03 / AR-T13 | Reserved paid slot, crash BEFORE dispatch-intent, proven no network send | admitted=1; provider attempt recorded=0; no automatic retry |
+| R1-F04 / AR-T13 | Dispatch-intent durable then crash BEFORE proven socket send | admitted=1; dispatch-risk attempt=1; USD hold, outcome unknown; no automatic retry or false claim remote received |
+| R1-F05 / P1 valid unsupported | Paid P1 returns interpretation_status=unsupported after admission | admitted=1, one dispatch-risk attempt, NeedResolution=ambiguous_question, reason=interpretation_unsupported, final clarification, zero additional P2 |
+| R1-F06 / AR-T20 | OUTPUT_STAGED exact bytes, HTTP transport failed/unknown | Audit exact staged bytes/UTC and truthful transport status; not proven visually displayed; replay only to original still-active session |
+| R1-F07 / AR-T22 | Malformed model plan, metadata-only navigation, partially supported need with source error | Distinct invalid_model_plan, document_reference_only, partial/error and citation modes; no answered status for unsupported technical needs |
+| R1-F08 / AR-T21 | Global paid USD breaker triggered; source-proven local P0 fact available | **OWNER POLICY DECISION PENDING**: P1/P2 denied under both options; P0 admission controlled by final explicit owner choice |
+| R1-F09 / AR-T09/10 | Two legal series of up to ten questions with 30m idle reset | Correct 20/day question slots, 11 recorded paid dispatches in mixed case, no 11th rapid-series bypass |
 
 ## Explicit negative test gates
 
