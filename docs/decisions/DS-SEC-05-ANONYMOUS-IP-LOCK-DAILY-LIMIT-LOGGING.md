@@ -1,7 +1,7 @@
 # DS-SEC-05 — Owner-Accepted Anonymous Visitor Access, IP Lock, Daily Lockout and Dialogue Logging
 
 
-**CURRENT NUMERIC APPROVAL NOTE (2026-11-18):** The owner has now approved numeric pilot defaults through `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`: 20 billable model POSTs per canonical IP per configured calendar day, 15-minute idle IP lease, 30-day private raw logs, plus accepted cooldown/character/token budgets. Exact operator timezone, global dollar budget, trusted proxy, support and privacy specifics must still be configured/reviewed before deployment. Original pending-decision list remains historical context.
+**CURRENT NUMERIC APPROVAL NOTE (2026-11-18):** The owner has now approved numeric pilot defaults through `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`: 20 accepted visitor questions per canonical IP per configured calendar day (including local/cache replies; provider POST attempts separately tracked), 15-minute idle IP lease, 30-day private raw logs, plus accepted cooldown/character/token budgets. Exact operator timezone, global dollar budget, trusted proxy, support and privacy specifics must still be configured/reviewed before deployment. Original pending-decision list remains historical context.
 
 **Recorded:** 2026-11-18  
 **Decision:** **ACCEPTED OWNER REQUIREMENTS / IMPLEMENTATION NOT STARTED**  
