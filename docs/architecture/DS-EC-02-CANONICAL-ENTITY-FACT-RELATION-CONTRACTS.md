@@ -35,6 +35,11 @@ Required fields:
 | site_commit_sha | SHA string | Pinned source Git commit |
 | site_tree_sha | SHA string | Root of verified source tree when supplied |
 | site_route_manifest_id | string | Exact canonical path inventory; no guessed routes |
+| source_inventory_manifest_id | string | **v0.2 required** complete approved site/PDF-to-entity source inventory for scoped coverage receipts; includes known excluded/unpinned sources |
+| attribute_dictionary_revision | string | **v0.2 required** typed field/unit/qualifier normalization contract |
+| relation_dictionary_revision | string | **v0.2 required** directed relationship vocabulary and no-inference rules |
+| evidence_policy_revision | string | **v0.2 required** runtime source-to-claim eligibility rules |
+| entity_identity_map_revision | string | **v0.2 required** provenance-backed stable ID mapping across bundle revisions (may be empty initially) |
 | pdf_revisions | list | Approved per-document bytes SHA-256 + document/revision IDs; may initially be empty |
 | extraction_policy_version | string | Versioned parser/schema and normalization rules |
 | built_at_utc | ISO8601 timestamp | Operational metadata, **not** a source revision substitute |
