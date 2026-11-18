@@ -23,7 +23,7 @@ Need a **stack of independent server-owned limits** before any DeepSeek request:
 
 OWASP: LLM10:2025 Unbounded Consumption; API4:2023 Unrestricted Resource Consumption; NIST API Protection guidance.
 
-**CURRENT REVISION 2026-11-18 — DS-SEC-08 owner-approved input ceiling:** All active input-context references below now use **10,000 tokens total**. This is a **maximum**, not a prompt-length target; keep typical simple questions close to their minimal evidence packet (often ≤3,000 input tokens). At fixed 2026-11-18 peak Flash rates, **10,000 cache-miss input + 450 output tokens = $0.00354 model-only reserved cost**. This overrides the historical 3,000-token approval; see `docs/decisions/DS-SEC-08-OWNER-APPROVED-10000-INPUT-TOKEN-CAP.md`. Other accepted site/abuse controls from DS-SEC-07 are unchanged. Original proposal text remains as an explanatory design baseline where not superseded.\n\n## 2. Numeric defaults proposed for a first controlled public pilot (NOT owner-accepted)
+**CURRENT REVISION 2026-11-18 — DS-SEC-08 owner-approved input ceiling:** All active input-context references below now use **10,000 tokens total**. This is a **maximum**, not a prompt-length target; keep typical simple questions close to their minimal evidence packet (often ≤3,000 input tokens). At fixed 2026-11-18 peak Flash rates, **10,000 cache-miss input + 450 output tokens = $0.00354 model-only reserved cost**. This overrides the historical 3,000-token approval; see `docs/decisions/DS-SEC-08-OWNER-APPROVED-10000-INPUT-TOKEN-CAP.md`. Other accepted site/abuse controls from DS-SEC-07 are unchanged. Original proposal text remains as an explanatory design baseline where not superseded.\n\n## 2. Original pilot numeric proposal — now owner-accepted as amended by DS-SEC-07 and DS-SEC-08
 
 | Guard | Initial candidate | Why |
 |---|---|---|
@@ -45,7 +45,7 @@ OWASP: LLM10:2025 Unbounded Consumption; API4:2023 Unrestricted Resource Consump
 | Global concurrency/provider timeouts | **small bounded queue**, exact concurrency/timeout after load tests | Avoid DoS, provider escalation and fanout |
 | Tool access | No arbitrary web/files/paid native tools from public chat until separately gated | Prevent hidden search/fetch charges |
 
-In practical terms **"first five without limits" means no added temporal pause**, not no character, token, concurrency or global budget limits. Even normal visitor turns must pass all hard gates. Do not claim the sample numbers have been performance-tuned or owner-approved.
+In practical terms **"first five without limits" means no added temporal pause**, not no character, token, concurrency or global budget limits. Even normal visitor turns must pass all hard gates. These limits are now owner-approved for future implementation under DS-SEC-07/08, **but not yet performance-tested or deployed**.
 
 ## 3. Server-side acceptance algorithm (proposed)
 
@@ -86,7 +86,7 @@ The previous 3,000 input + 450 output maximum was $0.00144 per call on the same 
 
 **Valid requests:** five rapid short technical questions without artificial wait; real time quotas still apply; sixth after proper wait; legitimate change of entity; correct known fact, safe missing fact and bounded context preservation.
 
-**Denied requests, no paid DeepSeek traffic:** over-1200-character question; 10,001 counted input tokens with no legal reduction to 10,000; >8 KiB body; total token envelope overflow; sixth submitted before wait; eleventh in continuous series; 21st in rolling day; global budget depleted; too many concurrent same-session submissions; role spoof / fake admin demand to bypass budget.
+**Denied requests, no paid DeepSeek traffic:** over-1200-character question; 10,001 counted input tokens with no legal reduction to 10,000; >8 KiB body; total token envelope overflow; sixth submitted before wait; eleventh in continuous series; 21st in configured operator-calendar day; global budget depleted; too many concurrent same-session submissions; role spoof / fake admin demand to bypass budget.
 
 **Adversarial concurrency/identity:** two tabs race to submit sixth request; ten parallel attempts in a new session; deletion of visitor cookie; one office network with many independent legitimate sessions; high-volume bot creating fresh sessions; stale server process and losing the quota backing store (fail closed); uncertain timeout must not be retried.
 
@@ -94,11 +94,11 @@ The previous 3,000 input + 450 output maximum was $0.00144 per call on the same 
 
 **No paid test authorization:** DS-QV-01 is finished with 6/6 paid attempts. Draft DS-SEC-04 acceptance exercises may be implemented later offline with fake provider and deterministic clock, **only after independent owner approval**. Real DeepSeek calls need a separately bounded numeric GO.
 
-## 7. Architecture decisions pending
+## 7. Original pending decisions — superseded in part by DS-SEC-07/08
 
-1. Accept or adjust **1,200 question characters**, **10,000 max input tokens**, **450 output tokens** as pilot defaults.
+1. **RESOLVED:** owner approved **1,200 question characters**, **10,000 max total input tokens**, and **450 output tokens** as pilot defaults (DS-SEC-07/08).
 2. Accept or adjust **30-minute inactivity reset** and **10/20/40/60/90s** waits for Q6–Q10, stop Q11+.
-3. Accept or adjust **20 accepted requests per rolling 24h** per anonymous session/identity, plus NAT-sensitive IP/WAF controls.
+3. **RESOLVED in DS-SEC-07:** 20 accepted billable provider attempts per canonical IP per operator-configured calendar day, plus IP/NAT-aware protection; operator timezone and network configuration still required.
 4. Set explicit **global daily and monthly budget** based on expected visits and affordability; ensure configurable kill-switch.
 5. Choose storage for atomic quotas/reservations; ensure `retry-after`, frontend countdown, and static support handoff.
 6. Decide which safe FAQ results can be answered deterministically or cached without losing evidence/source revision guarantees.
