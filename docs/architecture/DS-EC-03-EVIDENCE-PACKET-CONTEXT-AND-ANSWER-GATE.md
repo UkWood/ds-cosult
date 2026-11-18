@@ -182,7 +182,9 @@ The accepted user question and the **actually displayed** final reply, UTC times
 | P-14 | Model chooses valid Fact but wrong variant | verifier rejects it |
 | P-15 | Model status answered but need missing | downgrade/needs_support |
 | P-16 | Cached local reply and different session same IP | no extra active session, no private data leak |
-| P-17 | Daily IP limit exhausted / global USD breaker | zero provider traffic, static notice/support |
+| P-17 | IP daily quota exhausted | deny P0/P1/P2 and return static support notice, zero paid provider calls |
+| P-17A | Global DeepSeek-paid USD budget exhausted; locally verified P0 available | **DS-SEC-10 approved:** admit source-verified P0 with 1 visitor turn and 0 model calls/paid USD; block P1/P2 before admission |
+| P-17B | Global USD exhausted; paid P1/P2 required and no safe P0 | static budget/support notice, 0 visitor turn debit, 0 provider calls |
 | P-18 | Bounded cost + token telemetry and audit | actual final text logged with IP/UTC privately |
 | P-19 | Source snapshot changes between requests | packet recreated, old refs invalidated |
 | P-20 | Malformed structured model output | no unchecked prose, safe error/partial |
@@ -254,11 +256,11 @@ EvidencePacket v0.3 references `coverage_receipts[]`, `eligibility_decisions[]`,
 
 **10k is a cap, not a target.** Discard redundant prose; never truncate a required model/firmware/condition qualifier or silently remove a conflict to fit. If necessary, do not use P1/P2 and render bounded local partial/clarification.
 
-### 10.5 Acceptance fixtures and budget-open policy (CR-I06)
+### 10.5 Owner-approved paid USD breaker with protected local P0 (R1-CR05 / DS-SEC-10)
 
 Offline required: AR-T05 early P1 prompt 10,001 tokens -> **zero POST**; budget 0 -> zero POST; valid P1 consumes exactly one attempt; P2 afterward rejected; AR-T07 explicit external goal-hijack request no admitted turn; AR-T08 mixed benign technical + injection preserves only technical intent; fake-clock race/idempotency and unknown-timeout without retry.
 
-**Proposed owner choice (not silently accepted):** global USD exhaustion blocks paid P1/P2 calls but may permit source-verified P0 local answers within visitor/IP/day and CPU/abuse limits. If owner does not approve, fail closed with static service notice. Either path requires explicit operator policy before public launch.
+**OWNER APPROVED — DS-SEC-10 (2026-11-18), R1-CR05 RESOLVED AT POLICY LEVEL:** Global **DeepSeek-paid USD** daily/monthly budget exhaustion (or uncertain available paid reserve) **blocks new P1/P2** before accepted-turn debit and before provider POST. A truly **zero-provider P0**, verified against approved pinned sources and rendered deterministically, remains available within all canonical-IP/session/20-accepted-questions-per-day/series/cooldown/local-CPU/concurrency/source-proof/private-audit guards. Each admitted P0 counts **one** visitor question, **zero** provider-attempt reservations/dispatch events and **zero** model USD. If no valid P0 route can safely answer or qualify part of the question, use a static budget/support notice **without admitting the turn**; do not improvise an LLM-like local answer. No native tools, model-generated cached prose or hidden paid classifier may be passed off as P0. A separate non-monetary safety/capacity breaker may still deny P0. Exact monetary thresholds remain operator-configured; this is a routing policy, not a new dollar budget.
 
 ## 11. Owners' next architectural decisions
 
