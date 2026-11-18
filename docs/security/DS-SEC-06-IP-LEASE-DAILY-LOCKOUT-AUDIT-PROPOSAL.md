@@ -99,7 +99,7 @@ Create an event for every received attempt (including length rejects and rate bl
 9. Header spoof attacks `X-Forwarded-For`, `CF-Connecting-IP`, IPv4-mapped IPv6 normalization and trusted-proxy chains; actual IP cannot be chosen by attacker-supplied header.
 10. Logging stores every accepted full question and final answer with separate timestamps/full IP, and security events for rejected attempts. Redact/encrypt as required, prevent log injection and cap giant rejected payloads.
 11. Provider timeout/unknown spend still consumes reserved attempt and prevents retry; accounting/lock remains sound after process restart.
-12. No shared-store access, invalid IP or exhausted global budget: fail closed and do not leak another visitor's session.
+12. No shared-store access or invalid canonical IP: fail closed for all routes. **Exhausted global paid DeepSeek USD** denies P1/P2 but owner DS-SEC-10 explicitly permits source-verified zero-provider **P0** with all IP/day/series/CPU/concurrency/audit guards; a separate non-monetary safety breaker can deny all routes. Never leak another visitor's session.
 13. Retention expiry/deletion and staff log viewing tested; no private log data in GitHub/DeepSeek error messages.
 
 **Implementation and any live HTTP/model calls require separate owner authorization**. All DS-QV-01 paid GO exhausted 6/6. No Merge, DS-02, production, Corpus Freeze, NEW RAG or Saturn site changes.
