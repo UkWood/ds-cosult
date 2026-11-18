@@ -141,7 +141,7 @@ A user-supplied claim may be retained as `proposed_query_filter` **for that one 
 
 ## 6. Two-phase turn processing and atomic state transitions
 
-**Precondition:** visitor is admitted by trusted IP/session lease + question/body length validation + cooldown/daily/global budget and in-flight guards. Denied traffic is still bounded audited, but does not enter technical DialogState.
+**Precondition:** visitor has passed deterministic unpaid domain/IP/body/series/day eligibility; **paid-route admission is committed only after full provider token/cost preflight and atomic accepted-turn+provider+budget reserve**. Denied/preflight-blocked traffic has bounded audit metadata, no accepted turn and no model POST.
 
 1. Read a consistent `DialogState(context_revision=N)` under the validated anonymous session token/IP lease.
 2. Interpret message as **candidate intent/need update**, not immediately commit. Resolve canonical entities and any source revision. Reject any user attempt to mutate `policy_revision`, `bundle_id`, provider `role`, source facts or quotas.
@@ -280,9 +280,10 @@ Next suggested contract: **DS-EC-05 — final claim-verifier and controlled rend
 Machine states (server-owned, persisted by stable idempotency key scoped to session and IP lease):
 - RECEIVED: raw user question observed, no slot charged, no model call;
 - VALIDATED: authenticated anonymous session+IP ownership, <=1,200 chars/8KiB request, obvious out-of-domain/override filtered by deterministic domain screen; if no plausible domain anchors, static clarification without paid model or accepted-turn slot;
-- ADMITTED: **one** accepted-question slot reserved and committed atomically in IP/operator-calendar-day bucket, series/cooldown updated as defined, request_id bound to DialogState context_revision and pinned SourceBundle; future retransmission of same request ID returns same state, not another debit;
+- ROUTE_READY: select P0 local or paid P1/P2, prepare any paid prompt and pass full input/cost preflight **before visitor-turn debit**; blocked preflight returns DENIED, consumes no accepted turn and makes no POST;
+- ADMITTED: atomically commit **one visitor question slot** with request_id and pinned bundle. For P1/P2 the SAME serializable commit reserves **one provider attempt, global USD amount and exclusive IP in-flight fence**. For P0 no provider/monetary reserve is made. Retransmitted request_id never double-debits;
 - LOCAL_PROCESSING or PROVIDER_PREPARED: local source lookup OR complete serialized P1/P2 prompt, both subject to the independent verifier and one-call policy;
-- PROVIDER_RESERVED: shared ProviderDispatchGuard passed, exactly one provider_attempt_id and conservative global monetary reserve committed with exclusive IP in-flight fence before external POST;
+- PROVIDER_RESERVED: paid-route outcome of the SAME composite ADMITTED transaction; ProviderDispatchGuard confirmed and reserved the one provider attempt/USD/IP fence **with** the accepted-turn debit before POST; do not perform a second debit/reservation;
 - PROVIDER_DISPATCHED: one outbound POST has been attempted; on unknown charge outcome never retry and do not grant a new provider attempt to same turn;
 - PROVIDER_RESOLVED / PROVIDER_UNCERTAIN: usage known and reconciled, or error/time-out with conservative held reservation and no automatic retry;
 - VERIFYING: evidence, atomic claims and citations validated against pinned bundle; no direct user-visible model prose;
@@ -290,7 +291,7 @@ Machine states (server-owned, persisted by stable idempotency key scoped to sess
 - DELIVERED / DELIVERY_UNCERTAIN: response emitted to same valid session or transport may have failed; replay same idempotency key returns the stored final output only to its original live authenticated session, with zero extra provider call and zero quota debit;
 - DENIED: validation, known out-of-domain, IP busy, quota/cooldown, operator global policy or unsafe input; no paid provider call, no accepted-question slot; bounded security log only.
 
-**Atomic storage requirements:** admission debit and request-id record are one serializable transaction; one IP inflight lease and provider_attempt reservation are protected by a shared lock or compare-and-swap/fencing token; global USD reservations are atomically checked against all outstanding reservations. No process-local counter may be relied on across workers. Memory CAS is a later, separate guarded commit and does not substitute for admission/provider fencing.
+**Atomic storage requirements:** for P1/P2 the **accepted-turn debit + request_id + exactly one provider attempt + global USD reserve + exclusive IP fence** commit together *after* verified token/cost preflight. P0 commits one visitor turn/request ID without provider spending. Preflight-denied routes consume no accepted turn. Memory CAS is a later independent commit; provider fencing and atomic shared quota checks may not rely on process-local state.
 
 **Crash policy:**
 1. Before ADMITTED => no accepted slot or charge.
@@ -301,7 +302,7 @@ Machine states (server-owned, persisted by stable idempotency key scoped to sess
 6. After OUTPUT_STAGED but before HTTP delivery => re-deliver identical stored final result only to original valid session if it still owns lease. No LLM regeneration.
 7. If 15-minute lease expires during unresolved in-flight work => fenced old request completes or reaches a bounded timeout; no second owner/new request until safe finalization, no private response leaks to new cookie.
 
-**Admission and IP counters:** an in-domain accepted question counts once even if downstream verifier fails or provider timeout occurs. A local answer also counts. Invalid/denied/obviously outside-domain requests do not consume a question. P1 cannot be used as an **unaccounted paid classifier**; if deterministic domain screen cannot plausibly admit, local clarification is returned without paid provider. LLM result cannot retroactively change accepted-turn quota. P1/P2 both require identical ProviderDispatchGuard immediately before model POST; at most one per turn.
+**Admission and IP counters:** only an atomically committed ADMITTED turn consumes one of the 20 accepted questions. A token/global-USD preflight block BEFORE ADMITTED consumes **zero** question slots and makes **zero** paid POSTs. Once admitted, a later verifier failure, provider timeout or audit error does not automatically refund the slot; provider attempt/possible spend remain separately counted. A P1 model call cannot be an unaccounted paid classifier, and a P2 call cannot follow an attempted P1 POST. LLM cannot refund or elevate its own request.
 
 ### 14.2 Session activity and source bundle cutover (CR-I03/I08)
 
