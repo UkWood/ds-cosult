@@ -1,7 +1,7 @@
 # DS-SEC-04 — Public Consultant Input, Throttling and Budget Guardrails (Proposal)
 
 
-**CURRENT APPROVAL UPDATE (2026-11-18):** The owner accepted the numerical **pilot defaults** and budget-guard architecture; see `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Specifically the earlier *per-session rolling-24-hour* 20-request suggestion is **superseded** by the accepted **20 billable POST attempts per canonical IP per configured operator-calendar day**. Exact timezone, organization USD budgets, contacts and privacy configuration must be supplied before deployment. Historical proposal text below is preserved, not binding where superseded.
+**CURRENT APPROVAL UPDATE (2026-11-18):** The owner accepted the numerical **pilot defaults** and budget-guard architecture; see `docs/decisions/DS-SEC-07-ACCEPTED-PUBLIC-CONSULTANT-GUARDRAILS.md`. Specifically the earlier *per-session rolling-24-hour* 20-request suggestion is **superseded** by the accepted **20 accepted visitor questions per canonical IP per configured operator-calendar day (including local/cached responses)**, with independent billable POST tracking. Exact timezone, organization USD budgets, contacts and privacy configuration must be supplied before deployment. Historical proposal text below is preserved, not binding where superseded.
 
 **Recorded:** 2026-11-18  
 **Status:** **ARCHITECTURE PROPOSAL FOR OWNER REVIEW — NOT NUMERICALLY APPROVED; NO IMPLEMENTATION OR PAID EXPERIMENT**  
@@ -23,7 +23,9 @@ Need a **stack of independent server-owned limits** before any DeepSeek request:
 
 OWASP: LLM10:2025 Unbounded Consumption; API4:2023 Unrestricted Resource Consumption; NIST API Protection guidance.
 
-**CURRENT REVISION 2026-11-18 — DS-SEC-08 owner-approved input ceiling:** All active input-context references below now use **10,000 tokens total**. This is a **maximum**, not a prompt-length target; keep typical simple questions close to their minimal evidence packet (often ≤3,000 input tokens). At fixed 2026-11-18 peak Flash rates, **10,000 cache-miss input + 450 output tokens = $0.00354 model-only reserved cost**. This overrides the historical 3,000-token approval; see `docs/decisions/DS-SEC-08-OWNER-APPROVED-10000-INPUT-TOKEN-CAP.md`. Other accepted site/abuse controls from DS-SEC-07 are unchanged. Original proposal text remains as an explanatory design baseline where not superseded.\n\n## 2. Original pilot numeric proposal — now owner-accepted as amended by DS-SEC-07 and DS-SEC-08
+**CURRENT REVISION 2026-11-18 — DS-SEC-08 owner-approved input ceiling:** All active input-context references below now use **10,000 tokens total**. This is a **maximum**, not a prompt-length target; keep typical simple questions close to their minimal evidence packet (often ≤3,000 input tokens). At fixed 2026-11-18 peak Flash rates, **10,000 cache-miss input + 450 output tokens = $0.00354 model-only reserved cost**. This overrides the historical 3,000-token approval; see `docs/decisions/DS-SEC-08-OWNER-APPROVED-10000-INPUT-TOKEN-CAP.md`. Other accepted site/abuse controls from DS-SEC-07 are unchanged. Original proposal text remains as an explanatory design baseline where not superseded.
+
+## 2. Original pilot numeric proposal — now owner-accepted as amended by DS-SEC-07 and DS-SEC-08
 
 | Guard | Initial candidate | Why |
 |---|---|---|
@@ -32,7 +34,7 @@ OWASP: LLM10:2025 Unbounded Consumption; API4:2023 Unrestricted Resource Consump
 | Total request context to LLM | **max 10,000 input tokens** including system + trusted RAG evidence + compact state | Actual token/cost boundary rather than characters alone; subject to future real-corpus quality calibration |
 | Model answer generation | **server-set `max_tokens=450`**, optional shorter by task class | Prevent expensive long output; monitor `finish_reason=length` for excessive truncation |
 | Concurrent inference per visitor | **1** | Prevent tab races, duplicate clicks and simultaneous expensive requests |
-| Anonymous visitor sustained daily quota | **20 accepted/billable attempts per rolling 24 hours**, provisional | Session reset cannot imply unlimited daily requests; calibrate for legitimate visitor needs |
+| Anonymous visitor sustained daily quota | **20 accepted visitor questions per canonical IP/operator-calendar day**, including local/cached answers; paid provider attempts separate (DS-SEC-09 owner approved) | Session reset cannot imply unlimited daily requests; calibrate for legitimate visitor needs |
 | Active question series reset | **30 minutes after last accepted interaction**, provisional | Define what "подряд" means |
 | Series question 1–5 | **0 added cooldown**, provided every other guard passes | Owner-preferred normal conversation |
 | Question 6 | **10s** after previous accepted request | Initial anti-burst friction |
@@ -54,7 +56,7 @@ When a visitor presses Send:
 1. Server receives signed, random, opaque, HTTP-only `SameSite` session cookie; never trust browser's claimed `question_count`, `wait_seconds` or API role. Avoid fingerprinting. The IP/network signal is a supplementary abuse detector rather than the only user identity.
 2. Before paid inference: enforce JSON size/schema, Unicode/character length, allowed technical-domain task and safe request normalization. Reject overlength with 413 or 422 and a human-readable character-limit message. Rejected invalid attempts are **not paid model requests**, but count toward an independent abuse counter to prevent cheap endpoint spam.
 3. Resolve session history from backend storage (server-controlled), with immutable verified entity/source IDs and compact state. If the 10,000 input-token envelope would overflow, deterministically trim/rebuild conversation context and relevant trusted dossier within a declared evidence completeness policy; if critical evidence cannot fit, return a safe clarification/not-enough-context result instead of silently omitting necessary facts.
-4. With an **atomic shared transaction** (e.g. Redis script or transactional datastore, not just frontend state) check session count, last accepted timestamp, required next allowable time, 24h quota, IP abuse threshold, global concurrency, remaining daily/monthly budgets. A user can submit from ten browser tabs; only one should receive approval.
+4. With an **atomic shared transaction** (e.g. Redis script or transactional datastore, not just frontend state) check session count, last accepted timestamp, required next allowable time, operator-calendar-day IP question quota, IP abuse threshold, global concurrency, remaining daily/monthly budgets. A user can submit from ten browser tabs; only one should receive approval.
 5. If cooldown is not yet elapsed, return HTTP `429 Too Many Requests` and `Retry-After` with the remaining wait; **do not sleep on the server**, queue paid requests, or make DeepSeek calls. Do not automatically resend blocked requests; browser can display a countdown and user must retry. A rate-blocked request does not increment the accepted question count, but repeated rate-block attempts may trigger bot/abuse mitigation.
 6. If the visitor would exceed the tenth accepted request in the current series, return a static `support_handoff` response **without calling DeepSeek**; use vetted company phone/email from server/site config, not model-generated contacts. Continued rejected messages do not reset series limits.
 7. For an allowed call, atomically **reserve a conservative maximum possible cost** against global and daily budgets before any external API POST. Budget input estimate should include entire token envelope, output cap and any explicitly permitted paid tools. Initial example at **10,000 input/450 output** and known Flash peak `$0.30/M` input cache misses + `$1.20/M` output gives **$0.00354 per call** at those rates, not a hard financial guarantee (pricing, hidden tools and provider can change). Never assume prompt caching when reserving budget.
@@ -98,7 +100,7 @@ The previous 3,000 input + 450 output maximum was $0.00144 per call on the same 
 
 1. **RESOLVED:** owner approved **1,200 question characters**, **10,000 max total input tokens**, and **450 output tokens** as pilot defaults (DS-SEC-07/08).
 2. Accept or adjust **30-minute inactivity reset** and **10/20/40/60/90s** waits for Q6–Q10, stop Q11+.
-3. **RESOLVED in DS-SEC-07:** 20 accepted billable provider attempts per canonical IP per operator-configured calendar day, plus IP/NAT-aware protection; operator timezone and network configuration still required.
+3. **RESOLVED in DS-SEC-07 + owner DS-SEC-09:** 20 accepted visitor questions (including local/cache) per canonical IP per operator-configured calendar day; separately count paid provider attempts, plus IP/NAT-aware protection; operator timezone and network configuration still required.
 4. Set explicit **global daily and monthly budget** based on expected visits and affordability; ensure configurable kill-switch.
 5. Choose storage for atomic quotas/reservations; ensure `retry-after`, frontend countdown, and static support handoff.
 6. Decide which safe FAQ results can be answered deterministically or cached without losing evidence/source revision guarantees.
