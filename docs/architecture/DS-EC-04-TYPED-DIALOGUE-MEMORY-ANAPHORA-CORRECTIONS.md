@@ -1,7 +1,7 @@
 # DS-EC-04 — Typed Dialogue Memory, Anaphora and Correction State Contract v0.1
 
 **Date:** 2026-11-18  
-**Status:** **ARCHITECTURE DESIGN CANDIDATE — FOR INDEPENDENT REVIEW / OWNER ACCEPTANCE; NOT IMPLEMENTED**  
+**Status:** **ARCHITECTURE DESIGN CANDIDATE v0.2 — AUTHOR CORRECTION; REQUIRES NEW INDEPENDENT REVIEW; NOT IMPLEMENTED**  
 **Project:** independent DS-консультант `UkWood/ds-cosult`, existing OPEN/DRAFT PR #1.  
 **Inputs:** DS-EC-01 reference architecture; DS-EC-02 typed Entity/Fact/Relation/EvidenceRef contract; DS-EC-03 EvidencePacket/answer gate; owner-approved DS-SEC-01, DS-SEC-07 and DS-SEC-08.  
 **No paid GO:** DS-QV-01 6/6 authorized HTTP exhausted. Do not call DeepSeek.
@@ -270,3 +270,60 @@ Next suggested contract: **DS-EC-05 — final claim-verifier and controlled rend
 - `UkWood/Saturn-Main-Site` READ-ONLY.
 - `UkWood/LLM-RAG-chat-bot` NEW RAG independent; **no changes**.
 - Do not publish private Core/GT, real visitor IP or complete logs in public GitHub.
+
+## 14. Normative v0.2 corrections: request admission FSM, crash-safe memory and source migration
+
+**Precedence:** this section is the author correction to consolidated DS-EC-AR-01 (CR-B03/B04, I01/I03/I08/M02) and supersedes earlier provisional two-phase explanations where inconsistent. The owner-approved 15-minute technical memory expiry, 30-minute IP series, 20 **accepted questions**/IP/operator calendar day (including local), max one paid model POST, ≤10,000 full input/450 output and private Q/A/IP logging are not reopened. This document is not implementation acceptance.
+
+### 14.1 Global per-request state machine and invariants (CR-B04/I01)
+
+Machine states (server-owned, persisted by stable idempotency key scoped to session and IP lease):
+- RECEIVED: raw user question observed, no slot charged, no model call;
+- VALIDATED: authenticated anonymous session+IP ownership, <=1,200 chars/8KiB request, obvious out-of-domain/override filtered by deterministic domain screen; if no plausible domain anchors, static clarification without paid model or accepted-turn slot;
+- ADMITTED: **one** accepted-question slot reserved and committed atomically in IP/operator-calendar-day bucket, series/cooldown updated as defined, request_id bound to DialogState context_revision and pinned SourceBundle; future retransmission of same request ID returns same state, not another debit;
+- LOCAL_PROCESSING or PROVIDER_PREPARED: local source lookup OR complete serialized P1/P2 prompt, both subject to the independent verifier and one-call policy;
+- PROVIDER_RESERVED: shared ProviderDispatchGuard passed, exactly one provider_attempt_id and conservative global monetary reserve committed with exclusive IP in-flight fence before external POST;
+- PROVIDER_DISPATCHED: one outbound POST has been attempted; on unknown charge outcome never retry and do not grant a new provider attempt to same turn;
+- PROVIDER_RESOLVED / PROVIDER_UNCERTAIN: usage known and reconciled, or error/time-out with conservative held reservation and no automatic retry;
+- VERIFYING: evidence, atomic claims and citations validated against pinned bundle; no direct user-visible model prose;
+- OUTPUT_STAGED: immutable deterministic final result plus **private durable audit intent** of exact question and exact final output, UTC and resolved IP committed; if persistence failed, fail safely rather than emit an unlogged success;
+- DELIVERED / DELIVERY_UNCERTAIN: response emitted to same valid session or transport may have failed; replay same idempotency key returns the stored final output only to its original live authenticated session, with zero extra provider call and zero quota debit;
+- DENIED: validation, known out-of-domain, IP busy, quota/cooldown, operator global policy or unsafe input; no paid provider call, no accepted-question slot; bounded security log only.
+
+**Atomic storage requirements:** admission debit and request-id record are one serializable transaction; one IP inflight lease and provider_attempt reservation are protected by a shared lock or compare-and-swap/fencing token; global USD reservations are atomically checked against all outstanding reservations. No process-local counter may be relied on across workers. Memory CAS is a later, separate guarded commit and does not substitute for admission/provider fencing.
+
+**Crash policy:**
+1. Before ADMITTED => no accepted slot or charge.
+2. After ADMITTED but before any POST => one accepted slot remains recorded (real admitted question), zero attempted paid calls, error/local fallback stored if possible; never double debit on retry.
+3. After PROVIDER_RESERVED before network write => conservatively treat uncertain dispatch as possibly charged unless the implementation can prove no POST occurred; never auto-resend from the same attempt record.
+4. After POST but no response/timeout => one attempted provider call, cost reserved until reliable reconciliation, never retry automatically.
+5. After provider response but before private audit OUTPUT_STAGED => no unchecked output; preserve provider attempt id and safe failure state; reconcile without new paid request.
+6. After OUTPUT_STAGED but before HTTP delivery => re-deliver identical stored final result only to original valid session if it still owns lease. No LLM regeneration.
+7. If 15-minute lease expires during unresolved in-flight work => fenced old request completes or reaches a bounded timeout; no second owner/new request until safe finalization, no private response leaks to new cookie.
+
+**Admission and IP counters:** an in-domain accepted question counts once even if downstream verifier fails or provider timeout occurs. A local answer also counts. Invalid/denied/obviously outside-domain requests do not consume a question. P1 cannot be used as an **unaccounted paid classifier**; if deterministic domain screen cannot plausibly admit, local clarification is returned without paid provider. LLM result cannot retroactively change accepted-turn quota. P1/P2 both require identical ProviderDispatchGuard immediately before model POST; at most one per turn.
+
+### 14.2 Session activity and source bundle cutover (CR-I03/I08)
+
+Last activity is updated only on **genuine verified same-cookie visitor question/explicit supported interaction**, not idle browser polling, repeated denied quota inputs or arbitrary unauthenticated keepalive. 15-minute inactivity invalidates entire technical DialogState, including referents, fact handles and pending clarification. A new session at the same IP never retrieves old conversation by IP alone. 30-minute series clock is measured from last accepted question and remains stored under IP beyond technical memory expiry; 20 daily accepted turns persist to the configured operator-calendar-day reset.
+
+A provider request active across a 15m boundary retains a separate bounded in-flight fence through timeout/usage reconciliation. Such a fence cannot be prolonged indefinitely by low-trust traffic. Alternative visitor behind the same NAT gets neutral IP_BUSY and no previous source state.
+
+**Source cutover invariant:** at admission, bind exactly one bundle_id + policy_revision + attribute_dictionary_revision + relation_dictionary_revision to the entire turn and its claims/citations. When an approved new SourceBundle is published while a model call runs, the current turn may finish only against its **pinned previous bundle** (provided it remains available and eligible). It must not fetch mixed later PDF bytes or switch citation revision. If old bundle becomes unavailable/error, return safe error/partial; do not silently migrate mid-turn. Next turn re-resolves stable entity IDs using evidence-backed identity mapping and invalidates all prior Fact/Relation/EvidenceRef/negative coverage receipt/cached answer handles. If variant mapping is ambiguous, ask clarification.
+
+### 14.3 Private logging and administration prerequisites
+
+Audit storage is a **separate private store** with all exact admitted questions and **actually displayed** final text, UTC receive/emission time and canonical IP; default retention 30 days, automatic purge/backup review. A question with no final response still gets a bounded error/outcome record, never a fake successful reply. No private chat, IP or secret in public GitHub or model prompts. Log access is staff-only, encrypted, reviewed under applicable privacy/legal purpose/basis/visitor notice before launch. Trusted proxy ranges, correct canonical IP, IANA timezone, operator USD/day/month, support phone/mail and administrator roles are deployment-config fields, **not invented** in this contract.
+
+### 14.4 Explicit boundary tests (offline only, no executable claim)
+
+- AR-T07/08: out-of-domain and mixed injected technical requests show accepted-turn/provider delta, with no privilege escalation;
+- AR-T09/10: 20 local questions => 20 turns and 0 paid; 9 local + 11 paid => 20 turns and 11 provider attempts; 21st denied;
+- AR-T11: 15:00 minutes idle invalidates DialogState, 30:00 resets series, day unchanged, DST/calendar timezone separately handled;
+- AR-T12: two tabs/two cookies same IP racing: exactly one active lease, one request-id debit/POST, no transcript leak;
+- AR-T13: crash after POST / unknown spend: no retry, held budget reservation;
+- AR-T14: new bundle published mid-turn: old pinned source for current turn, fresh validated source next turn;
+- AR-T20: full private Q/A/IP/UTC audit only, 30-day retention with deletion and access tests.
+
+**Status:** author-drafted cross-contract correction; independent acceptance remains pending. No code/API/corpus/production/merge authorization.
+
