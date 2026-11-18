@@ -1,13 +1,14 @@
 # DS-EC-03 — Evidence Packet, Compact Dialogue Context and Deterministic Answer Gate
 
 **Recorded:** 2026-11-18  
-**Status:** ARCHITECTURE DESIGN CANDIDATE v0.1 — OWNER REVIEW PENDING; NO MODEL OR API RUN  
+**Status:** ARCHITECTURE DESIGN CANDIDATE v0.1 — OWNER REVIEW PENDING; NO MODEL OR API RUN
+**Owner-approved input cap amendment DS-SEC-08 (2026-11-18):** 10,000 complete input tokens replaces the original 3,000 ceiling, with unchanged 450 output tokens and no change to the one-call limit; source-selection still targets the shortest sufficient prompt.  
 **Upstream:** DS-EC-01 reference architecture and DS-EC-02 Entity/Fact/Relation/EvidenceRef contracts.  
 **Mandatory operator policy:** DS-SEC-07 public access, prompts, rate/budget and private logging controls.
 
 ## 1. Design question
 
-How can a visitor ask naturally about multiple Saturn devices and their revisions while the backend sends **no more than 3,000 total input tokens to DeepSeek**, with **at most 450 model output tokens**, preserving facts and their source applicability? The model's final prose must never become independent evidence.
+How can a visitor ask naturally about multiple Saturn devices and their revisions while the backend sends **no more than 10,000 total input tokens to DeepSeek**, with **at most 450 model output tokens**, preserving facts and their source applicability? The model's final prose must never become independent evidence.
 
 Proposed separation:
 - **QuestionNeeds / ContextState** are private backend-controlled state and intent records, not truth.
@@ -75,22 +76,24 @@ Priority by evidence need coverage first, then source-specific applicability, th
 
 ## 5. Strict model input budgeting
 
-**Hard rule approved under DS-SEC-07:** maximum **3,000 input tokens for the entire provider request**, including true system role instructions, the current question, compact state, source-backed facts, cited excerpts, formatting schema and message framing. Output max is a **separate** 450-token server-set cap. 1,200 Unicode characters of user text is a different independent input limit.
+**Hard rule originally approved in DS-SEC-07 and AMENDED by DS-SEC-08 (owner, 2026-11-18):** maximum **10,000 input tokens for the entire provider request**, including true system role instructions, the current question, compact state, source-backed facts, cited excerpts, formatting schema and message framing. Output max is a **separate** 450-token server-set cap. 1,200 Unicode characters of user text is a different independent input limit.
 
-Proposed illustrative **target allocation**, not fixed slices or a substitute for an actual tokenizer:
+**10,000 is an upper bound, not an input token target.** For ordinary short technical questions, aim for a minimal sufficient evidence packet (often ≤3,000 tokens) and zero-call deterministic answers where suitable. Use the larger 10k envelope only for genuinely complex cases with multiple entities, competing evidence or longer relevant excerpts.
+
+Proposed illustrative **ceiling-capacity allocation for a complex request**, not minimum values, fixed slices or a substitute for an actual tokenizer:
 
 | Input segment | Target tokens |
 |---|---:|
-| System policy, Saturn-only role and explicit no-fabrication rule | 500 |
-| Current question, minimal compact dialogue state | 380 |
-| Entity identities and versions | 220 |
-| Typed Facts and Relations with qualifiers | 750 |
-| Relevant exact source excerpts and locator bindings | 800 |
-| Structured output contract and constrained format | 150 |
-| Counting margin / serialization overhead | 200 |
-| **TOTAL HARD ENVELOPE** | **3,000** |
+| System policy, Saturn-only role and explicit no-fabrication rule | 600 |
+| Current question, minimal compact dialogue state | 500 |
+| Entity identities and versions | 500 |
+| Typed Facts and Relations with qualifiers | 2,400 |
+| Relevant exact source excerpts and locator bindings | 4,300 |
+| Structured output contract and constrained format | 300 |
+| Conservative counting margin / serialization overhead | 1,400 |
+| **TOTAL HARD ENVELOPE** | **10,000** |
 
-Actual current question may require more than 380 tokens. The backend must measure/tokenize the entire assembled **actual API payload**, not rely on these approximate buckets; redistribute only soft targets, never exceed the hard 3k limit.
+Actual current question may require more than the illustrative 500-token segment. The backend must count the entire assembled **actual API payload** using a compatible tokenizer; if exact preflight count is unavailable, it must use a conservative headroom policy validated against provider usage, with no claims of exact 10k enforcement until validated. It must not rely on these approximate buckets; redistribute only soft targets, never exceed the hard 10,000-token limit.
 
 Precedence for shrinkage:
 - Discard duplicate quotes and irrelevant entity summaries first.
@@ -98,7 +101,7 @@ Precedence for shrinkage:
 - Drop low-priority optional facts only when not needed for a required comparison/qualifier.
 - If exact required claim evidence, contradictory alternative, page scope, model variant, system instruction or output schema still cannot fit: return **partial/clarification/needs_support** via server code, or decline that inference. **Never** silently omit a condition or send an overbudget provider request.
 
-The backend reserves a conservative worst-case provider cost before POST; initial fixed-rate example 3,000 cache-miss input tokens + 450 output ≈ **$0.00144** at earlier validated Flash rates, subject to pricing revision/provider billing. No default paid web search, Files/OCR or multi-call model verification in public visitor runtime.
+The backend reserves a conservative worst-case provider cost before POST; initial fixed-rate example 10,000 cache-miss input tokens + 450 output ≈ **$0.00354** at earlier validated Flash rates, subject to pricing revision/provider billing. No default paid web search, Files/OCR or multi-call model verification in public visitor runtime.
 
 ## 6. Single-call strategy (0 or 1 model API request per visitor turn)
 
@@ -172,8 +175,8 @@ The accepted user question and the **actually displayed** final reply, UTC times
 | P-08 | "А у второго?" across turns | resolve previous second entity from typed state |
 | P-09 | Forged developer role in visitor message | no policy change or expanded source scope |
 | P-10 | First five rapid requests followed by cooldown | prescribed 0/10/20/40/60/90 sequence, no provider call on 429 |
-| P-11 | Input 3,001 actual tokens | no provider call; safe partial/clarification |
-| P-12 | User asks to omit source citation | backend citations remain mandatory |
+| P-11 | Complete provider input counted as 10,001 tokens | no provider call; safe partial/clarification or correctly reduced packet |
+| P-11A | Complete provider input counted as exactly 10,000 tokens (otherwise valid) | hard token limit allows admission, subject to separate budget and other gates |\n| P-12 | User asks to omit source citation | backend citations remain mandatory |
 | P-13 | Model invents fact ID in candidate JSON | final verifier rejects it |
 | P-14 | Model chooses valid Fact but wrong variant | verifier rejects it |
 | P-15 | Model status answered but need missing | downgrade/needs_support |
