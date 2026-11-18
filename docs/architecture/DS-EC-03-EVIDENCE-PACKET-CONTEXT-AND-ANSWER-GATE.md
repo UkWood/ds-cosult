@@ -1,7 +1,7 @@
 # DS-EC-03 — Evidence Packet, Compact Dialogue Context and Deterministic Answer Gate
 
 **Recorded:** 2026-11-18  
-**Status:** ARCHITECTURE DESIGN CANDIDATE v0.1 — OWNER REVIEW PENDING; NO MODEL OR API RUN
+**Status:** ARCHITECTURE DESIGN CANDIDATE v0.2 — AUTHOR CORRECTIONS TO CONSOLIDATED REVIEW; INDEPENDENT REVIEW PENDING
 **Owner-approved input cap amendment DS-SEC-08 (2026-11-18):** 10,000 complete input tokens replaces the original 3,000 ceiling, with unchanged 450 output tokens and no change to the one-call limit; source-selection still targets the shortest sufficient prompt.  
 **Upstream:** DS-EC-01 reference architecture and DS-EC-02 Entity/Fact/Relation/EvidenceRef contracts.  
 **Mandatory operator policy:** DS-SEC-07 public access, prompts, rate/budget and private logging controls.
@@ -189,7 +189,56 @@ The accepted user question and the **actually displayed** final reply, UTC times
 
 Tests require deterministic fake source and mock provider first. No live API test permitted by exhausted previous GO. Real Saturn expert Ground Truth and PDF custody are still incomplete; no Corpus Freeze.
 
-## 10. Owners' next architectural decisions
+
+## 10. Normative v0.2: One provider-dispatch guard and distinct question interpretation plan
+
+**Precedence:** this section supersedes any earlier depiction that puts the first provider request at G5 only. Author correction of DS-EC-AR-01 CR-B03/B04, I05/I06, M02; no claim of independent acceptance.
+
+### 10.1 Server-side domain screen and disjoint routes (CR-B04)
+
+The backend first evaluates the **in-domain eligibility of the visitor text without paid LLM classification**. It may use validated canonical entity aliases, approved product/attribute vocabulary, the still-live typed comparison frame, and broad safe Saturn-domain recognition rules. Explicit outside-domain or policy-override-only requests get static out_of_scope/policy_blocked notices, **zero daily accepted-turn debit and zero model POSTs**. If there is no plausible supported domain anchor, return a local clarification without consuming a question slot or calling a model. This first-pilot conservative policy may over-clarify some natural questions; measure that risk offline.
+
+After deterministic eligibility, an otherwise plausible technical question can be admitted exactly once, charged one of 20 daily accepted turns, then **optionally** interpreted by the model. The model does not itself authorize admission or refund a turn. For a mixed technical need + injected command, retain only the legitimate scoped need, never the policy override. Legitimate “забудь прошлую тему” updates referent state, never changes system rules.
+
+Exclusive routes per accepted visitor turn:
+- P0: local entity/need → ledger → verified deterministic answer, 0 model calls;
+- P1: plausible scoped question → admitted turn → **guarded one model call to QuestionInterpretationPlan** → backend entity/need/evidence validation → local renderer, no model answer-plan call;
+- P2: scoped question → admitted turn → local retrieval/EvidencePacket → **guarded one model call to CandidateAnswerPlan** → independent verifier/renderer, no prior model interpret call;
+- denied: IP busy/limit/unknown domain/policy override/overlength and other pre-admission blocks => no POST and no accepted-turn debit.
+
+Thus no call is made “for free” before the quota is consumed, and any later model classification is **not the deciding authority** for retroactive quota refund. User-visible support/clarification outcomes remain predictable.
+
+### 10.2 ProviderDispatchGuard: required IMMEDIATELY BEFORE ANY PAID API POST (CR-B03)
+
+For **P1 AND P2**, the same backend-owned guard checks, in order:
+1. Validated active session/true canonical IP ownership, accepted turn + stable request ID, per-IP in-flight fencing, server policy/bundle revision and allowed one-call route. No provider action on an inadmissible turn.
+2. Server-configured allowlisted model (initial deepseek-flash, thinking disabled, no native tools and tool_choice none), fixed generation configuration, max output tokens 450. Visitor controls none of these.
+3. Complete actual message serialization (true system prompt, current user text, typed state, selected evidence when any, output schema). Verified compatible tokenizer count of **the whole input <=10,000**. If exact preflight counting is unvalidated, use a tested conservative margin and refuse if unable to prove the limit. 1,200 user characters / 8KiB body remain separate caps.
+4. Conservatively calculate and **atomically** reserve one provider attempt and possible monetary spend (at prior fixed peak Flash model-only rates: 10,000 cache-miss input + 450 output = $0.00354). Global USD/day/month reservations include existing in-flight calls. No inference if budget would be exceeded or quota/lock store unavailable.
+5. Durably mark single in-flight provider-attempt identity and fence **before** dispatch. Only then POST once. On timeout/unknown billing do not retry; retain attempt and conservative cost reserve pending reconciliation.
+6. Strictly validate route-specific structured output and pass candidate only to server verification. Raw technical prose from LLM is never displayed.
+
+The **token/cost computation runs before attempt reservation**, followed by one atomic attempt+budget+fence commit. Every dispatch uses this preflight, including the early interpretation call formerly represented as G2. G5 is a *description of optional generation*, not an exemption or first/only location of guard checks.
+
+### 10.3 QuestionInterpretationPlan v0.2 (P1 only)
+
+Strict output schema/typed fields: contract_version='ec-question-interpret/0.2', request_id, turn_id, bundle_id, policy_revision, intent enum (attribute_lookup, compare, relation_lookup, document_lookup, clarify, explain), entity_candidate_ids[] from server allowlist or live comparison frame, selected_variant_candidate_ids[], attribute_key_candidates[] from dictionary, relation_type_candidates[] from dictionary, reference_anchor enum (first,second,current,system,none), unresolved_slots[], interpretation_status (resolved,ambiguous,unsupported). Max lengths and array sizes to be specified in executable JSON Schema, with reject-on-extra-field validation.
+
+Model **cannot** create Entity/Fact/Relation/Evidence IDs, arbitrary URLs, a new policy, role, source, or technical values in this schema. All IDs are validated by backend against the exact active bundle and typed state. Invalid/malformed P1 response -> safe local clarification/error, **no second provider call**. P1 does not produce CandidateAnswerPlan (which refers to retrieved Fact/Relation IDs), and model self-report “out_of_scope” cannot replace server's domain admission decision.
+
+### 10.4 Evidence packet coverage and conflict boundary
+
+EvidencePacket v0.2 includes coverage_receipts[] and eligibility_decisions[] (DS-EC-02 v0.2), each bundle/need/source/policy bound. Source inventory and full eligible applicable ledger scan happen locally **outside** the top-K or 10k truncated model prompt. An omitted prompt excerpt never makes a contradictory Fact disappear. 'Insufficient evidence' requires complete_for_declared_scope SourceCoverageReceipt. Missing/unpinned/failed PDF source is scope_not_indexed/source_unavailable/processing_error, not a negative assertion.
+
+**10k is a cap, not a target.** Discard redundant prose; never truncate a required model/firmware/condition qualifier or silently remove a conflict to fit. If necessary, do not use P1/P2 and render bounded local partial/clarification.
+
+### 10.5 Acceptance fixtures and budget-open policy (CR-I06)
+
+Offline required: AR-T05 early P1 prompt 10,001 tokens -> **zero POST**; budget 0 -> zero POST; valid P1 consumes exactly one attempt; P2 afterward rejected; AR-T07 explicit external goal-hijack request no admitted turn; AR-T08 mixed benign technical + injection preserves only technical intent; fake-clock race/idempotency and unknown-timeout without retry.
+
+**Proposed owner choice (not silently accepted):** global USD exhaustion blocks paid P1/P2 calls but may permit source-verified P0 local answers within visitor/IP/day and CPU/abuse limits. If owner does not approve, fail closed with static service notice. Either path requires explicit operator policy before public launch.
+
+## 11. Owners' next architectural decisions
 
 - Select exact supported Fact/Relation attribute vocabulary and casing/version normalization for the **first three demo entities**; choose a non-sensitive fixture, not an invented Saturn value.
 - Review planned output modes (simple fact / compare / qualified relation / missing data) and whether controlled templates are sufficient for the intended user experience.
