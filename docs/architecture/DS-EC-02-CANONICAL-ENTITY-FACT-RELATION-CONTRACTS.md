@@ -1,7 +1,7 @@
 # DS-EC-02 — Canonical Data Contracts: Entity, Fact, Relation and EvidenceRef
 
 **Date:** 2026-11-18  
-**Status:** ARCHITECTURE CONTRACT CANDIDATE v0.1 — FOR OWNER REVIEW, NOT IMPLEMENTED  
+**Status:** ARCHITECTURE CONTRACT CANDIDATE v0.2 — AUTHOR CORRECTION AFTER CONSOLIDATED REVIEW; NOT YET INDEPENDENTLY ACCEPTED OR IMPLEMENTED  
 **Scope:** independent DS-консультант only; extension of DS-EC-01, not borrowing code or contracts from NEW RAG.  
 **Security baseline:** DS-SEC-07 owner-accepted restrictions remain mandatory. Source inputs: trusted Saturn site and approved Saturn PDF only, considered injection-free by owner.
 
@@ -209,7 +209,65 @@ NeedResolution fields: need_id, requested entity/attribute/relation, status, rev
 5. A derived structured summary must never discard a source qualifier, especially "without amplifier", "one ray", "optional" or "only for firmware X".
 6. Apply corpus revision change as a new bundle and invalidate dependent dossier, citation and answer caches; do not silently reuse old source-locator mappings.
 
-## 8. Offline acceptance scenarios for proposed contracts
+
+## 8. Normative v0.2 corrections: coverage, eligibility, entity identity (DS-EC-AR-01)
+
+**Precedence:** this v0.2 section supersedes incompatible earlier v0.1 candidate text and examples. It is an AUTHOR CORRECTION, not independently accepted. Sources remain trusted by owner; extracting and applying data requires independent verification. Applies to CR-B01/B02, CR-I02/I03/I04/I07 and CR-M02.
+
+### 8.1 SourceCoverageReceipt — explicit limited-world completeness (CR-B01)
+
+Any NeedResolution claiming 'insufficient_evidence' MUST contain a valid SourceCoverageReceipt with coverage_state 'complete_for_declared_scope'. Scope must specify exact bundle_id, entity_id, variant/edition, attribute_key or directed relation type, and relevant conditions. It proves **only the declared inventoried source scope**, never universal absence of a property in all available manuals.
+
+Required receipt fields:
+- contract_version='ec-source-coverage/0.2', coverage_receipt_id, bundle_id, need_id, scope{subject_entity_id,object_entity_id?,variant_id?,attribute_key?,relation_type?,conditions?};
+- source_inventory_manifest_id, required_source_ids[], enumerated_source_ids[], inspected_source_ids[], excluded_source_ids[] with reason, parser_versions[], index_revision;
+- per-source byte_integrity, locator_integrity, extraction_completeness, indexing_completion and relevant document/variant association;
+- applicable_assertion_ids_examined[], coverage_state, diagnostic_codes[], evaluated_at_utc.
+
+Inventory is enumerated **before** top-K/search result selection from trusted canonical routes and pinned approved PDF associations. A source omitted from the model prompt still contributes applicable facts and conflicts to the verifier; all eligible ledger assertions for the exact need/scope are examined outside the shortened LLM packet.
+
+Allowed coverage_state: 'complete_for_declared_scope', 'partial_index', 'source_unavailable', 'processing_error', 'not_applicable'. Required missing/unpinned/incompletely parsed source => 'partial_index' / NeedResolution 'scope_not_indexed'; approved source unreadable => 'source_unavailable'; checksum/parser/index problem => 'processing_error'. Only complete_for_declared_scope plus absence of any eligible applicable assertion may return 'insufficient_evidence'. If an applicable source conflicts, mark 'conflict' and include both source IDs rather than selecting a prompt-visible winner. For a positive fact with incomplete *other* sources, do not claim complete coverage or that no contradictory facts exist.
+
+A receipt is invalidated by a change in SourceBundle, manifest, parser, index, entity or attribute dictionary revision. Cached negative responses require matching exact receipt identity and cannot survive source updates. User wording must specify the checked scope: “В проверенных материалах, включённых в текущий корпус, не указано…”, never universal absence.
+
+### 8.2 EvidenceEligibilityPolicy — verified source-to-claim applicability (CR-B02)
+
+Version 'ec-eligibility/0.2' is bound to bundle and extraction policy. Every runtime technical Fact/Relation requires an EvidenceEligibilityDecision identifying fact/relation_id, need_id, bundle_id, policy_revision, evidence_ids[], per-check PASS/FAIL/NOT_APPLICABLE flags and deterministic reason_code. All required checks must pass: approved source identity and bytes/commit, exact field/span/table cell/diagram region locator, extraction value, unit/polarity and qualifiers, source edition, exact entity and hardware/software variant, relation direction, conditions, and local conflict scan. Neither a correct SHA nor a credible physical page alone validates the assertion.
+
+| Evidence kind | Public answer eligibility |
+|---|---|
+| Site structured field | Verified pinned site commit/blob/content hash + exact field path, source-declared value/unit/qualifiers and entity applicability |
+| Site prose or PDF text | Verified exact text span/physical page/parser; supported meaning/conditions and model edition; no quote-to-unrelated-claim |
+| PDF table | Original bytes SHA, physical page AND table ID,row,column,header,model/variant mapping; value, unit, sign, tolerances independently validated |
+| PDF drawing/wiring | Verified page/region PLUS separately reviewed interpretation of terminal, connection, direction and edition; otherwise blocked/needs_support |
+| Negative property | Explicit applicable source negation with evidence, not missing field |
+| Technical Relation | Explicit evidence of exact directional pair, type, firmware/accessory/variant conditions, no inference from same Ethernet or shared parent |
+| Document navigation | Approved identity and URL only; no technical claim implied |
+
+EvidenceRef states discovered/bytes_verified/locator_verified alone are insufficient for a published claim. Eligibility requires extraction_verified **and** source-to-claim applicability, with interpretation_reviewed for diagrams or otherwise ambiguous source semantics. 'expert_approved' for benchmarking is independent: do not imply every straightforward trusted site field requires separately approved benchmark GT.
+
+### 8.3 Identity, dictionary and schema registry (CR-I02/I03/I04/M02)
+
+Entity_id identifies a stable technical object, **not** its URL or name. A record is uniquely pinned by entity_id + entity_record_revision + bundle_id; model family, concrete execution, firmware edition and document revision are distinct scopes. For cross-bundle moves, entity_identity_map_revision must describe explicit evidence-backed old-to-new mapping or force clarification; never inherit parent-family facts automatically. Route redesign does not by itself create a new technical entity. Turn snapshot remains pinned until output/audit complete; next turn migrates and invalidates old facts/citations/caches.
+
+Fact and Need MUST reference attribute_dictionary_revision, declaring attribute_key, data type, allowed source/normalized units, exact decimal serialization, conversion_rule_revision, range/inclusive bounds, inequality, tolerance, enum/list exhaustiveness, explicit negation and mandatory applicability qualifiers. '0,5 МПа', '12.5 V', ≤ and ± must not be mis-tokenized or silently dropped. Null/missing never equals Boolean false. A list is non-exhaustive unless source explicitly establishes full enumeration. Unrecognized conversion => error/unsupported, not silent numeric rewrite.
+
+Relations MUST reference relation_dictionary_revision. Default semantics: directional=true, transitive=false, invertible=false; any exceptions require separate explicit source-backed reviewed rule. Compatible_with is NEVER inferred from protocol equality, connects_to, or shared family.
+
+Canonical wire types (schema versions required): Entity, Fact, Relation, EvidenceRef, SourceBundle, SourceCoverageReceipt, EvidenceEligibilityDecision, QuestionNeed (single), QuestionNeeds (ordered collection), NeedResolution, DialogState, EvidencePacket, QuestionInterpretationPlan, CandidateAnswerPlan, VerifiedClaim, CitationBinding, VerifiedAnswerResult. Public structures must omit IP, cookies, tokens, keys and private audit content.
+
+NeedResolution enum v0.2: supported, insufficient_evidence, ambiguous_entity_or_variant, conflict, scope_not_indexed, source_unavailable, processing_error, out_of_scope, policy_blocked. For missing/conflict completeness evidence link coverage_receipt_id. Eligibility decisions and reason codes are mandatory for selected factual assertions. DS-EC-05 defines the explicit mapping to verification/final statuses.
+
+### 8.4 Offline review fixtures (designed, not executed)
+
+- AR-T01: attribute appears only on a non-top-K PDF page => must not answer “not specified”.
+- AR-T02: two applicable contradictory facts, one not in LLM prompt => source-ledger conflict detected.
+- AR-T03: valid PDF SHA/page but wrong table row/column => ineligible claim.
+- AR-T04: equal Ethernet/RS-485 without explicit relation => no compatibility assertion.
+- AR-T14: SourceBundle changes mid-turn => old pinned bundle for active request, safe migration next turn.
+- AR-T15: valid Fact ID with wrong edition, qualifier or physical-page support => rejected.
+
+## 9. Offline acceptance scenarios for proposed contracts
 
 | ID | Scenario | Required result |
 |---|---|---|
@@ -231,7 +289,7 @@ NeedResolution fields: need_id, requested entity/attribute/relation, status, rev
 
 All examples and tests in this document are **contract specifications only**, not implemented or executed. Use deterministic synthetic fixtures before any real source material; real source test is separately subject to owner-approved scope/custody.
 
-## 9. Future formalization
+## 10. Future formalization
 
 A later coding stage may implement equivalent relational/typed JSON contracts, schema validation and canonical identity rules using an agreed technology. **Do not assume a particular storage engine, embedding provider or library now.** JSON Schema 2020-12 supports conditional required fields and type checks, useful to express site-vs-PDF locator alternatives; these specifications are not a ready-to-run JSON Schema.
 
@@ -242,6 +300,6 @@ The provenance concept of binding derived entities to their sources is compatibl
 - JSON Schema 2020-12: https://json-schema.org/draft/2020-12/json-schema-core
 - JSON Schema validation: https://json-schema.org/draft/2020-12/json-schema-validation
 
-## 10. Governance
+## 11. Governance
 
 **OPEN FOR OWNER ARCHITECTURE REVIEW**, no model calls, no DS-02 implementation, no production, no Corpus Freeze, no Merge. Do not publish private Core benchmark/GT, real visitor IP/dialogue data or restricted PDF originals in this public repository. NEW RAG remains independent; Saturn site remains READ-ONLY.
