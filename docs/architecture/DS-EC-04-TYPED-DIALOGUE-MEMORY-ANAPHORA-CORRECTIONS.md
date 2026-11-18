@@ -1,4 +1,4 @@
-# DS-EC-04 — Typed Dialogue Memory, Anaphora and Correction State Contract v0.1
+# DS-EC-04 — Typed Dialogue Memory, Anaphora and Correction State Contract v0.2
 
 **Date:** 2026-11-18  
 **Status:** **ARCHITECTURE DESIGN CANDIDATE v0.2 — AUTHOR CORRECTION; REQUIRES NEW INDEPENDENT REVIEW; NOT IMPLEMENTED**  
