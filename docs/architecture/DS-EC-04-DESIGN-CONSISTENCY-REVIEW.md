@@ -16,7 +16,7 @@
 | Source consistency | PASS — one SourceBundle per turn, deliberate invalidation/re-resolution on revision or policy change |
 | Session isolation | PASS AS DESIGN — private DialogState by authenticated anonymous session/active IP lease; different cookie at same IP cannot see old dialogue |
 | 15m IP lease vs 30m series | PASS AS DESIGN — expiry of technical memory at 15m does not reset IP-based 30m progressive series or day quota |
-| 20 billable model POSTs/IP/day | PASS AS EXISTING APPROVED POLICY — separate from dialogue state; local no-call answer counting remains an explicitly identified open policy question |
+| 20 accepted visitor questions/IP/day | PASS AS OWNER-APPROVED DS-SEC-09 POLICY — local no-call answers count; actual paid model POSTs counted independently |
 | Private logs | PASS AS DESIGN — accepted full Q/A + IP/UTC audit isolated to staff-only 30-day store; never GitHub or another visitor |
 | One in-flight call and atomic updates | PASS AS DESIGN — CAS `context_revision`, exclusive in-flight/lease fencing and idempotency; no automatic provider retry after uncertain spending |
 | 10,000 input / 450 output | PASS — owner-approved full-context cap, no uncontrolled past-turn replay, shortest evidence-sufficient source packet |
@@ -27,9 +27,9 @@
 
 ## 2. Important design choices still open (not blockers for documentation-only design)
 
-**IMPORTANT — MEM-REVIEW-01: short memory lifetime versus visitor usability.** The proposal chooses a **privacy-first full dialogue invalidation at 15 minutes of inactivity**, even for the original cookie owner, while retaining a separate IP-based series counter until the 30-minute inactivity threshold. This is a deliberate interpretation of the previously accepted IP lease value, not an explicit prior owner instruction to forget conversation at 15m. Require owner architecture acceptance before implementing; a future alternative would need separately secure token/ownership rules.
+**RESOLVED — MEM-REVIEW-01 by owner DS-SEC-09:** full active technical dialogue memory is cleared after **15 minutes** of inactivity even if the same cookie returns. IP-based 30-minute series and 20-question daily allowance persist independently. Keep privacy/no-leakage implementation tests.
 
-**IMPORTANT — MEM-REVIEW-02: user question quota versus API attempt counter.** Existing owner-approved DS-SEC-07 explicitly says **20 billable provider attempts per IP per site-calendar day**; separately counting locally answered accepted turns is proposed for anti-abuse, but it has not been formally authorized as an **additional 20-turn lockout**. Require explicit decision before implementing UI wording and counters.
+**RESOLVED — MEM-REVIEW-02 by owner DS-SEC-09:** hard **20 accepted visitor questions/IP/operator-calendar day**, including local and cache replies; actual provider POST attempts and dollar usage are separate counters. No double counting on idempotent replay. DS-SEC-09 supersedes the former billable-only interpretation.
 
 **IMPORTANT — MEM-REVIEW-03: atomicity and response/audit order.** `CAS` on memory revision alone is insufficient to prevent parallel provider POSTs or guarantee audit completeness: acquisition of shared IP in-flight lease and cost reserve **must precede** provider dispatch. Use explicit request-state transitions and fencing/timeout behavior in coding design, including backend crash after POST, return response before audit commit, and request replays.
 
@@ -56,7 +56,7 @@ At eventual coding preflight (requires owner GO):
 
 ## 4. Recommendation and governance
 
-**Recommendation:** carry DS-EC-04 forward as an **architecture candidate**, resolve MEM-REVIEW-01 and MEM-REVIEW-02 at owner review, then draft DS-EC-05 atomic-claim verifier and controlled rendering modes. Do not authorize implementation implicitly through document creation.
+**Recommendation:** carry DS-EC-04 forward as an **architecture candidate** with MEM-REVIEW-01/02 **resolved by DS-SEC-09 owner decision**, then draft DS-EC-05 atomic-claim verifier and controlled rendering modes. Do not authorize implementation implicitly through document creation.
 
 This review is a limited documentation assessment, not proof that DeepSeek cannot be goal-hijacked or that memory/accounting concurrency is safe in executable code.
 
