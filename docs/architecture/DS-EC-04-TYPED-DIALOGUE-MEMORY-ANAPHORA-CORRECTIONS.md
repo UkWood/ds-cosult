@@ -35,7 +35,7 @@ The system instruction `Не выдумывай недостающие техн�
 **B. Visitor activity and cost-control state** (server-owned, keyed by canonical IP identity and organization reset periods):
 - one active IP lease / one in-flight provider request;
 - per-IP question-series ordinal and cooldown;
-- 20 accepted billable provider POST attempts/IP/operator-calendar day;
+- **20 accepted visitor questions/IP/operator-calendar day**, including local/template/cache replies; independently counted model POST attempts and reserved USD cost;
 - global daily/monthly budget reservation and circuit breaker.
 
 **C. Private operational/audit data** (separate restricted store):
@@ -161,7 +161,7 @@ A user-supplied claim may be retained as `proposed_query_filter` **for that one 
 Approved DS-SEC-07 values:
 - **15 minutes of inactivity** to release an active anonymous session's IP lease;
 - **30 minutes of inactivity** to reset per-IP progressive question series, based on last **accepted question**, not a rejected retry or background timer;
-- **20 billable model POST attempts per canonical IP per configured operator calendar day**, exhausted state blocks all new paid chat until next calendar reset;
+- **20 accepted visitor questions per canonical IP per configured operator calendar day** (including zero-model-call local/cache/template answers), with a separate counter for actual provider POST attempts and USD cost; exhaustion blocks all chat questions until next calendar reset;
 - **30 days** retention for *restricted, encrypted audit of actual questions and final answers* after privacy/legal gate.
 
 These values **do not mean** one 30-day conversation memory.
@@ -247,15 +247,15 @@ Preserve exact revision/source mapping in audit for any later quality investigat
 | MEM-27 | Policy revision changed in active session | old operator system instructions not reused; safe rebuild/invalidate |
 | MEM-28 | Error reading corpus or source checksum fails | processing_error, not `документация не содержит характеристику` |
 | MEM-29 | User asks quota/support status | locally generated service status, no off-domain general chat or paid model |
-| MEM-30 | Quota reaches 20 billable POSTs/IP/site-calendar day | static lock until configured reset; context state cannot bypass quota |
+| MEM-30 | Quota reaches 20 accepted questions/IP/site-calendar day, including local replies | static lock until configured reset; context state cannot bypass quota |
 
 All equipment IDs in tests are **synthetic**. Tests require fake clock, synthetic source bundle, offline mock LLM and shared-store concurrency simulation. **NO real DeepSeek API calls** under the exhausted DS-QV-01 owner approval.
 
 ## 12. Important still-open architecture decisions
 
-1. **MEMORY TTL semantics:** above proposes privacy-first invalidation of live DialogState at 15m IP lease expiration, even when same cookie returns; require owner design acceptance for this precise behavior.
+1. **RESOLVED — DS-SEC-09 OWNER ACCEPTED:** live DialogState is invalidated after 15 minutes of inactive IP lease even if the same cookie returns; series and daily IP counters survive.
 2. **Token accounting and parsing:** local-only intent resolution vs one paid structured parse vs one paid answer plan; how to preserve natural language without a second LLM call or unverified technical prose (DS-EC-05).
-3. **Counter interpretation:** DS-SEC-07 approved **20 accepted billable provider POST attempts/IP/day**, but visitor-facing wording describes "20 questions." A zero-model-call local answer should at least increment a separate accepted-turn abuse counter. Exact enforcement of 20 **turns** vs 20 **paid POSTs** requires explicit owner decision; do not silently rewrite DS-SEC-07.
+3. **RESOLVED — DS-SEC-09 OWNER ACCEPTED:** 20 **accepted visitor questions/IP/operator-calendar day** (including zero-model-call local/cache answers), with **separate** paid provider POST and dollar accounting. Each accepted turn consumes one question slot exactly once, and at most one paid model POST is permitted.
 4. **Same-cookie multiple tabs:** proposed shared single conversation and CAS updates; if tab privacy is prioritized over convenience, owner may choose a stricter one-tab lease.
 5. **Operator settings:** IANA organization reset timezone, real USD/day and USD/month budgets, support contacts, approved reverse proxy chain, staff-only audit operation/privacy notice and retention mechanics still unset.
 6. **Source and Ground Truth readiness:** prior Linux owner report pins only 3/12 PDFs by SHA, expert-approved benchmark GT remains 0, P4/P5 claim-level audit incomplete; full Saturn corpus not frozen.
