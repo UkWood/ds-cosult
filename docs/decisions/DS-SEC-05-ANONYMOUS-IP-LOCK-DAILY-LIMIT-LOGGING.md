@@ -8,6 +8,8 @@
 **Scope:** DS-консультант, public Saturn technical consultant, existing Draft PR #1 `docs/ds-01c-benchmark-memory`.  
 **Supersedes DS-SEC-04 where it previously proposed only per-session daily accounting.** Numeric quota values and retention periods remain open, separate from the adopted requirements.
 
+**LATER OWNER DECISION DS-SEC-09 (2026-11-18):** The visitor-facing daily hard limit is now **20 accepted visitor questions per canonical IP per operator-calendar day**, including locally rendered/cache answers, with separately counted paid model POST attempts and spend. Active technical memory expires after **15 minutes idle**, without resetting IP series or day quota. Earlier pending-count notes below are historical only. Authoritative decision: `docs/decisions/DS-SEC-09-OWNER-APPROVED-MEMORY-AND-QUESTION-QUOTA.md`.
+
 ## 1. Exact owner requirements
 
 Owner explicitly added to DS-SEC-03:
