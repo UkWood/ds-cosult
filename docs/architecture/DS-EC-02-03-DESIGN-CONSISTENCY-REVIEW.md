@@ -1,5 +1,8 @@
 # DS-EC-02/03 — Architecture Contract Consistency Check v0.1
 
+**HISTORICAL PRE-R1 DESIGN REVIEW.** This report documents what was checked BEFORE the consolidated review and subsequent owner-authorized v0.2 corrections. Its earlier PASS/REVIEW NOTES must **not** be read as independent acceptance of the new corrected contracts. Current authoritative review baseline: `docs/acceptance/DS-EC-02-05-CONSOLIDATED-ARCHITECTURE-ACCEPTANCE-REVIEW.md` (CHANGES REQUESTED). Author's R1 correction trace: `docs/acceptance/DS-EC-02-05-R1-CONSOLIDATED-CORRECTIONS-REPORT.md`. **A separate reviewer/session must decide whether R1 passes.**
+
+
 **Date:** 2026-11-18  
 **Status:** DOCUMENTATION COMPLETE / INTERNAL DESIGN CONSISTENCY REVIEW — **NOT OWNER ACCEPTANCE OR EXECUTABLE TEST PASS**  
 **Reviewed scope:** two new source-verifiable Entity-Centric RAG architecture specifications; no code, no real Saturn source fetch, no paid API.
