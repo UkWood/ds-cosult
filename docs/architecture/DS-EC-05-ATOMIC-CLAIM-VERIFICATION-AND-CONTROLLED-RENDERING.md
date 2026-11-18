@@ -288,7 +288,7 @@ A future independent review must trace every final technical statement through `
 
 **NO Merge, DS-02 coding, new paid DeepSeek API calls (DS-QV-01 GO exhausted 6/6), production, Corpus Freeze, NEW RAG changes or writes to trusted Saturn-Main-Site (READ-ONLY).**
 
-## 12. Normative v0.2 corrections — exact status mapping, final gate and output modes
+## 13. Normative v0.2 corrections — exact status mapping, final gate and output modes
 
 **Precedence:** this section supersedes ambiguous v0.1 status/gate wording above and resolves architecture-review CR-B01/B02/B03/B04, CR-I02/I04/I05/I06 and CR-M02 at **author-correction level** only. Independent acceptance is pending. Approved visitor/DeepSeek limits remain fixed.
 
