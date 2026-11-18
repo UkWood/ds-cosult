@@ -14,6 +14,8 @@ This approval accepts the previously proposed controls and numerical **pilot def
 - `docs/decisions/DS-SEC-05-ANONYMOUS-IP-LOCK-DAILY-LIMIT-LOGGING.md` — owner-required anonymous access, one active session/IP, daily chat lockout, IP/Q&A logging.
 - `docs/security/DS-SEC-06-IP-LEASE-DAILY-LOCKOUT-AUDIT-PROPOSAL.md` — technical implementation proposal, including 30-day encrypted private raw logs.
 
+**Owner amendment effective 2026-11-18:** `docs/decisions/DS-SEC-08-OWNER-APPROVED-10000-INPUT-TOKEN-CAP.md` supersedes the original **3,000 full LLM input-token maximum** with **10,000 total input tokens**. This table and budget-gate rules below have been updated to the current 10,000 cap. The original owner acceptance quoted above is preserved as historical evidence; all unrelated requirements remain unchanged.
+
 **Where proposals conflict**, this decision is authoritative. In particular, **20 questions per canonical IP per operator-configured calendar day**, **not** 20 per cookie/session over a rolling 24-hour period. The owner's latest acceptance supersedes the earlier unapproved status of these numerics; old proposal documents are retained for traceability, not reinterpreted as current rejection.
 
 ## 2. Approved pilot configuration
@@ -25,7 +27,7 @@ This approval accepts the previously proposed controls and numerical **pilot def
 | System non-fabrication | Explicit Russian rule `Не выдумывай недостающие технические характеристики.` |
 | Question text cap | **1,200 Unicode characters** per visitor question, server-validated |
 | HTTP JSON body cap | **8 KiB** before JSON parsing |
-| Full LLM input/context cap | **3,000 tokens total** INCLUDING system policy, current user question, compact dialogue state and retrieved trusted source evidence |
+| Full LLM input/context cap | **10,000 tokens total (hard maximum, not typical prompt size)** INCLUDING system policy, current user question, compact dialogue state and retrieved trusted source evidence |
 | Output cap | **450 generated tokens** server-set `max_tokens` |
 | Concurrency | **One in-flight LLM request per canonical IP/anonymous session** |
 | Session ownership | **One active anonymous session per canonical external IP** |
@@ -51,7 +53,7 @@ This approval accepts the previously proposed controls and numerical **pilot def
 3. Session lease expiry or explicit end-session does **not** reset daily quota or continuous-series timer. Requests that never reach paid provider do not increment billable quota but may increment independent abuse counters; timeout after attempted POST counts as a consumed attempt.
 4. Every quota, lease, concurrency and budget check is **atomic in shared backend state** before external API dispatch; fail closed if accounting/lock store unavailable.
 5. For cooldown return server-generated `429` and `Retry-After` without sleeping in the backend or calling DeepSeek; for quota exhaustion show exact configured reset time and verified contact links; do not auto-email company support.
-6. Reserve conservative per-request maximum cost for **full input 3,000 / output 450 token envelope** and any separately approved tools. Release unused reserve only on validated provider usage. Cost estimate is not a provider-enforced dollar cap; reconcile billing externally.
+6. Reserve conservative per-request maximum cost for **full input 10,000 / output 450 token envelope** and any separately approved tools. Release unused reserve only on validated provider usage. At the 2026-11-18 peak Flash rates used for model-only conservative reservation, 10,000 input cache-miss tokens plus 450 output tokens are **$0.00354 per call** (previous 3,000-input case $0.00144); reserve before POST, with margin for tokenizer/pricing uncertainty as required. Cost estimate is not a provider-enforced dollar cap; reconcile billing externally.
 7. System role, source scope, retrieval, policy gate, claim verification and final citations are **backend-owned**. Visitors cannot promote instructions or proposed technical facts into trusted corpus or user-independent system role.
 8. IP locking prevents simultaneous sessions from a *network address*, **not** unique humans. NAT/shared office IPs and VPN/IPv6 rotation are known limitations. A global budget, mild network abuse controls and IP-aware analytics remain required. Do not claim prevention of all sybil attacks.
 9. Logging full IP and Q/A can involve personal data; maintain approved purpose/legal basis, visitor notice, access control, deletion rights/handling and data-transfer analysis as applicable. **30 days is a product retention default, not legal permission to collect indiscriminately**. Privacy/security review remains a launch gate.
@@ -73,7 +75,7 @@ The owner accepted the **requirement to configure**, not guessed values, for:
 
 Architectural acceptance here is **not authorization for coding DS-02, hosting, production, new PR, or new paid DeepSeek calls**. Scope remains current open Draft PR #1 documentation only.
 
-A future coding assignment must carry these accepted requirements, with offline tests first for IP concurrency/races, daily reset, series Q6–Q11, log retention, budget reservations, bad proxy headers, malicious role text, session visibility, known vs missing source facts and 3,000-token overflow. Private IP/Q&A and hidden benchmark Core/GT must **never** be copied to this public repo.
+A future coding assignment must carry these accepted requirements, with offline tests first for IP concurrency/races, daily reset, series Q6–Q11, log retention, budget reservations, bad proxy headers, malicious role text, session visibility, known vs missing source facts and 10,001-token overflow (10,000 boundary accepted when otherwise valid). Private IP/Q&A and hidden benchmark Core/GT must **never** be copied to this public repo.
 
 **DS-QV-01: 6/6 authorized requests used, 0 remain**. NEW RAG remains independent and `Saturn-Main-Site` read-only.
 
