@@ -251,7 +251,7 @@ Preserve exact revision/source mapping in audit for any later quality investigat
 
 All equipment IDs in tests are **synthetic**. Tests require fake clock, synthetic source bundle, offline mock LLM and shared-store concurrency simulation. **NO real DeepSeek API calls** under the exhausted DS-QV-01 owner approval.
 
-## 12. Important still-open architecture decisions
+## 12. Historical v0.1 design questions (resolved owner decisions superseded by DS-SEC-09 and normative §14)
 
 1. **RESOLVED — DS-SEC-09 OWNER ACCEPTED:** live DialogState is invalidated after 15 minutes of inactive IP lease even if the same cookie returns; series and daily IP counters survive.
 2. **Token accounting and parsing:** local-only intent resolution vs one paid structured parse vs one paid answer plan; how to preserve natural language without a second LLM call or unverified technical prose (DS-EC-05).
