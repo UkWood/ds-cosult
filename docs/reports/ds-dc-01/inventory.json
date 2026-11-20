@@ -1,0 +1,21 @@
+{
+  "commit": "084d759487bfab6e111549c9b5469711ac5fc13e",
+  "excluded": {
+    "other_repository_file": 612,
+    "astro_route_template": 19
+  },
+  "kinds": {
+    "article": 36,
+    "group": 23,
+    "news": 22,
+    "page": 40,
+    "device": 277,
+    "software": 15,
+    "category": 12,
+    "system": 13
+  },
+  "states": {
+    "not_ready": 436,
+    "ready": 2
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "model": "deepseek-flash",
+  "thinking": {
+    "type": "enabled"
+  },
+  "max_tokens": 4096,
+  "stream": false,
+  "file_parts": [
+    {
+      "type": "file",
+      "file_id": "[mock handle]"
+    },
+    {
+      "type": "file",
+      "file_id": "[mock handle]"
+    },
+    {
+      "type": "file",
+      "file_id": "[mock handle]"
+    },
+    {
+      "type": "file",
+      "file_id": "[mock handle]"
+    }
+  ],
+  "pages": [
+    {
+      "path": "src/content/products/bkd-pk-rf-2.md",
+      "sha256": "26a8480446e5533600c0373055377c33f06760fd1cbf5a00929877594b850738",
+      "utf8_bytes": 8544
+    }
+  ],
+  "documents": [
+    {
+      "applicability": "БКД-ПК-RF.2, быстрый старт",
+      "id": "76f0b59dbddd380fd3977e2ecf247cce53578becbbcdf770fe79c22577d33fb3",
+      "pages": 2,
+      "revision": null,
+      "scope": "saturn:device:bkd-pk-rf-2",
+      "sha256": "bf07da30d1221f61a3ecdde5b40f542b90ca2a646c5dc6019997326a2c570148",
+      "url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20%d0%91%d1%8b%d1%81%d1%82%d1%80%d1%8b%d0%b9%20%d1%81%d1%82%d0%b0%d1%80%d1%82.pdf"
+    },
+    {
+      "applicability": "БКД-ПК-RF.2, обзор изменений",
+      "id": "42f2fcb6f7dfdfa33cd832d58d533d38d5d07de2c268cc22722395112b529d25",
+      "pages": 8,
+      "revision": null,
+      "scope": "saturn:device:bkd-pk-rf-2",
+      "sha256": "496ddc2786b8fb2cdfd8970947fadde6b7a045e7d86e20737f2ef694425d5890",
+      "url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20%d0%9e%d0%b1%d0%b7%d0%be%d1%80.pdf"
+    },
+    {
+      "applicability": null,
+      "id": "6f65a717b55eec7c51a90e47ac379a76a9b7ad4af5953bd79bff1cb5ddd7de2a",
+      "pages": 65,
+      "revision": "ЕСАН.426469.012РЭ, 203-01",
+      "scope": "saturn:device:bkd-pk-rf-2",
+      "sha256": "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a",
+      "url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-pk-rf2/re%20BKD-PK-RF2.pdf"
+    },
+    {
+      "applicability": "БКД-ПК-RF.2, OPC UA, ПО 1.5, Информационные каналы",
+      "id": "7ec55efd3076acb655d842dd0e538f240fc528f82efcc3be1e80a3cf95a49688",
+      "pages": 5,
+      "revision": null,
+      "scope": "saturn:device:bkd-pk-rf-2",
+      "sha256": "959f515c588ea8758cae0ccfdd17efaf396b31c84c4315e1b195c745d59db5db",
+      "url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20OPCUA.pdf"
+    }
+  ],
+  "real_api_calls": 0,
+  "cold_chat_reserved_micro_usd": 24116,
+  "file_reserved_micro_usd": 108675
+}

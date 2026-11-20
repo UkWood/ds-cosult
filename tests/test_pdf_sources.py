@@ -77,8 +77,10 @@ def test_verified_offline_physical_pages(tmp_path):
     assert pages[3]["excluded_regions"]
     assert catalog.records["bkd", "pdf_page_4"][0].evidence.region["bbox"]
     (tmp_path / "pdf" / (digest + ".pdf")).write_bytes(raw + b"tamper")
-    with pytest.raises(ValueError, match="SHA-256"):
-        pdf.load_pdfs(load_local(tmp_path), tmp_path)
+    corrupted = pdf.load_pdfs(load_local(tmp_path), tmp_path)
+    failed = next(doc for doc in corrupted if (doc["entity"], doc["index"]) == ("bkd", 2))
+    assert failed["status"] == "failed" and "SHA-256" in failed["error"]
+    assert next(doc for doc in corrupted if doc["url"] in pdf.OWNER_EXCLUDED)["status"] == "EXCLUDED_BY_OWNER"
     args.expected_sha256 = "0"*64
     with pytest.raises(ValueError, match="SHA-256"):
         pdf.run_command(args, catalog)
