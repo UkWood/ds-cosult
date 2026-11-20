@@ -224,38 +224,84 @@ def requested_page(clause):
     return f"pdf_page_{int(match[1])}" if match and ALIASES.fullmatch(match[2]) else None
 
 
+DIV_SUBJECT = r"дополнительная антенна 4g[ -]*div"
+DIV_RELATION = re.compile(
+    DIV_SUBJECT + r" подключается к разъему [xх]w2 (?:тип sma|\(sma\)|sma)\.?"
+)
+DIV_ROW = re.compile(DIV_SUBJECT + r" \| [xх]w2(?: (?:тип sma|\(sma\)|sma)| \| sma)")
+SIM_SWITCH = r"(?:карты )?переключ(?:аются|ение выполняется) программн(?:о|ым способом)"
+SIM_OPERATION = re.compile(
+    r"одновременная работа (?P<cards>двух карт|(?:двух )?sim[- ]карт) не поддерживается"
+    r"(?:, " + SIM_SWITCH + r"|\. (?:переключение программное|" + SIM_SWITCH + r"))\.?"
+)
+BKD_FACTS = {
+    "pdf_div_connector": ({"connector": "XW2", "connector_type": "SMA"},
+                          "Дополнительная антенна 4G Div подключается к разъёму XW2 (SMA)."),
+    "pdf_sim_operation": ({"simultaneous_operation": False, "switching": "software"},
+                          "SIM-карты одновременно не работают. Переключение выполняется программно."),
+}
+
+
+def normalize_statement(text):
+    return " ".join(text.casefold().replace("ё", "е").split())
+
+
+def sim_operation_quote(text):
+    spans = list(re.finditer(r"\S.*?(?:[.!?](?=\s|$)|$)", text, re.DOTALL))
+    for index, span in enumerate(spans):
+        # Both facts must occur in the same sentence or two adjacent ones.
+        for last in spans[index:index + 2]:
+            quote = text[span.start():last.end()]
+            match = SIM_OPERATION.fullmatch(normalize_statement(quote))
+            if not match:
+                continue
+            if match["cards"] == "двух карт":
+                if not index or not re.search(r"\bsim[12]\b", spans[index - 1][0], re.IGNORECASE):
+                    continue
+                quote = text[spans[index - 1].start():last.end()]
+            return quote
+
+
 def bkd_claims(source, sha, page):
-    """Only explicit statements in the reviewed manual revision can prove these needs."""
+    """Match explicit statements in the reviewed manual, retaining their original spans."""
     if (source.entity, source.index, sha) != ("bkd", PRIMARY["bkd"], BKD_PIN):
         return
     number = page["physical_page"]
-    for block in page["blocks"] + (page["rows"] if number == 12 else []):
-        text = re.sub(r"\s+", " ", block["text"].casefold().replace("ё", "е"))
-        if number == 14:
-            if (re.search(r"s[iі]m", text) and "одновременн" in text
-                    and re.search(r"одновременн[^.!?]{0,100}(?:не\s+(?:поддержива|допуска|предусмотр|могут|работа)|невозмож)"
-                                  r"|не\s+(?:поддержива|допуска|предусмотр|могут|работа)[^.!?]{0,65}одновременн", text)
-                    and re.search(r"переключ\w*", text) and "программ" in text):
-                yield "pdf_sim_operation", "SIM-карты одновременно не работают. Переключение выполняется программно.", block
-        elif number == 12 and all(re.search(pattern, text) for pattern in (
-            r"4g[ -]*div", r"антенн", r"\b[xх]w2\b", r"\bsma\b",
-        )) and set(re.findall(r"\b[xх]w\d+\b", text)) <= {"xw2", "хw2"}:
-            typed_row = block["kind"] == "ruled_table_row" and len(block["cells"]) >= 2
-            if typed_row or ("разъем" in text and "подключ" in text and not re.search(
-                r"не\s+подключ|запрещ|нельзя|не\s+предназнач", text
-            )):
-                yield ("pdf_div_connector",
-                       "Дополнительная антенна 4G Div подключается к разъёму XW2 (SMA).", block)
+    if number == 12:
+        for order, block in enumerate(page["blocks"], 1):
+            # Sentence boundaries separate neighboring relations. A line wrap is
+            # whitespace within a sentence, and the citation keeps it verbatim.
+            statements = re.split(r"(?<=[.!?])\s+", block["text"])
+            div_statements = [
+                statement for statement in statements
+                if re.search(r"4g[ -]*div.*(?:разъем|[xх]w\d+|подключ)",
+                             normalize_statement(statement))
+            ]
+            if len(div_statements) == 1 and DIV_RELATION.fullmatch(normalize_statement(div_statements[0])):
+                yield "pdf_div_connector", block, order, div_statements[0]
+        for order, row in enumerate(page["rows"], 1):
+            if (all("|" not in cell["text"] for cell in row["cells"])
+                    and DIV_ROW.fullmatch(normalize_statement(row["text"]))):
+                yield "pdf_div_connector", row, order, row["text"]
+    elif number == 14:
+        for order, block in enumerate(page["blocks"], 1):
+            quote = sim_operation_quote(block["text"])
+            if quote:
+                yield "pdf_sim_operation", block, order, quote
 
 
-def region_ref(source, sha, number, block, order, route):
+def region_ref(source, sha, number, block, order, route, quote=None):
     locator = f"PDF physical page {number}"
     structure = {k: v for k, v in block.items() if k != "text"}
     structure.update(order=order, physical_page=number, entity=source.entity,
                      revision=revision_for(source), scope="manufacturer manual",
                      extraction=REGION_VERSION)
+    if quote is not None:
+        structure.update(source_block_text=block["text"],
+                         geometry_scope="row" if block["kind"] == "ruled_table_row" else "block")
     return EvidenceRef(source.url, locator, route, COMMIT, "", sha,
-                       block["text"], source.url + f"#page={number}", PARSER, structure)
+                       block["text"] if quote is None else quote,
+                       source.url + f"#page={number}", PARSER, structure)
 
 
 def load_pdfs(catalog, data):
@@ -307,11 +353,11 @@ def load_pdfs(catalog, data):
                                     ev.snippet, label + "\n" + ev.snippet, ev))
             if records:
                 catalog.records[(source.entity, attr)] = records
-            for attribute, value, block in bkd_claims(source, sha, page):
-                blocks = page["blocks"] if block["kind"] == "selectable_text" else page["rows"]
-                order = blocks.index(block) + 1
-                ev = region_ref(source, sha, n, block, order, entity.route)
-                record = Fact(f"{sha}:page:{n}:{attribute}:{order}", entity.id, attribute, value, value, ev)
+            for attribute, block, order, quote in bkd_claims(source, sha, page):
+                ev = region_ref(source, sha, n, block, order, entity.route, quote)
+                value, text = BKD_FACTS[attribute]
+                location = str(order) if block["kind"] == "selectable_text" else f"row:{order}"
+                record = Fact(f"{sha}:page:{n}:{attribute}:{location}", entity.id, attribute, value, text, ev)
                 ledger = catalog.records.setdefault((source.entity, attribute), [])
                 if record not in ledger:
                     ledger.append(record)

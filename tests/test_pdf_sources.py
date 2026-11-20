@@ -116,25 +116,85 @@ SIM_QUESTION = "2 SIM карты могут работать одновреме�
 DIV_QUESTION = "К какому разъему подключается дополнительная антенна 4G Div?"
 HOUSING_QUESTION = "Из какого материала выполнен корпус БКД-ПК-RF.2?"
 EXPECTED = [(SIM_QUESTION, 14, "программно"), (DIV_QUESTION, 12, "XW2 (SMA)")]
+DIV_QUOTE = "Дополнительная антенна 4G Div\nподключается к разъему XW2 тип SMA."
+ANTENNA_BLOCK = (
+    "Напряжение питание 220 В, 50 Гц подается на разъем ХТ9.\n"
+    "Резервное постоянное напряжение питания +(12-24) В подается на разъем ХТ8.\n"
+    "Основная антенна 2G/3G/4G подключается к разъему XW1 тип SMA.\n"
+    + DIV_QUOTE + "\n"
+    "Активная антенна GРS/ГЛОНАСС подключается к разъему XW3 тип SMA."
+)
+SIM_QUOTE = ("Одновременная работа двух карт не\n"
+             "поддерживается, карты переключаются программным способом.")
+SIM_BLOCK = "Х3 (SIM2) в верхней части корпуса контроллера. " + SIM_QUOTE
 
 
-def assert_pdf_answers(catalog, tmp_path, sha):
+@pytest.mark.parametrize("text", [
+    ANTENNA_BLOCK.replace("XW2", "XW1"),
+    ANTENNA_BLOCK.replace("XW2", "XW3"),
+    ANTENNA_BLOCK.replace("XW2", "XW2 или XW3"),
+    ANTENNA_BLOCK.replace("XW2 тип SMA", "XW2"),
+    "Основная антенна подключается к разъему XW2 тип SMA. Дополнительная антенна 4G Div.",
+    DIV_QUOTE.replace("подключается", "не подключается"),
+    DIV_QUOTE + " Дополнительная антенна 4G Div подключается к разъему XW3 тип SMA.",
+])
+def test_div_rejects_wrong_or_unproven_relationship(text):
+    source = pdf.Source("bkd", 2, "doc", "https://www.mnppsaturn.ru/test.pdf", "test", True)
+    block = {"text": text, "bbox": [20, 50, 280, 70], "kind": "selectable_text"}
+    page = {"physical_page": 12, "blocks": [block], "rows": []}
+    assert not list(pdf.bkd_claims(source, pdf.BKD_PIN, page))
+
+
+def test_div_row_requires_explicit_cells_in_the_same_row():
+    source = pdf.Source("bkd", 2, "doc", "https://www.mnppsaturn.ru/test.pdf", "test", True)
+    subject = "Дополнительная антенна 4G Div"
+    text = f"{subject} | XW2 | SMA"
+    row = {"text": text, "kind": "ruled_table_row", "bbox": [0, 0, 120, 10],
+           "cells": [{"text": cell} for cell in (subject, "XW2", "SMA")]}
+    page = {"physical_page": 12, "blocks": [], "rows": [row]}
+    attribute, region, order, quote = next(pdf.bkd_claims(source, pdf.BKD_PIN, page))
+    assert attribute == "pdf_div_connector"
+    proof = pdf.region_ref(source, pdf.BKD_PIN, 12, region, order, "test", quote)
+    assert proof.region["geometry_scope"] == "row" and proof.snippet == text
+    row["cells"] = [{"text": subject}, {"text": "XW2 | SMA"}]
+    assert not list(pdf.bkd_claims(source, pdf.BKD_PIN, page))
+
+
+def assert_pdf_answers(catalog, tmp_path, source, sha):
+    attempts = []
+
     def select(mode, payload):
+        attempts.append(mode)
         if mode == "P1":
             return {"interpretation_status": "supported", "need_ids": ["n1"]}
         return {"question_needs_hash": payload["question_needs_hash"], "selection": payload["candidates"]}
 
     pilot = Pilot(catalog, tmp_path / "routed.sqlite", lab=True, mock=select, mock_budget=4)
+    baseline = {}
     for mode in ("P0", "P1", "P2"):
         for question, page, fragment in EXPECTED:
             # P0 establishes the local referent for subsequent offline model routes.
             result = pilot.ask(question, "reader", f"{page}-{mode}", mode=mode)
             assert result["status"] == "answered", result
             assert fragment in result["text"]
+            assert len(result["verified_claims"]) == len(result["question_needs"]) == 1
+            assert not result["unresolved_need_ids"]
+            outcome = (result["question_needs"], result["verified_claims"], result["text"])
+            assert outcome == baseline.setdefault(question, outcome)
+            assert result["provider_attempts"] == (0 if mode == "P0" else 1)
+            if page == 14:
+                assert "SIM-карты одновременно не работают." in result["text"]
+            else:
+                assert "XW1" not in result["text"] and "XW3" not in result["text"]
             proof = result["verified_claims"][0]["citation"]
             assert proof["sha256"] == sha
-            assert proof["url"].endswith(f"#page={page}")
+            assert proof["url"] == source.url + f"#page={page}"
+            assert proof["parser"] == pdf.PARSER
             assert proof["region"]["bbox"] and proof["region"]["physical_page"] == page
+            assert proof["region"]["revision"] == pdf.revision_for(source)
+            assert proof["region"]["geometry_scope"] == "block"
+            assert proof["snippet"] in proof["region"]["source_block_text"]
+    assert attempts == ["P1", "P1", "P2", "P2"]
     assert pilot.ask(HOUSING_QUESTION, "reader", "housing")["status"] == "needs_support"
 
 
@@ -148,18 +208,46 @@ def test_structured_pdf_claims_use_scoped_blocks_and_not_site_keyword(tmp_path, 
     monkeypatch.setattr(pdf, "BKD_PIN", sha)
     # Synthetic extractor output exercises the typed resolver without distributing
     # the vendor binary. Geometry itself is tested with the generated real PDF.
-    texts = {12: "Дополнительная антенна 4G Div подключается к разъему XW2 (SMA).",
-             14: "Одновременная работа SIM-карт не поддерживается. Переключение программное."}
+    texts = {12: ANTENNA_BLOCK, 14: SIM_BLOCK}
     pages = [{"physical_page": page, "blocks": [
         {"text": text, "bbox": [20, 50, 280, 70], "kind": "selectable_text"}
     ], "rows": [], "exclusion": None, "tables": [], "excluded_regions": []}
         for page, text in texts.items()]
+    neighbor = "Самостоятельный соседний блок."
+    pages[0]["blocks"].append({"text": neighbor, "bbox": [20, 90, 280, 100],
+                               "kind": "selectable_text"})
     monkeypatch.setattr(pdf, "extract", lambda _: pages)
     source = next(src for src in pdf.sources(tmp_path) if (src.entity, src.index) == ("bkd", 2))
     pdf.stage(tmp_path, source, raw, sha)
     pdf.load_pdfs(catalog, tmp_path)
     assert catalog.coverage["site_files"] == provenance
-    assert_pdf_answers(catalog, tmp_path, sha)
+    assert_pdf_answers(catalog, tmp_path, source, sha)
+    assert [fact.value for fact in catalog.records["bkd", "pdf_page_12"]] == [ANTENNA_BLOCK, neighbor]
+    assert catalog.search(neighbor, "bkd", 1)[0]["url"] == source.url + "#page=12"
+    for attr, quote, value in (
+        ("pdf_div_connector", DIV_QUOTE, {"connector": "XW2", "connector_type": "SMA"}),
+        ("pdf_sim_operation", SIM_BLOCK, {"simultaneous_operation": False, "switching": "software"}),
+    ):
+        fact, = catalog.records["bkd", attr]
+        assert fact.value == value
+        proof = fact.evidence
+        assert proof.snippet == quote and proof.region["order"] == 1
+
+    # P1 may omit a need in its proposal, but server-side freezing retains it.
+    pilot = Pilot(catalog, tmp_path / "compound.sqlite", lab=True, mock_budget=1,
+                  mock=lambda *_: {"interpretation_status": "supported", "need_ids": ["n1"]})
+    result = pilot.ask(f"{DIV_QUESTION} {HOUSING_QUESTION}", "reader", "compound", mode="P1")
+    assert result["status"] == "partial"
+    assert [need["attribute"] for need in result["question_needs"]] == [
+        "pdf_div_connector", "pdf_housing_material"]
+    assert result["unresolved_need_ids"] == ["n2"]
+
+    pages[0]["blocks"][0]["text"] = ANTENNA_BLOCK.replace("XW2", "XW2 или XW3")
+    ambiguous = load_local(tmp_path)
+    pdf.load_pdfs(ambiguous, tmp_path)
+    pilot = Pilot(ambiguous, tmp_path / "ambiguous.sqlite", lab=True)
+    result = pilot.ask(DIV_QUESTION, "reader", "ambiguous")
+    assert result["status"] == "needs_support" and not result["verified_claims"]
 
 
 def test_pinned_manufacturer_originals(tmp_path):
@@ -183,4 +271,5 @@ def test_pinned_manufacturer_originals(tmp_path):
     assert docs["bkd"]["accepted_blocks"] > 1
     print({entity: doc["accepted_blocks"] for entity, doc in docs.items()})
     assert catalog.coverage["site_files"] == provenance
-    assert_pdf_answers(catalog, tmp_path, pdf.BKD_PIN)
+    bkd = next(s for s in pdf.sources(tmp_path) if (s.entity, s.index) == ("bkd", 2))
+    assert_pdf_answers(catalog, tmp_path, bkd, pdf.BKD_PIN)
