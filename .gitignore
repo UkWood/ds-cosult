@@ -1,0 +1,4 @@
+.venv/
+.pilot/
+__pycache__/
+.pytest_cache/

@@ -1,0 +1,1191 @@
+{
+  "commit": "084d759487bfab6e111549c9b5469711ac5fc13e",
+  "sources": [
+    {
+      "key": "articles.dispetcherizatsiya-liftov-sldks-1",
+      "entity": "saturn:article:dispetcherizatsiya-liftov-sldks-1",
+      "title": "Диспетчеризация лифтов СЛДКС-1",
+      "type": "article",
+      "path": "src/content/articles/dispetcherizatsiya-liftov-sldks-1.md",
+      "route": "/articles/dispetcherizatsiya-liftov-sldks-1/",
+      "url": "https://www.mnppsaturn.ru/articles/dispetcherizatsiya-liftov-sldks-1/",
+      "blob": "00187c830f18ff7be4d5a2b55dcd00654042eabb",
+      "sha256": "58182be1e48dbed809d78d1f89b9eb9eb570bae8ae513e5dd3fc210a4302622f",
+      "bytes": 15257,
+      "variant": null,
+      "reason": [
+        "sld articles[1]"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "articles.dispetcherskiy-kontrol-podemnikov-dlya-invalidov-video-i",
+      "entity": "saturn:article:dispetcherskiy-kontrol-podemnikov-dlya-invalidov-video-i",
+      "title": "Диспетчерский контроль подъемников для инвалидов видео и связь",
+      "type": "article",
+      "path": "src/content/articles/dispetcherskiy-kontrol-podemnikov-dlya-invalidov-video-i.md",
+      "route": "/articles/dispetcherskiy-kontrol-podemnikov-dlya-invalidov-video-i/",
+      "url": "https://www.mnppsaturn.ru/articles/dispetcherskiy-kontrol-podemnikov-dlya-invalidov-video-i/",
+      "blob": "fa10b2fdc418edac0b940bcde085b36e3c2c97d1",
+      "sha256": "2611ddb313922f7a7202d433008f941e77adce6e60643618fd6e51cd8cd653a9",
+      "bytes": 15177,
+      "variant": null,
+      "reason": [
+        "sld articles[2]",
+        "sld L77"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "articles.intellektualnoe-zdanie-v-gorode-murmansk",
+      "entity": "saturn:article:intellektualnoe-zdanie-v-gorode-murmansk",
+      "title": "Интеллектуальное здание в городе Мурманск",
+      "type": "article",
+      "path": "src/content/articles/intellektualnoe-zdanie-v-gorode-murmansk.md",
+      "route": "/articles/intellektualnoe-zdanie-v-gorode-murmansk/",
+      "url": "https://www.mnppsaturn.ru/articles/intellektualnoe-zdanie-v-gorode-murmansk/",
+      "blob": "af9c0fc92e467ead997c255dd63c46831fe2f6c9",
+      "sha256": "80afe9a136ad0b9874a4d32794804177f2d9a835974ba6cc501c4a7e8b183c31",
+      "bytes": 6863,
+      "variant": null,
+      "reason": [
+        "sld articles[3]"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "articles.obzor-apparatnykh-sredstv",
+      "entity": "saturn:article:obzor-apparatnykh-sredstv",
+      "title": "Обзор аппаратных средств",
+      "type": "article",
+      "path": "src/content/articles/obzor-apparatnykh-sredstv.md",
+      "route": "/articles/obzor-apparatnykh-sredstv/",
+      "url": "https://www.mnppsaturn.ru/articles/obzor-apparatnykh-sredstv/",
+      "blob": "1b1784da1610dd66e1c519becbdd8117f5589289",
+      "sha256": "4f7b71a6ac5404a2d74097ae0d97e75032c778d464b6b2d22a1ea3a7019bdc4f",
+      "bytes": 10550,
+      "variant": null,
+      "reason": [
+        "sld articles[4]"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "articles.prostaya-sistema-dispetcherizatsii-liftov",
+      "entity": "saturn:article:prostaya-sistema-dispetcherizatsii-liftov",
+      "title": "Простая система диспетчеризации лифтов",
+      "type": "article",
+      "path": "src/content/articles/prostaya-sistema-dispetcherizatsii-liftov.md",
+      "route": "/articles/prostaya-sistema-dispetcherizatsii-liftov/",
+      "url": "https://www.mnppsaturn.ru/articles/prostaya-sistema-dispetcherizatsii-liftov/",
+      "blob": "60b04bf5218c5c314adc9712eac25a3cb9f4aada",
+      "sha256": "0315c50ab79cf2db233ce2154e110aa32c8b77185ed2f13e6665b444b4e00449",
+      "bytes": 16168,
+      "variant": null,
+      "reason": [
+        "sld L126"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "articles.sldks-1-vypusk-2001-2004-g",
+      "entity": "saturn:article:sldks-1-vypusk-2001-2004-g",
+      "title": "СЛДКС-1 выпуск 2001-2004 г.",
+      "type": "article",
+      "path": "src/content/articles/sldks-1-vypusk-2001-2004-g.md",
+      "route": "/articles/sldks-1-vypusk-2001-2004-g/",
+      "url": "https://www.mnppsaturn.ru/articles/sldks-1-vypusk-2001-2004-g/",
+      "blob": "01bb8a383f667b3cc18cf48d3f9abb478e0e61c1",
+      "sha256": "7e00d79c705b29e67a31fcda7ba6952a0f047c3c3e69258cf36b8bc3565bb0f2",
+      "bytes": 3024,
+      "variant": "gen1",
+      "reason": [
+        "sld L85"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "articles.sldks-1-vypusk-2005-2006-g",
+      "entity": "saturn:article:sldks-1-vypusk-2005-2006-g",
+      "title": "СЛДКС-1 выпуск 2005-2006 г.",
+      "type": "article",
+      "path": "src/content/articles/sldks-1-vypusk-2005-2006-g.md",
+      "route": "/articles/sldks-1-vypusk-2005-2006-g/",
+      "url": "https://www.mnppsaturn.ru/articles/sldks-1-vypusk-2005-2006-g/",
+      "blob": "e91a74abd0f1b7b671fd3bdea8248c065c882309",
+      "sha256": "4cc4abf9f26b82a9d751c360be13447e76c0e12056aa28f248fd6eb565578ce1",
+      "bytes": 2686,
+      "variant": "gen2",
+      "reason": [
+        "sld articles[0]",
+        "sld L93"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "pages.dispetcherizatsiya-liftov-sldks-1",
+      "entity": "saturn:page:dispetcherizatsiya-liftov-sldks-1",
+      "title": "Диспетчеризация лифтов СЛДКС-1",
+      "type": "page",
+      "path": "src/content/pages/dispetcherizatsiya-liftov-sldks-1.md",
+      "route": "/dispetcherizatsiya-liftov-sldks-1/",
+      "url": "https://www.mnppsaturn.ru/dispetcherizatsiya-liftov-sldks-1/",
+      "blob": "808e2b67d012f015ad509bff7fc973bbe8fbe164",
+      "sha256": "69a55aa34150860504211cf384c4e93dc723793453d1a382168484e62f902a06",
+      "bytes": 15922,
+      "variant": null,
+      "reason": [
+        "sld solutions[0]"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "pages.sldks-1",
+      "entity": "saturn:page:sldks-1",
+      "title": "СЛДКС-1",
+      "type": "page",
+      "path": "src/content/pages/sldks-1.md",
+      "route": "/sldks-1/",
+      "url": "https://www.mnppsaturn.ru/sldks-1/",
+      "blob": "8ca4302fa53b771c63ee4d02bb09e07ac735e2d7",
+      "sha256": "2ddd54864b1da614fd69fc6db22625d8a3b8841e8b14aefd6d372a95116404bf",
+      "bytes": 541,
+      "variant": null,
+      "reason": [
+        "sld L34"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bdk-2m",
+      "entity": "saturn:device:bdk-2m",
+      "title": "БДК-2М",
+      "type": "device",
+      "path": "src/content/products/bdk-2m.md",
+      "route": "/products/bdk-2m/",
+      "url": "https://www.mnppsaturn.ru/products/bdk-2m/",
+      "blob": "c0ac74a48197cab8d60e8f3cb8795cc5a94ed57f",
+      "sha256": "d1bc48927604226871d596ef16d877be7858cde760d0428bdb17b02a28ba8ca1",
+      "bytes": 10905,
+      "variant": null,
+      "reason": [
+        "sld L103"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bdk-3m2",
+      "entity": "saturn:device:bdk-3m2",
+      "title": "БДК-3М2",
+      "type": "device",
+      "path": "src/content/products/bdk-3m2.md",
+      "route": "/products/bdk-3m2/",
+      "url": "https://www.mnppsaturn.ru/products/bdk-3m2/",
+      "blob": "013474510c2bde4cda554cf2dda54b7f14efb2dd",
+      "sha256": "2605c7d0c2af34283c964806dd2830072c0a144708990a5ac449e21ff8a96800",
+      "bytes": 6112,
+      "variant": null,
+      "reason": [
+        "sld L103"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bdk-4m2",
+      "entity": "saturn:device:bdk-4m2",
+      "title": "БДК-4М2",
+      "type": "device",
+      "path": "src/content/products/bdk-4m2.md",
+      "route": "/products/bdk-4m2/",
+      "url": "https://www.mnppsaturn.ru/products/bdk-4m2/",
+      "blob": "75d046ab62212fe16e6668a6813c4f0e3f8fabba",
+      "sha256": "3e4aa986a84c29fd60c791b963afb68c02cc1083bf8d32ecbada8f1f16b8893c",
+      "bytes": 13441,
+      "variant": null,
+      "reason": [
+        "sld L103"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bdk-l-3m2",
+      "entity": "saturn:device:bdk-l-3m2",
+      "title": "БДК-Л-3М2",
+      "type": "device",
+      "path": "src/content/products/bdk-l-3m2.md",
+      "route": "/products/bdk-l-3m2/",
+      "url": "https://www.mnppsaturn.ru/products/bdk-l-3m2/",
+      "blob": "bed84124bcf53c3108c237f82bfcdefbf24072fc",
+      "sha256": "bb52cb03e0f97ab95ea533144167b5c5c7f633e116cdaaddd5369abd28a5efe7",
+      "bytes": 7188,
+      "variant": null,
+      "reason": [
+        "sld L101"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bdk-l-4m2",
+      "entity": "saturn:device:bdk-l-4m2",
+      "title": "БДК-Л-4М2",
+      "type": "device",
+      "path": "src/content/products/bdk-l-4m2.md",
+      "route": "/products/bdk-l-4m2/",
+      "url": "https://www.mnppsaturn.ru/products/bdk-l-4m2/",
+      "blob": "aa639056f1397f1008c3707a544fd0914a016388",
+      "sha256": "412eff23d2d3765d7efb48142fb99fdfe2a69d7c194af5e9615b2b432ad4db71",
+      "bytes": 25065,
+      "variant": null,
+      "reason": [
+        "sld L101"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bgs-pm-v",
+      "entity": "saturn:device:bgs-pm-v",
+      "title": "БГС-ПМ-В",
+      "type": "device",
+      "path": "src/content/products/bgs-pm-v.md",
+      "route": "/products/bgs-pm-v/",
+      "url": "https://www.mnppsaturn.ru/products/bgs-pm-v/",
+      "blob": "99b0d4d5659ad840f18f674b743745bfbc66f6db",
+      "sha256": "70641cd1316062585637d3b79b712edefb30e6cef57dbc51f77b5f49f30e335f",
+      "bytes": 4095,
+      "variant": null,
+      "reason": [
+        "sld L104"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bgs-pm",
+      "entity": "saturn:device:bgs-pm",
+      "title": "БГС-ПМ",
+      "type": "device",
+      "path": "src/content/products/bgs-pm.md",
+      "route": "/products/bgs-pm/",
+      "url": "https://www.mnppsaturn.ru/products/bgs-pm/",
+      "blob": "0bf2fc318138a790467f15dcbeb7af2911517fb0",
+      "sha256": "efa9c8cbf7f054437dc7e48936e563599d5ac859a317ed06210fe026555f27e2",
+      "bytes": 3737,
+      "variant": null,
+      "reason": [
+        "sld L104"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.biu-l",
+      "entity": "saturn:device:biu-l",
+      "title": "БИУ-Л",
+      "type": "device",
+      "path": "src/content/products/biu-l.md",
+      "route": "/products/biu-l/",
+      "url": "https://www.mnppsaturn.ru/products/biu-l/",
+      "blob": "97554d01b0217f6a098983ae2a1d5da87a767575",
+      "sha256": "886027d47b2500a32e4994f916c697363828ae37c430dde34124f0b746ee0a3d",
+      "bytes": 4461,
+      "variant": null,
+      "reason": [
+        "sld L105"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bkd-m",
+      "entity": "saturn:device:bkd-m",
+      "title": "БКД-М",
+      "type": "device",
+      "path": "src/content/products/bkd-m.md",
+      "route": "/products/bkd-m/",
+      "url": "https://www.mnppsaturn.ru/products/bkd-m/",
+      "blob": "88c33ac32c850325305b8d3e5dca8cdb5deae54b",
+      "sha256": "3f813967c4e3a6eb6db9813d47249bd3adb8180cc98e82a543f2b56195dec8a9",
+      "bytes": 8097,
+      "variant": null,
+      "reason": [
+        "sld L100"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bkd-me",
+      "entity": "saturn:device:bkd-me",
+      "title": "БКД-МЕ",
+      "type": "device",
+      "path": "src/content/products/bkd-me.md",
+      "route": "/products/bkd-me/",
+      "url": "https://www.mnppsaturn.ru/products/bkd-me/",
+      "blob": "3f77e13537945a2ae76fe604dd0ba2ccf9d78619",
+      "sha256": "7bc07bca1a26d520dda74d4db16b48987aff2bbdc68238af84c9aa4cf79266b1",
+      "bytes": 10676,
+      "variant": null,
+      "reason": [
+        "sld L100"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "bkd",
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "title": "БКД-ПК-RF.2",
+      "type": "device",
+      "path": "src/content/products/bkd-pk-rf-2.md",
+      "route": "/products/bkd-pk-rf-2/",
+      "url": "https://www.mnppsaturn.ru/products/bkd-pk-rf-2/",
+      "blob": "86afcfe8be3be4e5022f0baf43143f64a2a9f7a0",
+      "sha256": "26a8480446e5533600c0373055377c33f06760fd1cbf5a00929877594b850738",
+      "bytes": 8544,
+      "variant": null,
+      "reason": [
+        "pinned primary dossier"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bkd-r",
+      "entity": "saturn:device:bkd-r",
+      "title": "БКД-Р",
+      "type": "device",
+      "path": "src/content/products/bkd-r.md",
+      "route": "/products/bkd-r/",
+      "url": "https://www.mnppsaturn.ru/products/bkd-r/",
+      "blob": "c21cb6c73000e35f52c0277e80c2aabc49f55365",
+      "sha256": "23fbd3a54ee7976cd0c6f3ae5b409f9d394e70bbe7536ee8ae6c85879224b0dd",
+      "bytes": 15026,
+      "variant": null,
+      "reason": [
+        "sld L118"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.bps",
+      "entity": "saturn:device:bps",
+      "title": "БПС",
+      "type": "device",
+      "path": "src/content/products/bps.md",
+      "route": "/products/bps/",
+      "url": "https://www.mnppsaturn.ru/products/bps/",
+      "blob": "d905d054e5e14fd3c668c9303d0d2f50e50bd473",
+      "sha256": "7f986fc0e4906d8c5a19163523f10c8012d7f689d1a26cc29aeb1b7d72ba4698",
+      "bytes": 2764,
+      "variant": null,
+      "reason": [
+        "sld L119"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.gr-1",
+      "entity": "saturn:device:gr-1",
+      "title": "ГР-1",
+      "type": "device",
+      "path": "src/content/products/gr-1.md",
+      "route": "/products/gr-1/",
+      "url": "https://www.mnppsaturn.ru/products/gr-1/",
+      "blob": "1df6e6c94cf551265c5ed95dd1ad502be5e581b2",
+      "sha256": "8821d6c8a8595dab40941751aa1d7bd35e7a4e952cbde2bd685a50b1563b81ea",
+      "bytes": 3760,
+      "variant": null,
+      "reason": [
+        "sld L107"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.gr-1d",
+      "entity": "saturn:device:gr-1d",
+      "title": "ГР-1Д",
+      "type": "device",
+      "path": "src/content/products/gr-1d.md",
+      "route": "/products/gr-1d/",
+      "url": "https://www.mnppsaturn.ru/products/gr-1d/",
+      "blob": "4c06ed6730733c81de0291ed0b0adfed507860f2",
+      "sha256": "2ba1af22152d409938148f2fa748754be512e4939ec18ab05fe42e2ab1f5a2a4",
+      "bytes": 2861,
+      "variant": null,
+      "reason": [
+        "sld L107"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.ksn-313",
+      "entity": "saturn:device:ksn-313",
+      "title": "КСН-313",
+      "type": "device",
+      "path": "src/content/products/ksn-313.md",
+      "route": "/products/ksn-313/",
+      "url": "https://www.mnppsaturn.ru/products/ksn-313/",
+      "blob": "3e9ceeabaf0330583e8dfd190a928d98ca760d2f",
+      "sha256": "165cfdb87119d0d49c4431f1b27531191c3e5dcd76d889a984c2b076cadeac50",
+      "bytes": 2704,
+      "variant": null,
+      "reason": [
+        "sld L101"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.lift-4",
+      "entity": "saturn:device:lift-4",
+      "title": "ЛИФТ-4",
+      "type": "device",
+      "path": "src/content/products/lift-4.md",
+      "route": "/products/lift-4/",
+      "url": "https://www.mnppsaturn.ru/products/lift-4/",
+      "blob": "27b2425a8467c7067e49ffddab212e96b322acbb",
+      "sha256": "2b417c72d5b7d28adc78cda51ffe66bf23a1bfbdca2e8b7589c62415acb9545c",
+      "bytes": 11086,
+      "variant": null,
+      "reason": [
+        "sld L99"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.td",
+      "entity": "saturn:device:td",
+      "title": "ТД",
+      "type": "device",
+      "path": "src/content/products/td.md",
+      "route": "/products/td/",
+      "url": "https://www.mnppsaturn.ru/products/td/",
+      "blob": "fd84ab59f1d2488cacf6571deb0538922808db09",
+      "sha256": "63fcfc5564eaa37b6f778797f8c70d9c4be0ec18cb565e1c89478c4be3c540bf",
+      "bytes": 2229,
+      "variant": null,
+      "reason": [
+        "sld L109"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "products.ukl",
+      "entity": "saturn:device:ukl",
+      "title": "УКЛ",
+      "type": "device",
+      "path": "src/content/products/ukl.md",
+      "route": "/products/ukl/",
+      "url": "https://www.mnppsaturn.ru/products/ukl/",
+      "blob": "1ec6e2df0287366675fb17807f704022d32f556c",
+      "sha256": "964c535ac77f0d8ff8825d7be1ee4c36413b169a2c1555db40f59b39c87d4544",
+      "bytes": 792,
+      "variant": null,
+      "reason": [
+        "sld L102"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "systems.newel",
+      "entity": "saturn:system:newel",
+      "title": "NEWEL",
+      "type": "system",
+      "path": "src/content/systems/newel.md",
+      "route": "/systems/newel/",
+      "url": "https://www.mnppsaturn.ru/systems/newel/",
+      "blob": "caf4e60c8a62841bfe3e2529f4e7a398ee3ce78c",
+      "sha256": "524ebfc07563af2e1063d234c6af8cb4d1f7c9bd30a23919109ae037cd6c9b4a",
+      "bytes": 86,
+      "variant": null,
+      "reason": [
+        "bkd systems[0]"
+      ],
+      "status": "included"
+    },
+    {
+      "key": "sld",
+      "entity": "saturn:system:sldks-1",
+      "title": "Система лифтового диспетчерского контроля СЛДКС-1",
+      "type": "system",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "route": "/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1/",
+      "url": "https://www.mnppsaturn.ru/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1/",
+      "blob": "42ed9f4a12a78dc4e91db91123c5ae20f9b3dca1",
+      "sha256": "e059fe8eebc540b78b89dd0b0bd8ec276fd2ecfa9c896da86f300b8f214928c9",
+      "bytes": 17255,
+      "variant": null,
+      "reason": [
+        "pinned primary dossier"
+      ],
+      "status": "included"
+    }
+  ],
+  "documents": [
+    {
+      "entity": "saturn:device:bdk-2m",
+      "path": "src/content/products/bdk-2m.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk%20m2_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-2m",
+      "path": "src/content/products/bdk-2m.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk%20m2_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-2m",
+      "path": "src/content/products/bdk-2m.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk%20m2_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-2m",
+      "path": "src/content/products/bdk-2m.md",
+      "locator": "documents[3]",
+      "title": "Загрузить файл...",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-2m/pereproshivka%20BDK-2M.zip",
+      "type": "other",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-3m2",
+      "path": "src/content/products/bdk-3m2.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/public/doc/bdk-3(4)m/re%20bdk%20m2_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-3m2",
+      "path": "src/content/products/bdk-3m2.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/public/doc/bdk-3(4)m/re%20bdk%20m2_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-3m2",
+      "path": "src/content/products/bdk-3m2.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/public/doc/bdk-3(4)m/re%20bdk%20m2_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-4m2",
+      "path": "src/content/products/bdk-4m2.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk%20m2_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-4m2",
+      "path": "src/content/products/bdk-4m2.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk%20m2_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-4m2",
+      "path": "src/content/products/bdk-4m2.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk%20m2_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-l-3m2",
+      "path": "src/content/products/bdk-l-3m2.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-l-3m2",
+      "path": "src/content/products/bdk-l-3m2.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-l-3m2",
+      "path": "src/content/products/bdk-l-3m2.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-l-4m2",
+      "path": "src/content/products/bdk-l-4m2.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-l-4m2",
+      "path": "src/content/products/bdk-l-4m2.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bdk-l-4m2",
+      "path": "src/content/products/bdk-l-4m2.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bgs-pm-v",
+      "path": "src/content/products/bgs-pm-v.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bgs-pm-v",
+      "path": "src/content/products/bgs-pm-v.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bgs-pm-v",
+      "path": "src/content/products/bgs-pm-v.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bgs-pm",
+      "path": "src/content/products/bgs-pm.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_1.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bgs-pm",
+      "path": "src/content/products/bgs-pm.md",
+      "locator": "documents[1]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bgs-pm",
+      "path": "src/content/products/bgs-pm.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2 ч3",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-3(4)m/re%20bdk-l_3.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-m",
+      "path": "src/content/products/bkd-m.md",
+      "locator": "documents[0]",
+      "title": "Контроллер БКД-М. Руководство по эксплуатации",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-m/re%20BKD-M103.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-me",
+      "path": "src/content/products/bkd-me.md",
+      "locator": "documents[0]",
+      "title": "Контроллер БКД-МЕ. Руководство по эксплуатации",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-me/re%20BKD-ME503.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "path": "src/content/products/bkd-pk-rf-2.md",
+      "locator": "documents[0]",
+      "title": "Руководство по быстрому старту",
+      "original_url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20%d0%91%d1%8b%d1%81%d1%82%d1%80%d1%8b%d0%b9%20%d1%81%d1%82%d0%b0%d1%80%d1%82.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "path": "src/content/products/bkd-pk-rf-2.md",
+      "locator": "documents[1]",
+      "title": "Обзор основных изменений",
+      "original_url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20%d0%9e%d0%b1%d0%b7%d0%be%d1%80.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "path": "src/content/products/bkd-pk-rf-2.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации Контроллер БКД-ПК-RF.2",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-pk-rf2/re%20BKD-PK-RF2.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "path": "src/content/products/bkd-pk-rf-2.md",
+      "locator": "documents[3]",
+      "title": "Работа с OPC UA",
+      "original_url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20OPCUA.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-r",
+      "path": "src/content/products/bkd-r.md",
+      "locator": "documents[0]",
+      "title": "Контроллер БКД-Р. Руководство по эксплуатации (до 2013 г.)",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-r/re%20bkd-r(123).pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-r",
+      "path": "src/content/products/bkd-r.md",
+      "locator": "documents[1]",
+      "title": "Контроллер БКД-Р. Руководство по эксплуатации 2023 г.",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-r/re%20BKD-R%202023.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-r",
+      "path": "src/content/products/bkd-r.md",
+      "locator": "documents[2]",
+      "title": "Контроллер БКД-Р. Руководство по эксплуатации 2013 г.",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-r/re%20bkd-r(204).pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bkd-r",
+      "path": "src/content/products/bkd-r.md",
+      "locator": "documents[3]",
+      "title": "Инструкция диспетчеру лифтовой системы",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-r/instr%20lift.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:bps",
+      "path": "src/content/products/bps.md",
+      "locator": "documents[0]",
+      "title": "Блок питания БПС. Руководство по эксплуатации",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bps/re%20bps301.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:gr-1",
+      "path": "src/content/products/gr-1.md",
+      "locator": "documents[0]",
+      "title": "Блоки грозозащиты ГР-1, ГР-1Д. Руководство по эксплуатации",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/gr-1/re%20GR-1%20(6).pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:lift-4",
+      "path": "src/content/products/lift-4.md",
+      "locator": "documents[0]",
+      "title": "Загрузить Демо-версию программы ЛИФТ-4",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/soft/lift4/Lift4Setup.zip",
+      "type": "software",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:lift-4",
+      "path": "src/content/products/lift-4.md",
+      "locator": "documents[1]",
+      "title": "Инструкция по скачиванию и установке программы ЛИФТ-4",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/soft/lift4/installation%20Lift4.pdf",
+      "type": "software",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:lift-4",
+      "path": "src/content/products/lift-4.md",
+      "locator": "documents[2]",
+      "title": "Руководство оператора и администратора программы ЛИФТ-4",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/soft/lift4/manual%20Lift4.pdf",
+      "type": "software",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:lift-4",
+      "path": "src/content/products/lift-4.md",
+      "locator": "documents[3]",
+      "title": "Описание процессов, обеспечивающих поддержаниежизненного цикла программы ЛИФТ-4",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/soft/lift4/life%20cycle%20Lift4.pdf",
+      "type": "software",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:lift-4",
+      "path": "src/content/products/lift-4.md",
+      "locator": "documents[4]",
+      "title": "СЛДКС-1. Инструкция диспетчера",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/inst%20d.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:lift-4",
+      "path": "src/content/products/lift-4.md",
+      "locator": "documents[5]",
+      "title": "Цена на программу ЛИФТ-4 с декабря 2024 г.",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/soft/lift4/price%20Lift4.pdf",
+      "type": "software",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:device:td",
+      "path": "src/content/products/td.md",
+      "locator": "documents[0]",
+      "title": "Руководство по эксплуатации БДК-Л серии М2...",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-l%20m2/RE%20BDK-L%20M2.zip",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[0]",
+      "title": "Альбом подключения сигналов лифтов к СЛДКС-1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/albom.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[1]",
+      "title": "Презентация системы диспетчеризации лифтов СЛДКС-1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/pre%20SLDKS-1(4).pdf",
+      "type": "presentation",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[2]",
+      "title": "Руководство по эксплуатации СЛДКС-1М",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1M%20(8).zip",
+      "type": "manual",
+      "revision": "2006 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[3]",
+      "title": "УБ СЛДКС Руководство по эксплуатации",
+      "original_url": "https://www.mnppsaturn.ru/photos/3981607157828496.pdf",
+      "type": "manual",
+      "revision": "2006 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[4]",
+      "title": "УКСЛ СЛДКС Руководство по эксплуатации",
+      "original_url": "https://www.mnppsaturn.ru/photos/2278872612744825.pdf",
+      "type": "manual",
+      "revision": "2006 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[5]",
+      "title": "Простая система диспетчеризации лифтов (без компьютера)",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/1.zip",
+      "type": "other",
+      "revision": "2006 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[6]",
+      "title": "БДК-Л серии М2. Руководство по эксплуатации (2008)",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-l%20m2/RE%20BDK-L%20M2.zip",
+      "type": "manual",
+      "revision": "2009 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[7]",
+      "title": "БДК серии М2. Руководство по эксплуатации (2008)",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk%20m2/RE%20BDK%20M2.zip",
+      "type": "manual",
+      "revision": "2009 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[8]",
+      "title": "СЛДКС-1 Руководство по эксплуатации (2011) часть 1. Техническое описание",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf",
+      "type": "manual",
+      "revision": "2011 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[9]",
+      "title": "Инструкция диспетчера системы диспетчеризации лифтов СЛДКС-1",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/inst%20d.pdf",
+      "type": "manual",
+      "revision": "2011 г.",
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+      "locator": "documents[10]",
+      "title": "Инструкция по подключению к УПСЛ-М",
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/UPCL-M.pdf",
+      "type": "manual",
+      "revision": null,
+      "variant": null,
+      "status": "metadata_only",
+      "reason": "manufacturer document listing; body requires local import"
+    }
+  ],
+  "excluded": [
+    {
+      "url": "http://server.mnppsaturn.ru/?id=341&topic_id=124",
+      "reason": "sld L42",
+      "status": "out_of_scope"
+    },
+    {
+      "url": "/?topic_id=3&good_id=291",
+      "reason": "sld L102",
+      "status": "out_of_scope"
+    },
+    {
+      "url": "/photos/4818574370638221.jpg",
+      "reason": "sld L130",
+      "status": "out_of_scope"
+    },
+    {
+      "url": "/photos/2443814739366396.jpg",
+      "reason": "sld L136",
+      "status": "out_of_scope"
+    }
+  ],
+  "cloud_acquisition": [
+    {
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-pk-rf2/re%20BKD-PK-RF2.pdf",
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "revision": null,
+      "status": "failed",
+      "bytes_received": 0,
+      "sha256": null,
+      "pages": null,
+      "error": "HTTPS proxy CONNECT 403"
+    },
+    {
+      "original_url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1%20p1(3).pdf",
+      "entity": "saturn:system:sldks-1",
+      "revision": "2011 г.",
+      "status": "failed",
+      "bytes_received": 0,
+      "sha256": null,
+      "pages": null,
+      "error": "HTTPS proxy CONNECT 403"
+    }
+  ],
+  "excluded_channels": [
+    "Image and drawing pixels, OCR, video, archive interiors, exterior web pages, historic query routes, unlinked pages and second-hop sources.",
+    "PDF bodies require independent verified local import. Other document originals were not downloaded in the cloud run."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+    "bundle": "saturn-two-entity-site-084d7594-v1",
+    "commit": "084d759487bfab6e111549c9b5469711ac5fc13e",
+    "entities": [
+        {
+            "id": "saturn:device:bkd-pk-rf-2",
+            "kind": "device",
+            "name": "БКД-ПК-RF.2",
+            "route": "/products/bkd-pk-rf-2/"
+        },
+        {
+            "id": "saturn:system:sldks-1",
+            "kind": "system",
+            "name": "СЛДКС-1",
+            "route": "/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1/"
+        }
+    ],
+    "excluded_channels": [
+        "PDF: только метаданные ссылок"
+    ],
+    "site_files": [
+        {
+            "blob": "86afcfe8be3be4e5022f0baf43143f64a2a9f7a0",
+            "path": "src/content/products/bkd-pk-rf-2.md",
+            "sha256": "26a8480446e5533600c0373055377c33f06760fd1cbf5a00929877594b850738"
+        },
+        {
+            "blob": "42ed9f4a12a78dc4e91db91123c5ae20f9b3dca1",
+            "path": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md",
+            "sha256": "e059fe8eebc540b78b89dd0b0bd8ec276fd2ecfa9c896da86f300b8f214928c9"
+        }
+    ]
+}
