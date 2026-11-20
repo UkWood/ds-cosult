@@ -168,10 +168,49 @@ class MockD1:
             return "candidate", candidate
 
 
-def verify(candidate, question, documents, cache):
+def source_locator(loc, claim, pages):
+    if not all(isinstance(v, str) for v in loc.values()):
+        return "invalid_locator"
+    source = next((p for p in pages if p["id"] == loc["doc_id"]
+                   and p["sha256"] == loc["sha256"] and claim["scope"] in p["scope"]), None)
+    if not source or not loc["quote"].strip():
+        return "invalid_locator"
+    from ds_pilot.discovery import front
+
+    field = loc["field_path"]
+    lines, _, data = front(source["raw"].encode())
+    if field.startswith("line:"):
+        line = field.removeprefix("line:")
+        if not line.isascii() or not line.isdecimal() or len(line) > 7 or not 1 <= int(line) <= len(lines):
+            return "invalid_locator"
+        excerpt = lines[int(line) - 1]
+    elif re.fullmatch(r"[a-zA-Z_]\w*(?:\[[0-9]{1,4}\]|\.[a-zA-Z_]\w*){0,8}", field):
+        excerpt = data
+        for part in re.findall(r"[a-zA-Z_]\w*|[0-9]+", field):
+            if isinstance(excerpt, list) and part.isdecimal() and int(part) < len(excerpt):
+                excerpt = excerpt[int(part)]
+            elif isinstance(excerpt, dict) and part in excerpt:
+                excerpt = excerpt[part]
+            else:
+                return "invalid_locator"
+        if not isinstance(excerpt, str):
+            excerpt = encoded(excerpt)
+    else:
+        return "invalid_locator"
+    normalize = lambda value: " ".join(value.split())
+    quote = normalize(loc["quote"])
+    if quote not in normalize(excerpt):
+        return "quote_mismatch"
+    if any(normalize(claim[k]) not in quote for k in ("value", "unit", "qualifier", "condition")):
+        return "literal_mismatch"
+    return "matched"
+
+
+def verify(candidate, question, documents, cache, *, pages=(), dc02=False):
     if (not isinstance(candidate, dict) or set(candidate) != CandidateAnswer.__required_keys__
             or not isinstance(candidate["answer_candidate"], str)
-            or len(candidate["answer_candidate"]) > 2200
+            or not candidate["answer_candidate"].strip()
+            or len(candidate["answer_candidate"]) > (9000 if dc02 else 2200)
             or candidate["status_hint"] not in ("needs_support", "partial", "candidate")
             or not isinstance(candidate["claims"], list) or len(candidate["claims"]) > 16
             or not isinstance(candidate["unresolved"], list) or len(candidate["unresolved"]) > 32
@@ -183,10 +222,19 @@ def verify(candidate, question, documents, cache):
         if (not isinstance(claim, dict) or set(claim) != Claim.__required_keys__
                 or not all(isinstance(claim[k], str) for k in set(claim) - {"locators"})
                 or not claim["claim_id"] or claim["claim_id"] in ids or not claim["literal"]
-                or not isinstance(claim["locators"], list) or not 1 <= len(claim["locators"]) <= 4):
+                or not isinstance(claim["locators"], list)
+                or not (0 if dc02 else 1) <= len(claim["locators"]) <= 4):
             return "invalid_candidate", diagnostics
         ids.add(claim["claim_id"])
+        if not claim["locators"]:
+            diagnostics.append(dict(claim_id=claim["claim_id"], locator="missing", semantic="pending_review"))
         for loc in claim["locators"]:
+            if dc02 and isinstance(loc, dict) and set(loc) == {"doc_id", "sha256", "field_path", "quote"}:
+                result = source_locator(loc, claim, pages)
+                if result != "matched":
+                    return result, diagnostics
+                diagnostics.append(dict(claim_id=claim["claim_id"], locator="matched", semantic="pending_review"))
+                continue
             if (not isinstance(loc, dict) or set(loc) != Locator.__required_keys__
                     or not all(isinstance(loc[k], str) for k in ("doc_id", "sha256", "section", "table", "quote"))
                     or type(loc["page"]) is not int):
@@ -248,6 +296,7 @@ class Session:
     active: tuple = ()
     history: list = field(default_factory=list)
     receipts: dict = field(default_factory=dict)
+    lease_opened: float = 0
 
 
 class Journal:
@@ -257,15 +306,52 @@ class Journal:
         if self.directory.is_symlink() or self.directory.stat().st_mode & 0o077:
             raise ValueError("journal_directory_must_be_private")
 
+    def purge(self, now):
+        with (self.directory / ".lock").open("a+b") as lock:
+            os.fchmod(lock.fileno(), 0o600)
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            self._purge(now)
+
+    def _purge(self, now):
+        for path in self.directory.glob("turn-*.md"):
+            if now - path.stat().st_mtime >= 30 * 86400:
+                path.unlink()
+
+    def admit(self, ip, day):
+        path = self.directory / "admission.json"
+        peer = digest(ip.encode())
+        with (self.directory / ".lock").open("a+b") as lock:
+            os.fchmod(lock.fileno(), 0o600)
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            state = json.loads(path.read_text()) if path.exists() else {}
+            counts = state["counts"] if state.get("day") == day else {}
+            if counts.get(peer, 0) >= 20:
+                return False
+            counts[peer] = counts.get(peer, 0) + 1
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf8", dir=self.directory,
+                                             delete=False, prefix=".admit-") as file:
+                file.write(encoded(dict(day=day, counts=counts)))
+                file.flush()
+                os.fsync(file.fileno())
+            os.replace(file.name, path)
+            self.sync()
+            return True
+
+    def sync(self):
+        fd = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
     def record(self, ip, now, question, response):
         data = encoded(dict(ip=ip, utc=datetime.fromtimestamp(now, timezone.utc).isoformat(),
                             question=question, response=response))
         # JSON within a Markdown code block, with backticks escaped.
         with (self.directory / ".lock").open("a+b") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            for path in self.directory.glob("turn-*.md"):
-                if now - path.stat().st_mtime >= 30 * 86400:
-                    path.unlink()
+            os.fchmod(lock.fileno(), 0o600)
+            self._purge(now)
             with tempfile.NamedTemporaryFile(mode="w", encoding="utf8", dir=self.directory,
                                              delete=False, prefix=".pending-") as file:
                 file.write("```json\n" + data.replace("`", "\\u0060") + "\n```\n")
@@ -273,6 +359,7 @@ class Journal:
                 os.fsync(file.fileno())
             os.utime(file.name, (now, now))
             os.replace(file.name, self.directory / ("turn-" + token_urlsafe(18) + ".md"))
+            self.sync()
 
 
 def canonical_peer(value):
@@ -282,9 +369,14 @@ def canonical_peer(value):
 
 class Pilot:
     def __init__(self, entries, dossiers, cache, journal, provider: MockD1, cap=64_000, *,
-                 review: Callable[..., ReviewedEvidence] | None = None):
-        if type(provider) is not MockD1:
+                 review: Callable[..., ReviewedEvidence] | None = None, owner_dc02=False):
+        if owner_dc02:
+            from .native import NativeD1
+            if type(provider) is not NativeD1:
+                raise TypeError("native_adapter_required")
+        elif type(provider) is not MockD1:
             raise TypeError("offline_mock_required")
+        self.owner_dc02 = owner_dc02
         self.entries = entries
         self.dossiers = dossiers
         self.cache = Path(cache)
@@ -299,13 +391,18 @@ class Pilot:
 
     def expire(self, now):
         for ip, session in list(self.sessions.items()):
-            if now - session.last >= 1800:
-                del self.sessions[ip]
-            elif session.token is not None and now - session.last >= 900:
+            age = now - session.last
+            lease_age = now - max(session.last, session.lease_opened)
+            if session.token is not None and lease_age >= 900:
                 session.token = None
                 session.active = ()
                 session.history.clear()
                 session.receipts.clear()
+            if age >= 1800:
+                if session.token is None:
+                    del self.sessions[ip]
+                else:
+                    session.series = 0
 
     def open(self, peer, now=None, *, resume=None):
         ip = canonical_peer(peer)
@@ -317,9 +414,23 @@ class Pilot:
                 session = self.sessions[ip] = Session(token_urlsafe(24), now)
             elif session.token is None:
                 session.token = token_urlsafe(24)
+                session.lease_opened = now
             elif session.token != resume:
                 return None
             return session.token
+
+    def reset(self, peer, token, now=None):
+        if not self.owner_dc02:
+            return None
+        ip = canonical_peer(peer)
+        now = time.time() if now is None else now
+        with self.lock:
+            self.expire(now)
+            session = self.sessions.get(ip)
+            if not session or not token or token != session.token:
+                return None
+            self.sessions[ip] = Session(token_urlsafe(24), now)
+            return self.sessions[ip].token
 
     def ask(self, peer, token, request, question, *, hint=None, mode="D1", now=None):
         ip = canonical_peer(peer)
@@ -335,7 +446,9 @@ class Pilot:
                     or any(0xD800 <= ord(c) <= 0xDFFF for c in question + (hint or ""))
                     or len(encoded([token, request, question, hint, mode]).encode()) > 8192):
                 return {"status": "invalid_request"}
-            if OVERRIDE.search(question) or HOSTILE.search(question) or re.search(r"https?://", question, re.I):
+            if (OVERRIDE.search(question) or HOSTILE.search(question)
+                    or re.search(r"https?://|\bsk-[\w-]{10,}|\bfile-api-", question, re.I)
+                    or (self.owner_dc02 and self.provider.live and self.provider.live[2] in question)):
                 return {"status": "domain_denied", "unresolved": [question]}
             key = digest(encoded([question, hint, mode]).encode())
             if request in session.receipts:
@@ -353,8 +466,14 @@ class Pilot:
                 return {"status": "series_limit"}
             if session.series and now - session.last < COOLDOWNS[session.series]:
                 return {"status": "cooldown"}
+            if self.owner_dc02:
+                try:
+                    if not self.journal.admit(ip, day.isoformat()):
+                        return {"status": "daily_limit"}
+                except (OSError, ValueError):
+                    return {"status": "journal_unavailable", "unresolved": [question]}
             response = self.complete(session, token + "/" + request, question, hint, mode, now)
-            if response["status"] == "mock_budget_exhausted":
+            if response["status"] in {"mock_budget_exhausted", "budget_exhausted", "campaign_budget_exhausted"}:
                 return response
             session.series += 1
             session.last = now
@@ -362,6 +481,8 @@ class Pilot:
             return self.record(session, request, key, ip, now, question, response)
 
     def record(self, session, request, key, ip, now, question, response):
+        if self.owner_dc02:
+            response = dict(response, original_question=question)
         session.receipts[request] = key, response, False
         try:
             self.journal.record(ip, now, question, response)
@@ -378,14 +499,25 @@ class Pilot:
         response = dict(question_hash=digest(question.encode()), unresolved=[question],
                         decision=decision, dossier_ids=[], mock_posts=0)
         if not selected:
+            if self.owner_dc02:
+                if decision["unknown"]:
+                    response["message"] = "Проверьте обозначение изделия: " + ", ".join(decision["unknown"]) + "."
+                elif decision["reason"] in {"ambiguous_function", "ambiguous_models", "ambiguous_reference"}:
+                    candidates = [item["id"] for item in decision["candidates"]] or session.active
+                    titles = [self.entries[key]["title"] for key in candidates[:3]]
+                    if titles:
+                        response["message"] = "Уточните, какое изделие вас интересует: " + ", ".join(titles) + "."
+                elif decision["reason"] in {"variant_requires_clarification", "unbound_comparison"}:
+                    response["message"] = "Укажите точную модификацию каждого изделия в вопросе."
             return dict(response, status="clarification")
         if mode == "P0":
             return dict(response, status="navigation",
                         links=[self.entries[key]["canonical"] for key in selected])
         dossiers = [self.dossiers[key] for key in selected if key in self.dossiers]
         response["dossier_ids"] = [d["id"] for d in dossiers]
-        history = session.history[-4:] if tuple(selected) == session.active else []
-        if tuple(selected) != session.active:
+        same_scope = tuple(selected) == session.active
+        history = (session.history if self.owner_dc02 else session.history[-4:]) if same_scope else []
+        if not same_scope:
             session.active = ()
             session.history.clear()
         if len(dossiers) != len(selected) or any(d["state"] != "ready" for d in dossiers):
@@ -394,6 +526,11 @@ class Pilot:
         pages = [{k: self.entries[key][k] for k in ("path", "sha256", "raw", "variant")}
                  | {"scope": [entity for entity, dossier in zip(selected, dossiers) if key in dossier["pages"]]}
                  for key in page_ids]
+        if self.owner_dc02:
+            for key, page in zip(page_ids, pages):
+                row = self.entries[key]
+                page.update(id=key, canonical=row.get("production_url", row["canonical"]),
+                            commit=row.get("commit"), blob=row.get("blob"))
         documents = []
         omitted = []
         response["dossier_completeness"] = {entity: dossier["completeness"]
@@ -417,17 +554,51 @@ class Pilot:
         before = self.provider.chat_posts
         scope = [{k: doc[k] for k in ("id", "scope", "revision", "sha256", "pages", "url")}
                  | {"applicability": doc.get("applicability")} for doc in documents]
-        state, candidate = self.provider.dispatch(request, question, pages, scope, history, now, self.cap)
-        response["mock_posts"] = self.provider.chat_posts - before
+        if self.owner_dc02:
+            for source, public in zip(documents, scope):
+                public.update(source_path=source["path"], field_path=source["field"],
+                              final_url=source.get("final_url"))
+            response["sources"] = dict(pages=[{k: v for k, v in p.items() if k != "raw"} for p in pages],
+                                       documents=scope)
+            response["corpus_completeness"] = {entity: dossier.get("corpus_completeness")
+                                               for entity, dossier in zip(selected, dossiers)}
+            state, candidate, context = self.provider.dispatch(request, question, pages, scope, history, now, self.cap)
+            response["context"] = context
+            if context.get("file_omissions"):
+                omitted.extend(context["file_omissions"])
+                rejected = {row["sha256"] for row in context["file_omissions"]}
+                for row in context["file_omissions"]:
+                    response["dossier_completeness"][row["scope"]] = "partial"
+                scope = [doc for doc in scope if doc["sha256"] not in rejected]
+                response["sources"]["documents"] = scope
+            response["chat_posts"] = self.provider.chat_posts - before
+            if state == "over_cap":
+                response["message"] = "Уточните предмет. Оператор может явно выбрать карточку и основное РЭ."
+            if state not in {"provider_unknown", "provider_overage", "calibration_observed"}:
+                session.active = tuple(selected)
+                session.history = history + [dict(role="user", text=question, unresolved=[question])]
+        else:
+            state, candidate = self.provider.dispatch(request, question, pages, scope, history, now, self.cap)
+        response["mock_posts"] = (0 if self.owner_dc02 and self.provider.live else
+                                  self.provider.chat_posts - before)
         if state != "candidate":
             return dict(response, status=state)
-        status, diagnostics = verify(candidate, question, scope, self.cache)
+        status, diagnostics = verify(candidate, question, scope, self.cache, pages=pages, dc02=self.owner_dc02)
         if status != "draft":
+            if self.owner_dc02 and status in {"invalid_locator", "quote_mismatch", "literal_mismatch",
+                                                "locator_text_unavailable"}:
+                return dict(response, status=status, label="Черновик для сверки", candidate=candidate,
+                            diagnostics=diagnostics)
             return dict(response, status=status, diagnostics=diagnostics)
         session.active = tuple(selected)
-        session.history = (history + [dict(role="user", text=question),
-                          dict(role="assistant", unverified=candidate["answer_candidate"])])[-4:]
+        if not self.owner_dc02:
+            session.history = (history + [dict(role="user", text=question),
+                              dict(role="assistant", unverified=candidate["answer_candidate"])])[-4:]
         review = self.review(question, candidate, tuple(scope), tuple(diagnostics)) if self.review else None
         answer = render_reviewed(review or ReviewedEvidence((question,), {}))
+        if self.owner_dc02:
+            session.history = history + [dict(role="conversation_turn", text=question,
+                unverified=candidate["answer_candidate"], unresolved=answer["unresolved"],
+                dossier_ids=response["dossier_ids"])]
         return dict(response, status="draft", label="Черновик для сверки", candidate=candidate,
                     diagnostics=diagnostics, confirmed_answer=answer, unresolved=answer["unresolved"])

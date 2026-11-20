@@ -2,6 +2,8 @@
 import argparse
 from collections import Counter
 import json
+import os
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -9,6 +11,9 @@ from unittest.mock import patch
 from .corpus import BKD, COMMIT, dossiers, inventory
 from .runtime import MockD1, Pilot, Journal
 from .reference_review import reference_review
+from .finance import Ledger, Stopped
+from .native import NativeD1, mock_transport
+from .prep import freeze, freeze_digest, load, restore
 
 CASE_FILE = Path(__file__).resolve().parents[1] / "docs/reports/DS-DC-01-RESOLVER-CASES.json"
 PEER = "192.0.2.10"
@@ -89,11 +94,27 @@ def main():
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--evaluate", type=Path)
     action.add_argument("--question", action="append")
+    action.add_argument("--chat", action="store_true")
+    action.add_argument("--freeze", type=Path)
+    action.add_argument("--evaluate-dc02", type=Path)
+    action.add_argument("--cleanup-sha")
+    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--live-go", type=Path, help="Private operator approval, never needed in PREP.")
+    parser.add_argument("--manifest", type=Path, help="Frozen corpus manifest required by live GO.")
+    parser.add_argument("--contract", type=Path, help="Reviewed provider contract required by live GO.")
+    parser.add_argument("--ledger", type=Path, help="Private durable ledger required by live GO.")
+    parser.add_argument("--legacy-dc01", action="store_true", help="Use historical DC-01 question path.")
     parser.add_argument("--p0", action="store_true")
     parser.add_argument("--reference-only", action="store_true",
                         help="Explicitly scope material to the root card and pinned origin manual.")
     args = parser.parse_args()
     args.cache.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if not args.evaluate and not args.legacy_dc01:
+        return dc02(args, parser)
+    if args.live_go:
+        parser.error("live GO is incompatible with DC-01")
+    if args.legacy_dc01 and not (args.question or args.evaluate):
+        parser.error("DC-01 supports --question and --evaluate")
     entries, excluded = inventory(args.site)
     audit_path = args.cache / "audit.json"
     audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
@@ -112,6 +133,66 @@ def main():
     for i, question in enumerate(args.question):
         print(json.dumps(pilot.ask(PEER, token, f"turn-{i}", question,
                          mode="P0" if args.p0 else "D1", now=WHEN + i), ensure_ascii=False))
+
+
+def dc02(args, parser):
+    import time
+    from uuid import uuid4
+
+    if args.live_go and (args.fetch or args.freeze or args.evaluate_dc02
+                         or not args.manifest or not args.ledger or not args.contract):
+        parser.error("live GO requires a frozen manifest, reviewed contract and durable ledger")
+    if args.fetch:
+        restore(args.cache)
+    entries, registry, _ = load(args.site, args.cache, reference_only=args.reference_only)
+    manifest = freeze(entries, registry)
+    if args.freeze:
+        write(args.freeze, manifest)
+        print(freeze_digest(manifest))
+        return
+    if args.evaluate_dc02:
+        from .evaluate import evaluate
+        evaluate(entries, registry, manifest, args.cache, args.evaluate_dc02)
+        return
+    if args.live_go:
+        if args.live_go.stat().st_mode & 0o077 or args.live_go.is_symlink():
+            parser.error("GO file must be private")
+        if json.loads(args.manifest.read_text()) != manifest:
+            parser.error("corpus drift")
+        repo = Path(__file__).resolve().parents[1]
+        git = lambda *command: subprocess.check_output(["git", "-C", str(repo), *command], text=True).strip()
+        if git("status", "--porcelain"):
+            parser.error("live GO requires an exact, clean published revision")
+        approval = json.loads(args.live_go.read_text())
+        live = (approval, git("rev-parse", "HEAD"), os.getenv("DEEPSEEK_API_KEY", ""),
+                json.loads(args.contract.read_text()))
+        provider = NativeD1(args.cache, Ledger(args.ledger), manifest=manifest, live=live)
+        if args.cleanup_sha:
+            try:
+                provider.cleanup(args.cleanup_sha, time.time())
+            except Stopped as exc:
+                parser.exit(1, f"{exc}\n")
+            print("delete_acknowledged")
+            return
+        return run_dc02(args, entries, registry, provider, time, uuid4)
+    if args.cleanup_sha:
+        parser.error("cleanup requires operator GO")
+    # Explicit fixture transport is the default, regardless of environment credentials.
+    with TemporaryDirectory(prefix="ds-dc02-fixture-") as temporary:
+        provider = NativeD1(args.cache, Ledger(temporary), manifest=manifest, fixture=mock_transport())
+        return run_dc02(args, entries, registry, provider, time, uuid4)
+
+
+def run_dc02(args, entries, registry, provider, time, uuid4):
+    pilot = Pilot(entries, registry, args.cache, Journal(args.cache / "journal-dc02"), provider,
+                  cap=None, owner_dc02=True, review=reference_review(args.cache))
+    if args.chat:
+        from .owner_web import serve
+        return serve(pilot, args.port)
+    token = pilot.open(PEER)
+    for question in args.question:
+        print(json.dumps(pilot.ask(PEER, token, str(uuid4()), question,
+                                  mode="P0" if args.p0 else "D1", now=time.time()), ensure_ascii=False))
 
 
 if __name__ == "__main__":

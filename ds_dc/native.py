@@ -1,0 +1,455 @@
+"""DeepSeek Files and Chat Completions at an injectable HTTP boundary."""
+from hashlib import sha256
+import json
+import re
+import time
+
+import httpx
+
+from .context import EXTENDED, FILE_LIMIT, NORMAL, OUTPUT, TOKENIZER_NAME, get_counter, size, wire
+from .corpus import MAX_SIZE, digest, encoded
+from .finance import Ledger, OWNER, RATES, Stopped, cold_cost, token_cost
+from .runtime import PURPOSE, abstention
+
+ORIGIN = "https://api.deepseek.com"
+MAX_FILE_ID_SUFFIX = 128
+FILE_ID = re.compile(rf"file-api-[A-Za-z0-9_-]{{1,{MAX_FILE_ID_SUFFIX}}}")
+SHA = re.compile(r"[0-9a-f]{64}")
+MODEL_CONTEXT = 1_048_576
+PARSE_TTL = 3600
+STATUS_INTERVAL = 300
+CHAT_TIMEOUT = 150
+UPLOAD_TIMEOUT = 250
+PAGE_PRICE = int(RATES["page"])
+PARSED_BYTES_LIMIT = 8 * 1024 * 1024
+# Admission requires recorded Architecture review in the exact, approved code revision.
+# Current provider documentation does not establish a billable bound for any pilot wire.
+REVIEWED_BOUNDS = {}
+
+
+def wire_identity(question, pages, docs, history):
+    placeholders = {sha: "file-api-placeholder" for sha in sorted({d["sha256"] for d in docs})}
+    return digest(encoded(wire(question, pages, docs, placeholders, history)).encode())
+
+
+def wire_approval(question, pages, docs, history):
+    longest_handles = {
+        sha: "file-api-" + "x" * MAX_FILE_ID_SUFFIX for sha in sorted({d["sha256"] for d in docs})}
+    return dict(wire_sha256_without_handles=wire_identity(question, pages, docs, history),
+                scope_wire_sha256_without_handles=wire_identity("", pages, docs, []),
+                max_wire_bytes=len(encoded(wire(question, pages, docs, longest_handles, history)).encode()))
+
+
+class NativeD1:
+    def __init__(self, cache, ledger: Ledger, *, manifest, fixture=None, live=None):
+        self.cache = cache
+        self.ledger = ledger
+        self.manifest = manifest
+        self.manifest_sha = digest(encoded(manifest).encode())
+        self.approved = {d["sha256"]: d["pages"] for d in manifest["files"]}
+        self.chat_posts = 0
+        self.fixture = fixture
+        self.live = live
+        self.limits = OWNER
+        self.run = "prep"
+        self.campaign = None
+        self.principal = "fixture"
+        self.permit_sha = self.manifest_sha
+        self.account = "fixture"
+        self.project = "prep"
+        if live:
+            if fixture is not None:
+                raise ValueError("fixture_and_live_conflict")
+            go, head, key, contract = live
+            limits = go["limits"]
+            contract_sha = digest(encoded(contract).encode())
+            if (not key or not SHA.fullmatch(go["manifest_sha"]) or not re.fullmatch(r"[a-f0-9]{40}", head)
+                    or go["manifest_sha"] != self.manifest_sha or go["head"] != head or go["rates"] != RATES
+                    or go["contract_sha"] != contract_sha or contract["rates"] != RATES
+                    or contract["model"] != "DeepSeek-V4.1-Flash-1017"
+                    or contract["origin"] != ORIGIN or contract["model_context_max"] != MODEL_CONTEXT
+                    or contract["generation_max"] != OUTPUT or contract["parser"] != PURPOSE
+                    or type(contract["reviewed_at"]) is not int
+                    or not time.time() - 86400 <= contract["reviewed_at"] <= time.time()
+                    or not isinstance(contract["reviewer"], str) or not contract["reviewer"].strip()
+                    or not isinstance(contract["rates_evidence"], str)
+                    or not contract["rates_evidence"].startswith("https://api-docs.deepseek.com/")
+                    or not isinstance(contract["approved_bound_ids"], list)
+                    or not all(isinstance(value, str) and SHA.fullmatch(value)
+                               for value in contract["approved_bound_ids"])
+                    or not isinstance(contract["paid_operation_evidence"], str)
+                    or not contract["paid_operation_evidence"].startswith("https://api-docs.deepseek.com/")
+                    or go["kind"] not in {"regular", "calibration"}
+                    or type(go["expires"]) is not int or go["expires"] <= time.time()
+                    or go["ledger_path"] != str(self.ledger.path.resolve())
+                    or not all(isinstance(go[name], str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", go[name])
+                               for name in ("run", "account", "project"))
+                    or go["run"] == "prep" or go["key_sha256"] != sha256(key.encode()).hexdigest()
+                    or set(limits) != set(OWNER) - {"reserve_disabled"}
+                    or any(type(n) is not int or not 0 <= n <= OWNER[k] for k, n in limits.items())
+                    or type(go["expires"]) is not int or go["expires"] > contract["reviewed_at"] + 86400
+                    or (go["kind"] == "regular" and limits["calibration"])):
+                raise ValueError("invalid_live_go")
+            self.run = go["run"]
+            self.campaign = "dc02-live"
+            self.limits = limits
+            self.permit_sha = digest(encoded(go).encode())
+            self.account = go["account"]
+            self.project = go["project"]
+            self.principal = go["key_sha256"]
+
+    def now(self, fallback):
+        return time.time() if self.live else fallback
+
+    def check_go(self):
+        if self.live and self.live[0]["expires"] <= time.time():
+            raise Stopped("go_expired")
+        if not self.live and self.fixture is None:
+            raise Stopped("live_disabled")
+
+    def send(self, method, route, *, payload=None, data=None, files=None, timeout=30):
+        self.check_go()
+        allowed = ((method == "POST" and route in {"/files", "/chat/completions"})
+                   or (method in {"GET", "DELETE"} and route.startswith("/files/")
+                       and FILE_ID.fullmatch(route.removeprefix("/files/"))))
+        if not allowed:
+            raise ValueError("unknown_provider_operation")
+        transport = self.fixture if self.fixture is not None else httpx.HTTPTransport(retries=0)
+        key = self.live[2] if self.live else "fixture"
+        with httpx.Client(base_url=ORIGIN, transport=transport, trust_env=False, follow_redirects=False,
+                          timeout=httpx.Timeout(timeout, connect=8)) as client:
+            with client.stream(method, route, headers={"Authorization": "Bearer " + key},
+                               json=payload, data=data, files=files) as response:
+                response.raise_for_status()
+                raw = bytearray()
+                for chunk in response.iter_bytes():
+                    raw.extend(chunk)
+                    if len(raw) > 2_000_000:
+                        raise ValueError("provider_response_size")
+        return json.loads(raw)
+
+    def bound(self, approval):
+        if not self.live:
+            return None
+        permit, _, _, contract = self.live
+        calibration = permit["kind"] == "calibration"
+        exact = approval["wire_sha256_without_handles"]
+        scope = approval["scope_wire_sha256_without_handles"]
+        kind = "provider_billable_maximum" if calibration else "complete_input_bound"
+        choices = [(exact, kind, "request_sha256")]
+        if not calibration:
+            choices.append((scope, "complete_scope_bound", "scope_sha256"))
+        for identity, kind, identity_field in choices:
+            if identity not in contract["approved_bound_ids"]:
+                continue
+            record = REVIEWED_BOUNDS.get((identity, kind))
+            if (not isinstance(record, dict) or record.get("kind") != kind
+                    or record.get(identity_field) != identity
+                    or record.get("manifest_sha256") != self.manifest_sha
+                    or type(record.get("billable_input")) is not int
+                    or not 0 < record["billable_input"] <= MODEL_CONTEXT - OUTPUT
+                    or type(record.get("parsed_bytes_max")) is not int
+                    or not 0 <= record["parsed_bytes_max"] <= PARSED_BYTES_LIMIT
+                    or not isinstance(record.get("evidence_url"), str)
+                    or not record["evidence_url"].startswith("https://api-docs.deepseek.com/")
+                    or not isinstance(record.get("derivation"), str) or not record["derivation"].strip()):
+                continue
+            if kind == "complete_scope_bound" and (type(record.get("wire_bytes_max")) is not int
+                    or approval["max_wire_bytes"] > record["wire_bytes_max"]):
+                continue
+            bound = record["billable_input"]
+            if not calibration and bound > EXTENDED:
+                raise Stopped("over_cap")
+            return bound
+        raise Stopped("native_bound_unverified")
+
+    def file_key(self, sha):
+        return digest(encoded([self.account, self.project, self.principal, PURPOSE, PURPOSE, sha]).encode())
+
+    def file_snapshot(self, result, sha, raw_length, now):
+        handle = result["id"]
+        created = result["created_at"]
+        expires = result["expires_at"]
+        if (not isinstance(handle, str) or not FILE_ID.fullmatch(handle)
+                or result["object"] != "file" or result["purpose"] != PURPOSE
+                or result["filename"] != sha + ".pdf" or result["bytes"] != raw_length
+                or type(created) is not int or type(expires) is not int
+                or created > now + 30 or expires <= now or expires - created != PARSE_TTL):
+            raise ValueError("ambiguous_file_metadata")
+        return dict(id=handle, sha256=sha, bytes=raw_length, expires=expires,
+                    checked=now, created=created, account=self.account,
+                    project=self.project, purpose=PURPOSE, parser=PURPOSE)
+
+    def upload(self, state, key, sha, raw, now, pages):
+        def call():
+            try:
+                return self.send("POST", "/files", data={"purpose": PURPOSE,
+                    "expires_after[anchor]": "created_at", "expires_after[seconds]": str(PARSE_TTL)},
+                    files={"file": (sha + ".pdf", raw, "application/pdf")}, timeout=UPLOAD_TIMEOUT)
+            except httpx.HTTPStatusError as error:
+                if error.response.status_code != 413:
+                    raise
+                return None
+
+        def parse(result):
+            if result is None:
+                return 0, {"upload_rejected": self.file_key(sha)}
+            snapshot = self.file_snapshot(result, sha, len(raw), self.now(now))
+            if any(b["id"] == snapshot["id"] and b["sha256"] != sha for b in state["bindings"].values()):
+                raise ValueError("file_id_collision")
+            state["bindings"][self.file_key(sha)] = snapshot
+            return pages * PAGE_PRICE, {}
+
+        return self.ledger.operate(state, key, call, parse) is not None
+
+    def status(self, state, key, binding, now):
+        def parse(result):
+            fresh = self.file_snapshot(result, binding["sha256"], binding["bytes"], self.now(now))
+            if any(fresh[field] != binding[field] for field in ("id", "created", "expires")):
+                raise ValueError("binding_metadata_changed")
+            binding["checked"] = fresh["checked"]
+            return 0, {}
+
+        self.ledger.operate(state, key, lambda: self.send("GET", "/files/" + binding["id"]), parse)
+
+    def cleanup(self, sha, now):
+        """Operator only. The transaction excludes consumers during acknowledgement."""
+        self.check_go()
+        if sha not in self.approved:
+            raise Stopped("binding_unavailable")
+        now = self.now(now)
+        with self.ledger.transaction() as state:
+            binding = self.binding(state, sha)
+            if not binding or binding["expires"] <= now:
+                raise Stopped("binding_unavailable")
+            k = self.run + "/delete/" + sha + "/" + digest(binding["id"].encode())
+
+            def parse(result):
+                if (result.get("id") != binding["id"] or result.get("object") != "file"
+                        or result.get("deleted") is not True):
+                    raise ValueError("unconfirmed_delete")
+                del state["bindings"][self.file_key(sha)]
+                return 0, {"delete_acknowledged": True}
+
+            self.ledger.reserve(state, self.run, self.permit_sha, "owner", now, self.limits,
+                                {k: dict(kind="delete", reserve=0)}, campaign=self.campaign)
+            self.ledger.operate(state, k, lambda: self.send("DELETE", "/files/" + binding["id"]), parse)
+
+    def binding(self, state, sha):
+        binding = state["bindings"].get(self.file_key(sha))
+        if binding and (binding["account"] != self.account or binding["project"] != self.project
+                        or binding["sha256"] != sha or binding["purpose"] != PURPOSE
+                        or binding["parser"] != PURPOSE or not FILE_ID.fullmatch(binding["id"])):
+            raise Stopped("binding_unavailable")
+        return binding
+
+    def dispatch(self, request, question, pages, documents, history, now, cap=None):
+        context = size(question, pages, documents, history, self.cache)
+        if context["unique_files"] > FILE_LIMIT:
+            return "provider_file_limit", None, context
+        # Only resolved user turns can be compacted. Preserve unresolved turns and their order.
+        history = list(history)
+        original_turns = len(history)
+        while context["estimate"] > min(cap if cap is not None else EXTENDED, EXTENDED):
+            removable = next((i for i, turn in enumerate(history) if not turn.get("unresolved")), None)
+            if removable is None:
+                break
+            history.pop(removable)
+            context = size(question, pages, documents, history, self.cache)
+        context["compacted_turns"] = original_turns - len(history)
+        approval = wire_approval(question, pages, documents, history)
+        context.update(approval)
+        if (context["estimate"] > (cap if cap is not None else EXTENDED)
+                and not self.live):
+            return "over_cap", None, context
+        try:
+            self.check_go()
+            bound = self.bound(approval)
+            context["verified_upper_bound"] = bound
+            effective = bound if bound is not None else context["estimate"]
+            mode = ("calibration" if self.live and self.live[0]["kind"] == "calibration"
+                    else "normal" if effective <= NORMAL else "extended")
+            context["input_mode"] = mode
+            context["provider"] = "live" if self.live else "http_fixture"
+            started = time.monotonic()
+            with self.ledger.transaction() as state:
+                try:
+                    result = self.turn(state, request, question, pages, documents, history,
+                                       now, mode, bound, context)
+                finally:
+                    context["budget"] = self.ledger.summary(state, self.run, self.limits["budget"])
+                    if self.campaign:
+                        context["campaign_budget"] = self.ledger.summary(
+                            state, self.run, OWNER["budget"], self.campaign)
+                    context["latency_ms"] = round((time.monotonic() - started) * 1000)
+            return *result, context
+        except Stopped as exc:
+            return str(exc), None, context
+
+    def turn(self, state, request, question, pages, docs, history, now, mode, bound, context):
+        now = self.now(now)
+        question_key = self.run + "/question/" + digest(request.rsplit("/", 1)[-1].encode())
+        ops = {}
+        uploads = {}
+        references = {}
+        unique = {doc["sha256"]: doc["pages"] for doc in docs}
+        rejected_bindings = {row["upload_rejected"] for row in state["operations"].values()
+                             if row.get("run") == self.run and "upload_rejected" in row}
+        rejected = set()
+        for sha, count in sorted(unique.items()):
+            if self.approved.get(sha) != count:
+                raise Stopped("file_manifest_mismatch")
+            if self.file_key(sha) in rejected_bindings:
+                rejected.add(sha)
+                continue
+            binding = self.binding(state, sha)
+            if binding and binding["expires"] > now + CHAT_TIMEOUT + 30:
+                if now - binding["checked"] >= STATUS_INTERVAL:
+                    key = question_key + "/status/" + sha
+                    ops[key] = dict(kind="status", reserve=0)
+                    references[key] = binding
+                continue
+            raw_path = self.cache / (sha + ".pdf")
+            try:
+                if raw_path.stat().st_size > MAX_SIZE:
+                    raise Stopped("cache_integrity_error")
+                raw = raw_path.read_bytes()
+            except OSError:
+                raise Stopped("cache_integrity_error") from None
+            if digest(raw) != sha:
+                raise Stopped("cache_integrity_error")
+            key = question_key + "/upload/" + sha
+            ops[key] = dict(kind="upload", reserve=count * PAGE_PRICE, pages=count)
+            uploads[key] = sha, raw, count
+        context["file_cache_hits"] = len(unique) - len(uploads) - len(rejected)
+        billing_bound = bound or (NORMAL if mode == "normal" else EXTENDED)
+        reserve = cold_cost(billing_bound) if mode == "calibration" else (50_000 if mode == "normal" else 90_000)
+        slot = mode if mode != "calibration" else (
+            "normal" if context["estimate"] <= NORMAL else "extended")
+        ops[question_key] = dict(kind=mode, slot=slot, reserve=reserve)
+        self.ledger.reserve(state, self.run, self.permit_sha, "owner", now, self.limits, ops,
+                            campaign=self.campaign)
+        try:
+            for key, (sha, raw, count) in uploads.items():
+                self.check_go()
+                if not self.upload(state, key, sha, raw, now, count):
+                    rejected.add(sha)
+            for key, binding in references.items():
+                self.check_go()
+                self.status(state, key, binding, now)
+            if rejected:
+                context["file_omissions"] = [dict(doc_id=doc["id"], sha256=doc["sha256"],
+                    scope=doc["scope"], url=doc["url"], state="provider_rejected_pdf")
+                    for doc in docs if doc["sha256"] in rejected]
+                docs = [doc for doc in docs if doc["sha256"] not in rejected]
+                approval = wire_approval(question, pages, docs, history)
+                context["outgoing_wire_sha256_without_handles"] = approval["wire_sha256_without_handles"]
+                if self.live:
+                    narrowed_bound = self.bound(approval)
+                    if narrowed_bound > billing_bound:
+                        raise Stopped("native_bound_changed")
+                    billing_bound = narrowed_bound
+                    context["verified_upper_bound"] = billing_bound
+            bindings = {sha: self.binding(state, sha) for sha in sorted(set(unique) - rejected)}
+            if any(item["expires"] <= self.now(now) + CHAT_TIMEOUT for item in bindings.values()):
+                raise Stopped("binding_expiry_before_chat")
+            payload = wire(question, pages, docs, {s: b["id"] for s, b in bindings.items()}, history)
+            self.check_go()
+
+            def chat():
+                self.chat_posts += 1
+                return self.send("POST", "/chat/completions", payload=payload, timeout=CHAT_TIMEOUT)
+
+            def account(result):
+                usage = result["usage"]
+                if (result["model"] != "deepseek-flash" or usage.get("server_tool_use")
+                        or any(choice.get("message", {}).get("server_tool_calls")
+                               or choice.get("message", {}).get("tool_calls")
+                               for choice in result.get("choices", []))):
+                    raise ValueError("provider_contract_drift")
+                keys = ("prompt_tokens", "completion_tokens", "total_tokens",
+                        "prompt_cache_hit_tokens", "prompt_cache_miss_tokens")
+                counts = {k: usage[k] for k in keys}
+                if any(type(v) is not int or v < 0 for v in counts.values()):
+                    raise ValueError("incomplete_usage")
+                prompt, output, total, hit, miss = (counts[k] for k in keys)
+                if total != prompt + output or prompt != hit + miss:
+                    raise ValueError("incomplete_usage")
+                details = usage.get("completion_tokens_details") or {}
+                if "reasoning_tokens" in details:
+                    reasoning = details["reasoning_tokens"]
+                    if type(reasoning) is not int or not 0 <= reasoning <= output:
+                        raise ValueError("invalid_reasoning_usage")
+                    counts["reasoning_tokens"] = reasoning
+                context["observed_usage"] = counts
+                return token_cost(prompt, hit, output), dict(usage=counts,
+                    overage=prompt > billing_bound or output > OUTPUT)
+
+            result = self.ledger.operate(state, question_key, chat, account)
+        finally:
+            self.ledger.cancel_unstarted(state, ops)
+        try:
+            if result["model"] != "deepseek-flash" or len(result["choices"]) != 1:
+                return "invalid_candidate", None
+            choice = result["choices"][0]
+            context["finish_reason"] = choice["finish_reason"]
+            if mode == "calibration":
+                return "calibration_observed", None
+            if choice["finish_reason"] != "stop":
+                return "truncated_candidate" if choice["finish_reason"] == "length" else "invalid_candidate", None
+            message = choice["message"]
+            content = message["content"]
+            candidate = json.loads(content)
+            serialized = encoded(candidate)
+            serialized.encode("utf-8")
+            if FILE_ID.search(serialized) or (self.live and self.live[2] in serialized):
+                return "invalid_candidate", None
+            if isinstance(candidate, dict) and isinstance(candidate.get("answer_candidate"), str):
+                count, _ = get_counter(self.cache / TOKENIZER_NAME)
+                visible = count(candidate["answer_candidate"])
+                context["visible_tokens_estimate"] = visible
+                if visible > 1200:
+                    return "candidate_too_long", None
+            return "candidate", candidate
+        except (ValueError, TypeError, KeyError, IndexError):
+            return "invalid_candidate", None
+
+
+def mock_transport():
+    """Deterministic HTTP fixture. Local question and uploaded bytes are real."""
+    files = {}
+
+    def handle(request):
+        route = request.url.path
+        if route == "/files" and request.method == "POST":
+            from email.parser import BytesParser
+            from email.policy import default
+            raw = request.read()
+            parts = BytesParser(policy=default).parsebytes(
+                b"Content-Type: " + request.headers["content-type"].encode() + b"\r\n\r\n" + raw)
+            binary = list(parts.iter_parts())[-1]
+            content = binary.get_payload(decode=True)
+            name = binary.get_filename()
+            file_id = "file-api-" + digest(content)
+            now = int(time.time())
+            files[file_id] = dict(id=file_id, object="file", bytes=len(content),
+                                  created_at=now, expires_at=now + PARSE_TTL, purpose=PURPOSE,
+                                  filename=name)
+            return httpx.Response(200, json=files[file_id])
+        if route.startswith("/files/"):
+            file_id = route.rsplit("/", 1)[-1]
+            if file_id not in files:
+                return httpx.Response(404)
+            if request.method == "DELETE":
+                del files[file_id]
+                return httpx.Response(200, json=dict(id=file_id, object="file", deleted=True))
+            return httpx.Response(200, json=files[file_id])
+        if route != "/chat/completions" or request.method != "POST":
+            return httpx.Response(404)
+        answer = abstention(json.loads(request.read()))
+        return httpx.Response(200, json=dict(model="deepseek-flash",
+            choices=[dict(finish_reason="stop", message=dict(content=encoded(answer)))],
+            usage=dict(prompt_tokens=1000, completion_tokens=100, total_tokens=1100,
+                       prompt_cache_hit_tokens=0, prompt_cache_miss_tokens=1000)))
+
+    return httpx.MockTransport(handle)

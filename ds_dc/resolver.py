@@ -78,12 +78,20 @@ class Resolver:
             if VARIANT.search(question):
                 return self.result("variant_requires_clarification", [], exact)
             if MULTI.search(question) and re.search(r"\b(?:его|её|него|неё|этот|этого)\b", question, re.I):
-                if not active:
+                if len(active) != 1:
                     return self.result("unbound_comparison", [], exact)
                 return self.result("comparison_with_active", [*active, *(item["id"] for item in exact)], exact)
             if len(exact) > 1 and not MULTI.search(question):
                 return self.result("ambiguous_models", [], exact)
             return self.result("explicit_models", [item["id"] for item in exact], exact)
+
+        if active and VARIANT.search(question):
+            return self.result("variant_requires_clarification", [], [])
+        if (active and not FOREIGN_MODEL.search(question)
+                and not MULTI.search(question)
+                and (FOLLOW.search(question) or len(WORDS.findall(question)) <= 6)):
+            return self.result("active" if len(active) == 1 else "ambiguous_reference",
+                               list(active) if len(active) == 1 else [], [])
 
         terms = tokens(question)
         ranked = []
@@ -96,12 +104,14 @@ class Resolver:
                 ranked.append(dict(id=entity, score=round(score, 4), signals=matched))
         ranked.sort(key=lambda item: (-item["score"], item["id"]))
         best = ranked[:5]
-        if best and best[0]["score"] >= 7 and (len(best) == 1 or best[0]["score"] >= best[1]["score"] * 1.35):
+        if not active and best and best[0]["score"] >= 7 and (len(best) == 1 or best[0]["score"] >= best[1]["score"] * 1.35):
             return self.result("lexical", [best[0]["id"]], best)
+        if (active and (not best or best[0]["id"] in active or best[0]["score"] < 7)
+                and not FOREIGN_MODEL.search(question) and not MULTI.search(question)):
+            return self.result("active" if len(active) == 1 else "ambiguous_reference",
+                               list(active) if len(active) == 1 else [], best)
         if len(best) >= 2 and best[0]["score"] >= 7:
             return self.result("ambiguous_function", [], best)
-        if active and FOLLOW.search(question) and not best and not FOREIGN_MODEL.search(question):
-            return self.result("active", list(active), [])
         hints = [k for k, row in self.entries.items() if hint == row["canonical"]]
         if hints and FOLLOW.search(question) and not best and not active and not FOREIGN_MODEL.search(question):
             return self.result("page_hint", hints, [])

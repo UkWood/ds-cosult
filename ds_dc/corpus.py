@@ -100,7 +100,7 @@ def inventory(site):
         features = {key: data[key] for key in ("name", "summary", "applications", "interfaces",
                     "protocols", "notice", "features", "connectors", "specs") if data.get(key)}
         entries[entity] = dict(id=entity, kind=kind, route=route, canonical=PREVIEW + route,
-                               path=path, blob=meta.split()[-1], sha256=digest(raw), commit=COMMIT,
+                               production_url=SITE + route, path=path, blob=meta.split()[-1], sha256=digest(raw), commit=COMMIT,
                                variant=approved_sources.get(path, {}).get("variant"),
                                title=data["title"], draft=bool(data.get("draft")), state="not_ready",
                                features=features, relations=relations, links=links, body=body,
