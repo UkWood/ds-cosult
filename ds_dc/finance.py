@@ -60,12 +60,15 @@ class Ledger:
             os.close(fd)
 
     @contextmanager
-    def transaction(self):
+    def transaction(self, *, maintain=True):
         with (self.path / ".lock").open("a+b") as lock:
             os.fchmod(lock.fileno(), 0o600)
             fcntl.flock(lock, fcntl.LOCK_EX)
             state = json.loads(self.file.read_text()) if self.file.exists() else {
                 "operations": {}, "bindings": {}, "runs": {}}
+            if not maintain:
+                yield state
+                return
             for path in self.path.glob(".pending-*"):
                 path.unlink()
             interrupted = False
@@ -81,7 +84,14 @@ class Ledger:
             for key in stale:
                 del state["bindings"][key]
             pruned = False
+            events = state.get("recovery_events")
+            original_run = None
+            if events:
+                key = events[0]["authorization"]["original_operation"]
+                original_run = state["operations"][key]["run"]
             for row in state["operations"].values():
+                if original_run is not None and row["run"] == original_run:
+                    continue
                 if row.get("utc", float("inf")) <= cutoff:
                     row.pop("usage", None)
                     row.pop("calibration_result", None)
@@ -99,12 +109,20 @@ class Ledger:
             return row["cost"]
         return max(row.get("cost", 0), row["reserve"])
 
-    def reserve(self, state, run, permit_sha, peer, now, limits, ops, *, public=False, campaign=None):
+    def reserve(self, state, run, permit_sha, peer, now, limits, ops, *, public=False, campaign=None, recovery=None):
         if state["runs"].get(run, permit_sha) != permit_sha:
             raise Stopped("go_changed")
         existing = list(state["operations"].values())
-        if any(row["state"] == "unknown" and row.get("profile") == ("public" if public else "owner")
-               for row in existing):
+        ignored = None
+        if recovery:
+            from .recovery import ORIGINAL_UPLOAD
+            if public or campaign != "dc02-live" or not state.get("recovery_events") or (
+                    recovery["original_operation"] != ORIGINAL_UPLOAD):
+                raise Stopped("invalid_recovery_authorization")
+            ignored = ORIGINAL_UPLOAD
+        if any(key != ignored and row["state"] == "unknown"
+               and row.get("profile") == ("public" if public else "owner")
+               for key, row in state["operations"].items()):
             raise Stopped("provider_unknown")
         if any(key in state["operations"] for key in ops):
             raise Stopped("duplicate_operation")
@@ -125,6 +143,12 @@ class Ledger:
             raise Stopped("budget_exhausted")
         if campaign and exceeds([row for row in all_rows if row.get("campaign") == campaign], OWNER):
             raise Stopped("campaign_budget_exhausted")
+        if recovery:
+            cal_rows = [row for key, row in (state["operations"] | new).items()
+                        if key.startswith("dc02-live/calibration/") and row["state"] != "cancelled"]
+            cal_caps = OWNER | {"budget": 783_300, "pages": 548, "upload": 15, "chats": 2}
+            if exceeds(cal_rows, cal_caps) or sum(row["reserve"] for row in cal_rows) > cal_caps["budget"]:
+                raise Stopped("recovery_budget_exhausted")
         if public:
             rows_public = [r for r in all_rows if r["profile"] == "public"]
             if (sum(self.accounted(r) for r in rows_public if r["day"][:7] == day[:7]) > PUBLIC["month"]
@@ -134,6 +158,8 @@ class Ledger:
                 raise Stopped("budget_exhausted")
         state["runs"][run] = permit_sha
         state["operations"].update(new)
+        if recovery and recovery.get("consumption"):
+            state["recovery_events"].append(recovery["consumption"])
         self.save(state)
 
     def operate(self, state, key, call, interpret):

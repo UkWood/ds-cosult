@@ -10,6 +10,7 @@ from .context import EXTENDED, FILE_LIMIT, NORMAL, OUTPUT, TOKENIZER_NAME, get_c
 from .corpus import MAX_SIZE, digest, encoded
 from .finance import Ledger, OWNER, RATES, Stopped, cold_cost, token_cost
 from .provider_failure import ProviderFailure, transport_failure
+from .recovery import ORIGINAL_UPLOAD, RECOVERY_CHAT, matching_event
 from .runtime import PURPOSE, abstention, verify
 
 ORIGIN = "https://api.deepseek.com"
@@ -44,6 +45,9 @@ def controlled_permit(go):
         return False
     wire_sha, uploads, pages = CAL_WIRES[cal_id]
     prior = go.get("cal01_permit_sha")
+    recovery_sha = go.get("recovery_authorization_sha")
+    if recovery_sha is not None and (not isinstance(recovery_sha, str) or not SHA.fullmatch(recovery_sha)):
+        return False
     return (go.get("wire_sha256") == wire_sha
             and (prior is None if cal_id == "Q01" else isinstance(prior, str) and bool(SHA.fullmatch(prior)))
             and go["limits"] == dict(budget=CAL_POST_RESERVE + pages * PAGE_PRICE,
@@ -447,13 +451,28 @@ class NativeD1:
         if operation_key in state["operations"]:
             raise Stopped("duplicate_operation")
         permit = self.live[0]
+        recovery_sha = permit.get("recovery_authorization_sha")
+        events = None
+        recovery = None
+        if recovery_sha:
+            events = matching_event(state, recovery_sha, permit, self.live[1])
+            recovery = dict(original_operation=ORIGINAL_UPLOAD)
         if permit["cal_id"] == "Q02":
-            prior = state["operations"].get(self.campaign + "/calibration/" + CAL_WIRES["Q01"][0], {})
+            prior_key = RECOVERY_CHAT if events else self.campaign + "/calibration/" + CAL_WIRES["Q01"][0]
+            prior = state["operations"].get(prior_key, {})
             if (prior.get("state") != "settled"
                     or prior.get("permit_sha") != permit["cal01_permit_sha"]
                     or prior.get("calibration_scope") != self.calibration_scope()
-                    or prior.get("calibration_result", {}).get("finish_reason") != "stop"):
+                    or prior.get("calibration_result", {}).get("finish_reason") != "stop"
+                    or (events and (len(events) != 2
+                        or events[1].get("permit_sha") != prior["permit_sha"]))):
                 raise Stopped("cal01_not_confirmed")
+        elif events:
+            if len(events) != 1:
+                raise Stopped("recovery_already_consumed")
+            recovery["consumption"] = dict(kind="consumed", authorization_sha=recovery_sha,
+                                          operation=RECOVERY_CHAT, permit_sha=self.permit_sha)
+        return recovery
 
     def turn(self, state, request, question, pages, docs, history, now, mode, bound, context):
         now = self.now(now)
@@ -461,8 +480,12 @@ class NativeD1:
             question_key = self.campaign + "/calibration/" + context["wire_sha256_without_handles"]
         else:
             question_key = self.run + "/question/" + digest(request.rsplit("/", 1)[-1].encode())
+        recovery = None
         if self.controlled:
-            self.check_controlled_sequence(state, question_key)
+            permit = self.live[0]
+            if permit["cal_id"] == "Q01" and permit.get("recovery_authorization_sha"):
+                question_key = RECOVERY_CHAT
+            recovery = self.check_controlled_sequence(state, question_key)
         ops = {}
         uploads = {}
         references = {}
@@ -507,7 +530,7 @@ class NativeD1:
             ops[question_key].update(permit_sha=self.permit_sha, calibration_scope=self.calibration_scope())
             context["upload_latency_ms"] = {}
         self.ledger.reserve(state, self.run, self.permit_sha, "owner", now, self.limits, ops,
-                            campaign=self.campaign)
+                            campaign=self.campaign, recovery=recovery)
         try:
             for key, (sha, raw, count) in uploads.items():
                 self.check_go()

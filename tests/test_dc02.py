@@ -624,7 +624,8 @@ def controlled_operator(tmp_path, corpus, monkeypatch, finish="stop", fault=None
     transport = httpx.MockTransport(handle)
     monkeypatch.setattr(httpx, "HTTPTransport", lambda **_: transport)
 
-    def factory(qid, risk=True, prior=None, kind="controlled_calibration", account="fixture-account"):
+    def factory(qid, risk=True, prior=None, kind="controlled_calibration", account="fixture-account",
+                recovery_sha=None):
         sizing = questions[qid]
         pages, uploads = sizing["physical_pages"], sizing["unique_files"]
         go = dict(kind=kind, cal_id=qid, accepted_residual_risk=risk,
@@ -636,6 +637,9 @@ def controlled_operator(tmp_path, corpus, monkeypatch, finish="stop", fault=None
                               pages=pages, upload=uploads, status=0, delete=0, calibration=1))
         if prior:
             go["cal01_permit_sha"] = prior
+        if recovery_sha:
+            go["recovery_authorization_sha"] = recovery_sha
+            go["run"] += "-recovery"
         if kind == "regular":
             go["limits"]["calibration"] = 0
         adapter = NativeD1(cache, ledger, manifest=manifest, live=(go, head, key, contract))
@@ -725,6 +729,7 @@ def test_controlled_calibration_holds_and_stops(tmp_path, corpus, monkeypatch, f
     (400, "http_status", "http_error", 400, True),
     (401, "http_status", "http_error", 401, True),
     (402, "http_status", "http_error", 402, True),
+    (403, "http_status", "http_error", 403, True),
     (408, "http_status", "http_error", 408, True),
     (413, "http_status", "http_error", 413, True),
     (429, "http_status", "http_error", 429, True),
@@ -860,3 +865,108 @@ def test_calr_file_handle_collision(tmp_path):
         assert state["operations"]["upload"]["provider_failure"]["safe_reason_code"] == "id_collision"
         assert len(state["bindings"]) == 1
         assert ledger.accounted(state["operations"]["upload"]) == 225
+
+
+def recovery_fixture(factory, ledger, corpus):
+    from ds_dc import recovery
+
+    adapter = factory("Q01").provider
+    prior = adapter.live[0] | {"head": recovery.ORIGINAL_HEAD, "run": "original-q01"}
+    permit_sha = recovery.fingerprint(prior)
+    _, _, registry, _ = corpus
+    files = {doc["sha256"]: doc["pages"] for doc in registry[BKD]["included_docs"]}
+    reserved = dict(run=prior["run"], campaign=recovery.CAMPAIGN, profile="owner")
+    operations = {recovery.ORIGINAL_CHAT: reserved | dict(
+        kind="calibration", slot="extended", state="cancelled", reserve=330_000,
+        permit_sha=permit_sha, calibration_scope=recovery.scope(prior, recovery.ORIGINAL_HEAD))}
+    for sha, pages in files.items():
+        key = recovery.ORIGINAL_CHAT + "/upload/" + sha
+        operations[key] = reserved | dict(kind="upload", pages=pages, reserve=pages * 225,
+                                          state="unknown" if key == recovery.ORIGINAL_UPLOAD else "cancelled")
+    state = dict(operations=operations, runs={prior["run"]: permit_sha}, bindings={})
+    ledger.save(state)
+    archived = ledger.file.read_bytes()
+    auth = recovery.authorization_payload(state, archived, prior, adapter.live[1], "fixture-owner")
+    return auth, prior, archived, operations
+
+
+def test_incident_recovery_binding_and_success(tmp_path, corpus, monkeypatch):
+    from ds_dc import recovery
+
+    factory, ask, calls, ledger = controlled_operator(tmp_path, corpus, monkeypatch)
+    auth, prior, archived, original = recovery_fixture(factory, ledger, corpus)
+    head = auth["head"]
+    # The original operation key is occupied and the unknown still blocks all ordinary reservations.
+    assert ask(factory("Q01"), "Q01")["status"] == "duplicate_operation"
+    assert ask(factory("Q01", recovery_sha="f" * 64), "Q01")["status"] == "recovery_not_authorized"
+    with ledger.transaction() as state:
+        with pytest.raises(Stopped, match="provider_unknown"):
+            ledger.reserve(state, "ordinary", "permit", "owner", time.time(), OWNER,
+                           {"ordinary": dict(kind="extended", reserve=90000)}, campaign=recovery.CAMPAIGN)
+    assert not calls
+    for field, value in auth.items():
+        with pytest.raises(ValueError):
+            recovery.authorize(ledger, auth | {field: None if value is not None else "wrong"}, prior, archived, head)
+    assert ledger.file.read_bytes() == archived
+    auth_sha = recovery.authorize(ledger, auth, prior, archived, head)
+    with pytest.raises(Stopped, match="recovery_already_authorized"):
+        recovery.authorize(ledger, auth, prior, archived, head)
+    assert ask(factory("Q01", recovery_sha=auth_sha, account="other"), "Q01")[
+        "status"] == "recovery_authorization_mismatch"
+    assert ask(factory("Q02", prior=recovery.fingerprint(prior), recovery_sha=auth_sha), "Q02")[
+        "status"] == "cal01_not_confirmed"
+    assert not calls
+    recovered = factory("Q01", recovery_sha=auth_sha)
+    result = ask(recovered, "Q01")
+    assert result["status"] == "calibration_observed"
+    assert result["context"]["campaign_budget"]["held_micro_usd"] == 14625
+    assert result["context"]["campaign_budget"]["page_attempts"] == 145
+    assert ask(factory("Q01", recovery_sha=auth_sha), "Q01", "new-id")["status"] == "duplicate_operation"
+    assert ask(factory("Q02", prior=recovered.provider.permit_sha), "Q02")["status"] == "cal01_not_confirmed"
+    assert ask(factory("Q02", prior=recovered.provider.permit_sha, recovery_sha=auth_sha), "Q02")[
+        "status"] == "calibration_observed"
+    with ledger.transaction() as state:
+        assert all(state["operations"][key] == row for key, row in original.items())
+        assert [event["kind"] for event in state["recovery_events"]] == ["authorized", "consumed"]
+        summary = ledger.summary(state, "", OWNER["budget"], recovery.CAMPAIGN)
+        assert summary["held_micro_usd"] == 14625
+        assert summary["page_attempts"] == 548
+        assert summary["operations"]["upload"] == 15
+        assert summary["operations"]["calibration"] == 2
+    assert [request.url.path for request in calls] == ["/files"] * 4 + ["/chat/completions"] + [
+        "/files"] * 10 + ["/chat/completions"]
+
+
+@pytest.mark.parametrize("other_unknown", [False, True])
+def test_incident_recovery_concurrent_hold(tmp_path, corpus, monkeypatch, other_unknown):
+    from concurrent.futures import ThreadPoolExecutor
+    from ds_dc import recovery
+
+    factory, ask, calls, ledger = controlled_operator(tmp_path, corpus, monkeypatch, fault="upload")
+    auth, prior, archived, _ = recovery_fixture(factory, ledger, corpus)
+    auth_sha = recovery.authorize(ledger, auth, prior, archived, auth["head"])
+    if other_unknown:
+        with ledger.transaction() as state:
+            state["operations"]["another-failure"] = dict(state="unknown", kind="upload",
+                profile="owner", campaign=recovery.CAMPAIGN, run="another", reserve=225, pages=1)
+            ledger.save(state)
+
+    def recover(index):
+        operator = factory("Q01", recovery_sha=auth_sha)
+        return ask(operator, "Q01", str(index))["status"]
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        statuses = sorted(workers.map(recover, (1, 2)))
+    if other_unknown:
+        assert statuses == ["provider_unknown", "provider_unknown"]
+        assert not calls
+    else:
+        assert statuses == ["duplicate_operation", "provider_unknown"]
+        assert [request.url.path for request in calls] == ["/files"]
+        operator = factory("Q01", recovery_sha=auth_sha)
+        assert ask(factory("Q02", prior=operator.provider.permit_sha, recovery_sha=auth_sha), "Q02")[
+            "status"] == "cal01_not_confirmed"
+        with ledger.transaction() as state:
+            assert len(state["recovery_events"]) == 2
+            summary = ledger.summary(state, "", OWNER["budget"], recovery.CAMPAIGN)
+            assert summary["held_micro_usd"] == 2 * 14625

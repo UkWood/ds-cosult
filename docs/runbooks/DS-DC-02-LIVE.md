@@ -1,13 +1,13 @@
 # DS-DC-02 · Протокол закрытого пилота
 
-**Действие сейчас** · CAL-INC-01 остановил платную серию. CAL-R добавляет диагностику для офлайн-приёмки. Перед любым новым действием требуется сверка и отдельное решение владельца. Инструкции запуска ниже относятся к уже разрешённой кампании после снятия блокировки по утверждённой процедуре. [Проект сверки CAL-INC-01](ds-dc-02/CAL-INC-01-RECOVERY-DRAFT.md)
+**Действие сейчас** · CAL-INC-01 финансово неопределён. Для разрешённого одноразового восстановления используйте порядок ниже. Публикация RECOVERY не регистрирует разрешение и не даёт GO на сеть. [A-DS-DC-06](../architecture/A-DS-DC-06-CONTROLLED-INCIDENT-RECOVERY.md)
 
 ## Пакет freeze
 
 - [Манифест байтов и связей](../reports/ds-dc-02/corpus-manifest.json) · site pin `084d759487bfab6e111549c9b5469711ac5fc13e`, 11 Markdown, 14 уникальных PDF, 483 физических страницы. `manifest_sha` — SHA-256 канонического JSON из команды `--freeze`: `13fd98159f05809c019dd11a522b1c87fff3faebc505621bde7318880e3051f9`.
 - [Набор вопросов](ds-dc-02/live-questions.json) · SHA-256 файла `eda83041d26a32871860d3581fc363e6a3a61f73e8e47e560aa8d93c99dabee0`. [Опоры для независимой сверки](ds-dc-02/ground-truth.md) хранятся отдельно от входа модели.
 - [Оценки входа](../reports/ds-dc-02/sizing.json) · локальный токенизатор и Poppler. Сверить состав хешей, редакции, locator, возможный объём OCR и таблиц. Страницы с иным поколением или компонентом требуют явной применимости.
-- HEAD для GO — точный подтверждённый SHA поставки CAL-PREP в Draft PR #4. База CAL-PREP — `a4bcd85c8d371306815fb8a9f9c11bc72a82ee3f`. Манифест должен совпасть после восстановления исходников и оригиналов.
+- HEAD для GO — точный подтверждённый SHA поставки RECOVERY в Draft PR #4. База CAL-PREP — `a4bcd85c8d371306815fb8a9f9c11bc72a82ee3f`. Манифест должен совпасть после восстановления исходников и оригиналов.
 
 ## Проверочный интерфейс
 
@@ -68,6 +68,75 @@ python -m ds_dc --site "$SATURN_SOURCE" --cache "$DS_DC_CACHE" \
 
 CLI принимает тот же комплект с `--question` вместо `--chat`. Калибровка возвращает только операторские показатели и остаётся вне памяти диалога. Затем требуется новое решение на обычный запуск.
 
+## CAL-INC-01 · Одноразовое восстановление
+
+Используйте только доверенную WSL, точный опубликованный чистый HEAD RECOVERY, существующий приватный ledger и исходный GO. Сохраните одну и ту же учётную область и тот же ключ. Остановите все процессы, которые пишут в ledger. Сначала выполните проверку корпуса и автономный TLS из шага 1 ниже. Новые ключи, приватные файлы и отчёт об инциденте остаются на стороне владельца.
+
+### A. Сохранить исходные доказательства
+
+```sh
+set -e
+umask 077
+unset DEEPSEEK_API_KEY
+export DS_DC_LEDGER='<абсолютный путь исходного приватного ledger>'
+export DS_DC_ORIGINAL_GO='<абсолютный путь исходного GO Q01>'
+export DS_DC_ARCHIVE='<новый абсолютный путь архива CAL-INC-01>'
+test -f "$DS_DC_LEDGER/ledger.json"
+test -f "$DS_DC_ORIGINAL_GO"
+mkdir -m 700 "$DS_DC_ARCHIVE"
+install -m 400 "$DS_DC_LEDGER/ledger.json" "$DS_DC_ARCHIVE/ledger.json"
+install -m 400 "$DS_DC_ORIGINAL_GO" "$DS_DC_ARCHIVE/go-Q01.json"
+(cd "$DS_DC_ARCHIVE" && sha256sum ledger.json go-Q01.json > SHA256SUMS)
+chmod 400 "$DS_DC_ARCHIVE/SHA256SUMS"
+chmod 500 "$DS_DC_ARCHIVE"
+(cd "$DS_DC_ARCHIVE" && sha256sum -c SHA256SUMS)
+```
+
+Сохраните также независимую копию архива на защищённом от записи носителе либо в хранилище с неизменяемой версией. Права 0400/0500 защищают рабочую копию от обычной записи, а отдельная защищённая копия необходима для независимой сверки. Сохраните отчёт WSL рядом с защищённой копией, если он доступен владельцу.
+
+### B. Оформить и зарегистрировать Recovery Authorization без сети
+
+Проверьте состояние C, исходную попытку и удержание. Ввод подтверждения в этой команде относится только к регистрации Recovery Authorization. Допуск к отправке оформляется на следующем шаге. Имя владельца для журнала ограничено латинскими буквами, цифрами и `_.-`.
+
+```sh
+test "$(git rev-parse HEAD)" = "$DS_DC_HEAD"
+test -z "$(git status --porcelain)"
+export DS_DC_RECOVERY_AUTH="$(dirname "$DS_DC_ARCHIVE")/CAL-INC-01-authorization.json"
+read -r -p 'Owner label: ' DS_DC_RECOVERY_OWNER
+read -r -p 'Enter ACCEPT-CAL-INC-01 to authorize the one-time recovery and accept the residual risk: ' DS_DC_RECOVERY_CONSENT
+test "$DS_DC_RECOVERY_CONSENT" = ACCEPT-CAL-INC-01
+export DS_DC_RECOVERY_OWNER DS_DC_RECOVERY_CONSENT
+env -u DEEPSEEK_API_KEY python - <<'PYAUTH'
+import json
+import os
+from pathlib import Path
+from ds_dc.recovery import authorization_payload
+
+env = os.environ
+if env["DS_DC_RECOVERY_CONSENT"] != "ACCEPT-CAL-INC-01":
+    raise SystemExit("Owner approval required")
+archive = Path(env["DS_DC_ARCHIVE"])
+snapshot = (archive / "ledger.json").read_bytes()
+original_go = json.loads((archive / "go-Q01.json").read_text())
+event = authorization_payload(json.loads(snapshot), snapshot, original_go,
+                              env["DS_DC_HEAD"], env["DS_DC_RECOVERY_OWNER"])
+with Path(env["DS_DC_RECOVERY_AUTH"]).open("x", encoding="utf-8") as file:
+    json.dump(event, file, indent=2)
+PYAUTH
+DS_DC_RECOVERY_AUTH_SHA=$(env -u DEEPSEEK_API_KEY python -m ds_dc.recovery \
+  --ledger "$DS_DC_LEDGER" --authorization "$DS_DC_RECOVERY_AUTH" \
+  --archived-ledger "$DS_DC_ARCHIVE/ledger.json" --archived-go "$DS_DC_ARCHIVE/go-Q01.json")
+export DS_DC_RECOVERY_AUTH_SHA
+```
+
+Сравнение с архивным ledger делается под lock. При несовпадении файла или исходных записей остановитесь. Не правьте операции и не создавайте ledger взамен исходного.
+
+### C. Выдать отдельный GO, затем отправить ровно один Q01 Recovery
+
+Используйте шаг 2 ниже с `DS_DC_CAL_ID=Q01` и экспортированным `DS_DC_RECOVERY_AUTH_SHA`. Команды сохранят новые GO и contract под отдельными именами. После создания GO владелец может остановиться до строки вызова `python -m ds_dc`; только этот вызов выполняет dispatch. Стоимость в момент допуска — резерв 348 000 микроUSD сверх удержания 14 625. При любом отказе сохранить ledger и остановиться. Зарезервированная попытка считается потреблённой, даже если отправка ещё не началась.
+
+Q02 требует отдельного GO из шага 3, тот же SHA Recovery Authorization и `permit_sha` из успешной строки Recovery, с валидным usage, settled и `stop`. Изначальная отменённая запись Q01 для этого непригодна. Все шаги повторно используют исходный ledger.
+
 ## Controlled Calibration в доверенной WSL
 
 ### 1. Закрепить исходники, корпус и проверить TLS
@@ -101,11 +170,16 @@ TLS-проверка обрывается до HTTP. Нативный клиен
 
 ```sh
 set +x
-export DS_DC_PRIVATE="$HOME/.local/state/ds-dc02"
-export DS_DC_LEDGER="$DS_DC_PRIVATE/ledger"
-export DS_DC_CAL_ID=Q01
-export DS_DC_CONTRACT="$DS_DC_PRIVATE/contract-$DS_DC_CAL_ID.json"
-export DS_DC_GO="$DS_DC_PRIVATE/go-$DS_DC_CAL_ID.json"
+export DS_DC_PRIVATE="${DS_DC_PRIVATE:-$HOME/.local/state/ds-dc02}"
+export DS_DC_LEDGER="${DS_DC_LEDGER:-$DS_DC_PRIVATE/ledger}"
+export DS_DC_CAL_ID="${DS_DC_CAL_ID:-Q01}"
+cal_suffix=""
+if test -n "${DS_DC_RECOVERY_AUTH_SHA:-}"; then
+  test -f "$DS_DC_LEDGER/ledger.json"
+  cal_suffix="-recovery"
+fi
+export DS_DC_CONTRACT="$DS_DC_PRIVATE/contract-$DS_DC_CAL_ID$cal_suffix.json"
+export DS_DC_GO="$DS_DC_PRIVATE/go-$DS_DC_CAL_ID$cal_suffix.json"
 install -d -m 700 "$DS_DC_PRIVATE" "$DS_DC_LEDGER"
 read -r -p 'DeepSeek account label: ' DS_DC_ACCOUNT
 read -r -p 'DeepSeek project label: ' DS_DC_PROJECT
@@ -148,6 +222,9 @@ go = dict(kind=CONTROLLED_CAL, cal_id=cal_id, wire_sha256=wire_sha,
           limits=dict(budget=CAL_POST_RESERVE + pages * int(RATES["page"]),
                       normal=0, extended=1, chats=1, pages=pages, upload=uploads,
                       status=0, delete=0, calibration=1))
+if env.get("DS_DC_RECOVERY_AUTH_SHA"):
+    go["recovery_authorization_sha"] = env["DS_DC_RECOVERY_AUTH_SHA"]
+    go["run"] += "-recovery"
 if cal_id == "Q02":
     go["cal01_permit_sha"] = env["DS_DC_CAL01_PERMIT_SHA"]
 if Path(env["DS_DC_GO"]).exists():
@@ -157,11 +234,16 @@ with Path(env["DS_DC_GO"]).open("x", encoding="utf-8") as f:
     json.dump(go, f)
 PYGO
 
+```
+
+После оформления GO владелец отдельно разрешает отправку. Выполнить следующий блок в той же WSL-сессии, где задан ключ и проверены разрешение и текущий журнал.
+
+```sh
 DS_DC_QUESTION=$(python -c 'import json,os; from pathlib import Path; data=json.loads(Path("docs/runbooks/ds-dc-02/live-questions.json").read_text()); print(next(q["question"] for q in data["questions"] if q["id"] == os.environ["DS_DC_CAL_ID"]))')
 python -m ds_dc --site "$SATURN_SOURCE" --cache "$DS_DC_CACHE" \
   --manifest "$DS_DC_CACHE/corpus-manifest.json" --contract "$DS_DC_CONTRACT" \
   --live-go "$DS_DC_GO" --ledger "$DS_DC_LEDGER" --question "$DS_DC_QUESTION" \
-  > "$DS_DC_PRIVATE/result-$DS_DC_CAL_ID.json" || {
+  > "$DS_DC_PRIVATE/result-$DS_DC_CAL_ID$cal_suffix.json" || {
     unset DEEPSEEK_API_KEY
     printf '%s\n' 'CAL stopped. Inspect private result and ledger. Do not retry.'
     exit 1
@@ -177,10 +259,13 @@ import json
 import os
 from pathlib import Path
 from ds_dc.native import CAL_WIRES
+from ds_dc.recovery import RECOVERY_CHAT
 
 ledger = Path(os.environ["DS_DC_LEDGER"]) / "ledger.json"
 state = json.loads(ledger.read_text())
 key = "dc02-live/calibration/" + CAL_WIRES[os.environ["DS_DC_CAL_ID"]][0]
+if os.environ.get("DS_DC_RECOVERY_AUTH_SHA") and os.environ["DS_DC_CAL_ID"] == "Q01":
+    key = RECOVERY_CHAT
 receipt = state["operations"].get(key)
 print(json.dumps(receipt, ensure_ascii=False, indent=2))
 PYRESULT
@@ -195,6 +280,7 @@ PYRESULT
 ```sh
 read -r -p 'Reviewed CAL-01 permit_sha: ' DS_DC_CAL01_PERMIT_SHA
 export DS_DC_CAL01_PERMIT_SHA
+export DS_DC_CAL_ID=Q02
 ```
 
 Затем повторить шаг 2 с новым файлом GO, свежим подтверждением риска и тем же аккаунтом/проектом/ключом. Проверить 10 upload на 403 страницы и GT02. Q10 union вне программы. Ключ вводится только локально.
