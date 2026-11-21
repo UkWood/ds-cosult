@@ -1,0 +1,12 @@
+{
+  "questions": [
+    {
+      "id": "Q01-N",
+      "category": "natural_open",
+      "question": "Что проверить, если на БКД-ПК-RF.2 не горит зелёный индикатор Link?",
+      "scope": "saturn:device:bkd-pk-rf-2",
+      "status": "registered_offline_no_candidate"
+    }
+  ],
+  "future_categories": ["natural_open", "user_hypothesis", "false_premise", "dialogue_followup"]
+}
