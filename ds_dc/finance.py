@@ -83,6 +83,7 @@ class Ledger:
             for row in state["operations"].values():
                 if row.get("utc", float("inf")) <= cutoff:
                     row.pop("usage", None)
+                    row.pop("calibration_result", None)
                     row.pop("utc", None)
                     pruned = True
             if interrupted or stale or pruned:
@@ -146,10 +147,12 @@ class Ledger:
             self.save(state)
             raise Stopped("provider_unknown") from None
         row.update(state="settled", cost=cost, **facts)
-        if cost > row["reserve"] or facts.get("overage"):
+        overage = cost > row["reserve"] or facts.get("overage")
+        stop = "provider_overage" if overage else facts.get("hold_reason")
+        if stop:
             row["state"] = "unknown"
             self.save(state)
-            raise Stopped("provider_overage")
+            raise Stopped(stop)
         self.save(state)
         return result
 

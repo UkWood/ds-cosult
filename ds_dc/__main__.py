@@ -12,7 +12,7 @@ from .corpus import BKD, COMMIT, dossiers, inventory
 from .runtime import MockD1, Pilot, Journal
 from .reference_review import reference_review
 from .finance import Ledger, Stopped
-from .native import NativeD1, mock_transport
+from .native import CONTROLLED_CAL, NativeD1, mock_transport
 from .prep import freeze, freeze_digest, load, restore
 
 CASE_FILE = Path(__file__).resolve().parents[1] / "docs/reports/DS-DC-01-RESOLVER-CASES.json"
@@ -166,6 +166,9 @@ def dc02(args, parser):
         approval = json.loads(args.live_go.read_text())
         if bool(args.cleanup_sha) != (approval.get("kind") == "cleanup"):
             parser.error("cleanup requires a dedicated GO and --cleanup-sha")
+        if approval.get("kind") == CONTROLLED_CAL and (
+                args.chat or args.p0 or args.reference_only or len(args.question or []) != 1):
+            parser.error("controlled calibration requires one pinned CLI question")
         live = (approval, git("rev-parse", "HEAD"), os.getenv("DEEPSEEK_API_KEY", ""),
                 json.loads(args.contract.read_text()))
         provider = NativeD1(args.cache, Ledger(args.ledger), manifest=manifest, live=live)
@@ -193,8 +196,11 @@ def run_dc02(args, entries, registry, provider, time, uuid4):
         return serve(pilot, args.port)
     token = pilot.open(PEER)
     for question in args.question:
-        print(json.dumps(pilot.ask(PEER, token, str(uuid4()), question,
-                                  mode="P0" if args.p0 else "D1", now=time.time()), ensure_ascii=False))
+        result = pilot.ask(PEER, token, str(uuid4()), question,
+                           mode="P0" if args.p0 else "D1", now=time.time())
+        print(json.dumps(result, ensure_ascii=False))
+        if provider.controlled and result["status"] != "calibration_observed":
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

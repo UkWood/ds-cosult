@@ -579,3 +579,138 @@ def test_compacted_history_is_used_for_the_next_turn(tmp_path, monkeypatch):
     second = pilot.ask(peer, token, "second", "Резервное питание?", now=now + 1)
     assert second["chat_posts"] == 1
     assert second["context"]["compacted_turns"] == 0
+
+
+def controlled_operator(tmp_path, corpus, monkeypatch, finish="stop", fault=None):
+    from ds_dc import native
+    from ds_dc.finance import RATES
+
+    cache, entries, registry, manifest = corpus
+    report = json.loads(Path("docs/reports/ds-dc-02/r1-calibration-sizing.json").read_text())
+    questions = report["requests"]
+    now = int(time.time())
+    key, head = "fixture-only-inert-credential", "a" * 40
+    evidence = "https://api-docs.deepseek.com/guides/document_parsing/"
+    ledger = Ledger(tmp_path / "ledger")
+    contract = dict(origin=native.ORIGIN, model="DeepSeek-V4.1-Flash-1017", rates=RATES,
+                    model_context_max=native.MODEL_CONTEXT, generation_max=8192,
+                    parser="text_recognition", reviewed_at=now, reviewer="Fixture",
+                    rates_evidence=evidence, paid_operation_evidence=evidence, approved_bound_ids=[])
+    base = mock_transport()
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        if fault == "upload" and request.url.path == "/files":
+            return httpx.Response(413)
+        if request.url.path == "/chat/completions":
+            if fault == "timeout":
+                raise httpx.ReadTimeout("fixture")
+            request_wire = json.loads(request.content)
+            body = json.loads(request_wire["messages"][-1]["content"][-1]["text"])
+            assert body["history"] == []
+            assert request_wire["max_tokens"] == 8192
+            content = encoded(dict(answer_candidate="Черновик", status_hint="partial",
+                                   unresolved=[body["question"]], claims=[]))
+            payload = response(content, finish=finish).json()
+            payload["usage"]["completion_tokens_details"] = {"reasoning_tokens": 3}
+            if fault == "partial":
+                del payload["usage"]["prompt_cache_miss_tokens"]
+            if fault == "overage":
+                payload = response(content, prompt=1_200_000).json()
+            return httpx.Response(200, json=payload)
+        return base.handle_request(request)
+
+    transport = httpx.MockTransport(handle)
+    monkeypatch.setattr(httpx, "HTTPTransport", lambda **_: transport)
+
+    def factory(qid, risk=True, prior=None, kind="controlled_calibration", account="fixture-account"):
+        sizing = questions[qid]
+        pages, uploads = sizing["physical_pages"], sizing["unique_files"]
+        go = dict(kind=kind, cal_id=qid, accepted_residual_risk=risk,
+                  wire_sha256=sizing["wire_sha256_without_handles"], expires=now + 600,
+                  run="cal-" + qid, head=head, account=account, project="fixture-project",
+                  ledger_path=str(ledger.path.resolve()), rates=RATES, key_sha256=digest(key.encode()),
+                  contract_sha=digest(encoded(contract).encode()), manifest_sha=report["manifest_sha256"],
+                  limits=dict(budget=330_000 + 225 * pages, normal=0, extended=1, chats=1,
+                              pages=pages, upload=uploads, status=0, delete=0, calibration=1))
+        if prior:
+            go["cal01_permit_sha"] = prior
+        if kind == "regular":
+            go["limits"]["calibration"] = 0
+        adapter = NativeD1(cache, ledger, manifest=manifest, live=(go, head, key, contract))
+        return Pilot(entries, registry, cache, Journal(tmp_path / "audit"), adapter, owner_dc02=True)
+
+    def ask(pilot, qid, request="attempt"):
+        peer = "192.0.2.1"
+        token = pilot.open(peer, now)
+        return pilot.ask(peer, token, request, questions[qid]["question"], now=now)
+
+    return factory, ask, calls, ledger
+
+
+def test_controlled_calibration_exact_order_and_receipts(tmp_path, corpus, monkeypatch):
+    factory, ask, calls, ledger = controlled_operator(tmp_path, corpus, monkeypatch)
+    with pytest.raises(ValueError):
+        factory("Q01", risk=False)
+    with pytest.raises(ValueError):
+        factory("Q02")
+    with pytest.raises(ValueError):
+        factory("Q10")
+    first = factory("Q01")
+    disabled = NativeD1(first.cache, ledger, manifest=first.provider.manifest)
+    assert disabled.dispatch("disabled", "", [], [], [], time.time())[0] == "live_disabled"
+    question = "Какое назначение у БКД-ПК-RF.2?"
+    assert first.ask("127.0.0.1", first.open("127.0.0.1"), "changed", question)["status"] == "calibration_wire_mismatch"
+    assert ask(factory("Q02", prior=first.provider.permit_sha), "Q02")["status"] == "cal01_not_confirmed"
+    _, _, registry, _ = corpus
+    changed = factory("Q01")
+    changed.dossiers = {**registry, BKD: {**registry[BKD], "included_docs": registry[BKD]["included_docs"][1:]}}
+    assert ask(changed, "Q01")["status"] == "calibration_wire_mismatch"
+    assert ask(factory("Q01", kind="regular"), "Q01")["status"] == "native_bound_unverified"
+    assert not calls
+    observed = ask(first, "Q01")
+    assert observed["status"] == "calibration_observed"
+    assert observed["context"]["verified_upper_bound"] is None
+    assert not first.sessions["192.0.2.1"].history
+    assert ask(factory("Q01"), "Q01", "new-id")["status"] == "duplicate_operation"
+    assert ask(factory("Q02", prior=first.provider.permit_sha, account="changed"), "Q02")["status"] == "cal01_not_confirmed"
+    assert ask(factory("Q02", prior=first.provider.permit_sha), "Q02")["status"] == "calibration_observed"
+    assert [r.url.path for r in calls] == ["/files"] * 4 + ["/chat/completions"] + ["/files"] * 10 + ["/chat/completions"]
+    with ledger.transaction() as state:
+        chats = [row for row in state["operations"].values() if row["kind"] == "calibration"]
+        assert [row["reserve"] for row in chats] == [330_000, 330_000]
+        assert all(row["slot"] == "extended" and row["state"] == "settled" for row in chats)
+        assert [len({doc["sha256"] for doc in row["calibration_result"]["documents"]})
+                for row in chats] == [4, 10]
+        assert chats[0]["calibration_result"]["candidate"]["answer_candidate"] == "Черновик"
+        assert chats[0]["calibration_result"]["verification_status"] == "draft"
+        assert chats[0]["usage"]["reasoning_tokens"] == 3
+        assert "must-not-leak" not in encoded(chats)
+
+
+@pytest.mark.parametrize(("finish", "fault", "status"), [
+    ("length", None, "calibration_finish_not_stop"),
+    ("stop", "timeout", "provider_unknown"),
+    ("stop", "upload", "provider_unknown"),
+    ("stop", "partial", "provider_unknown"),
+    ("stop", "overage", "provider_overage"),
+])
+def test_controlled_calibration_holds_and_stops(tmp_path, corpus, monkeypatch, finish, fault, status):
+    factory, ask, calls, ledger = controlled_operator(tmp_path, corpus, monkeypatch, finish, fault)
+    first = factory("Q01")
+    result = ask(first, "Q01")
+    assert result["status"] == status
+    held = result["context"]["budget"]["held_micro_usd"]
+    if fault == "upload":
+        assert len(calls) == 1 and calls[0].url.path == "/files"
+        with ledger.transaction() as state:
+            row = next(row for row in state["operations"].values() if row["state"] == "unknown")
+            assert held == row["pages"] * 225
+    elif fault == "overage":
+        assert held > 330_000
+    else:
+        assert held == 330_000
+    count = len(calls)
+    assert ask(factory("Q02", prior=first.provider.permit_sha), "Q02")["status"] == "cal01_not_confirmed"
+    assert len(calls) == count

@@ -9,7 +9,7 @@ import httpx
 from .context import EXTENDED, FILE_LIMIT, NORMAL, OUTPUT, TOKENIZER_NAME, get_counter, size, wire
 from .corpus import MAX_SIZE, digest, encoded
 from .finance import Ledger, OWNER, RATES, Stopped, cold_cost, token_cost
-from .runtime import PURPOSE, abstention
+from .runtime import PURPOSE, abstention, verify
 
 ORIGIN = "https://api.deepseek.com"
 MAX_FILE_ID_SUFFIX = 128
@@ -25,6 +25,29 @@ PARSED_BYTES_LIMIT = 8 * 1024 * 1024
 # Admission requires recorded Architecture review in the exact, approved code revision.
 # Current provider documentation does not establish a billable bound for any pilot wire.
 REVIEWED_BOUNDS = {}
+
+CONTROLLED_CAL = "controlled_calibration"
+CAL_MANIFEST = "13fd98159f05809c019dd11a522b1c87fff3faebc505621bde7318880e3051f9"
+CAL_POST_RESERVE = 330_000
+CAL_WIRES = {
+    "Q01": ("7498d9920faf9cf25dfbf461c0bc64a75701089423a1c142c1b45cb85e9b9afd", 4, 80),
+    "Q02": ("d6c1ac408cf46c62c1f653a222c4e5af54d07fbc9981f65c21bb622b55303513", 10, 403),
+}
+
+
+def controlled_permit(go):
+    cal_id = go.get("cal_id")
+    if (not isinstance(cal_id, str) or cal_id not in CAL_WIRES
+            or go.get("accepted_residual_risk") is not True
+            or go["manifest_sha"] != CAL_MANIFEST):
+        return False
+    wire_sha, uploads, pages = CAL_WIRES[cal_id]
+    prior = go.get("cal01_permit_sha")
+    return (go.get("wire_sha256") == wire_sha
+            and (prior is None if cal_id == "Q01" else isinstance(prior, str) and bool(SHA.fullmatch(prior)))
+            and go["limits"] == dict(budget=CAL_POST_RESERVE + pages * PAGE_PRICE,
+                normal=0, extended=1, chats=1, pages=pages, upload=uploads,
+                status=0, delete=0, calibration=1))
 
 
 def wire_identity(question, pages, docs, history):
@@ -79,7 +102,7 @@ class NativeD1:
                                for value in contract["approved_bound_ids"])
                     or not isinstance(contract["paid_operation_evidence"], str)
                     or not contract["paid_operation_evidence"].startswith("https://api-docs.deepseek.com/")
-                    or go["kind"] not in {"regular", "calibration", "cleanup"}
+                    or go["kind"] not in {"regular", "calibration", "cleanup", CONTROLLED_CAL}
                     or type(go["expires"]) is not int or go["expires"] <= time.time()
                     or go["ledger_path"] != str(self.ledger.path.resolve())
                     or not all(isinstance(go[name], str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", go[name])
@@ -89,6 +112,7 @@ class NativeD1:
                     or any(type(n) is not int or not 0 <= n <= OWNER[k] for k, n in limits.items())
                     or type(go["expires"]) is not int or go["expires"] > contract["reviewed_at"] + 86400
                     or (go["kind"] == "regular" and limits["calibration"])
+                    or (go["kind"] == CONTROLLED_CAL and not controlled_permit(go))
                     or (go["kind"] != "cleanup" and limits["delete"])
                     or (go["kind"] == "cleanup" and (go.get("cleanup_sha") not in self.approved
                         or limits["delete"] != 1
@@ -191,7 +215,7 @@ class NativeD1:
                     "expires_after[anchor]": "created_at", "expires_after[seconds]": str(PARSE_TTL)},
                     files={"file": (sha + ".pdf", raw, "application/pdf")}, timeout=UPLOAD_TIMEOUT)
             except httpx.HTTPStatusError as error:
-                if error.response.status_code != 413:
+                if self.controlled or error.response.status_code != 413:
                     raise
                 return None
 
@@ -252,8 +276,62 @@ class NativeD1:
         return binding
 
     @property
+    def controlled(self):
+        return self.live is not None and self.live[0]["kind"] == CONTROLLED_CAL
+
+    @property
     def calibration(self):
-        return self.live is not None and self.live[0]["kind"] == "calibration"
+        return self.live is not None and self.live[0]["kind"] in {"calibration", CONTROLLED_CAL}
+
+    def controlled_admission(self, approval, context):
+        permit = self.live[0]
+        wire_sha, uploads, pages = CAL_WIRES[permit["cal_id"]]
+        if (approval["wire_sha256_without_handles"] != wire_sha
+                or context["unique_files"] != uploads or context["physical_pages"] != pages):
+            raise Stopped("calibration_wire_mismatch")
+
+    def controlled_receipt(self, value, question, pages, docs, context, chat_ms):
+        choices = value["choices"]
+        if len(choices) != 1:
+            raise ValueError("invalid_calibration_response")
+        choice = choices[0]
+        finish = choice.get("finish_reason")
+        if finish not in ("stop", "length", "content_filter", "tool_calls",
+                          "insufficient_system_resource", "aborted"):
+            finish = "unknown"
+        raw = choice["message"].get("content")
+        raw = raw if isinstance(raw, str) else None
+        draft = None
+        status, diagnostics = "invalid_candidate", []
+        if raw is not None:
+            raw = FILE_ID.sub("[redacted file handle]", raw.replace(self.live[2], "[redacted credential]"))
+            try:
+                raw.encode("utf-8")
+                draft = json.loads(raw)
+                serialized = encoded(draft)
+                serialized.encode("utf-8")
+                if FILE_ID.search(serialized) or self.live[2] in serialized:
+                    raw, draft = None, None
+            except UnicodeError:
+                raw, draft = None, None
+            except (ValueError, RecursionError):
+                draft = None
+        if draft is not None:
+            status, diagnostics = verify(draft, question, docs, self.cache, pages=pages, dc02=True)
+        receipt = dict(finish_reason=finish, raw_draft=raw, candidate=draft, question=question,
+                       verification_status=status, diagnostics=diagnostics, documents=docs,
+                       site=[{k: v for k, v in page.items() if k != "raw"} for page in pages],
+                       estimate=context["estimate"], wire_sha256=self.live[0]["wire_sha256"],
+                       upload_latency_ms=context["upload_latency_ms"], chat_latency_ms=chat_ms)
+        usage = value.get("usage")
+        serialized_usage = encoded(usage)
+        try:
+            serialized_usage.encode("utf-8")
+        except UnicodeError:
+            return receipt
+        if not FILE_ID.search(serialized_usage) and self.live[2] not in serialized_usage:
+            receipt["provider_usage"] = usage
+        return receipt
 
     def dispatch(self, request, question, pages, documents, history, now, cap=None):
         """Compact the caller's working copy of the dialogue before sizing and sending."""
@@ -280,7 +358,9 @@ class NativeD1:
             return "over_cap", None, context
         try:
             self.check_go()
-            bound = self.bound(approval)
+            if self.controlled:
+                self.controlled_admission(approval, context)
+            bound = None if self.controlled else self.bound(approval)
             context["verified_upper_bound"] = bound
             effective = bound if bound is not None else context["estimate"]
             mode = ("calibration" if self.calibration
@@ -302,12 +382,30 @@ class NativeD1:
         except Stopped as exc:
             return str(exc), None, context
 
+    def calibration_scope(self):
+        return digest(encoded([self.account, self.project, self.principal, self.manifest_sha,
+                               self.live[1]]).encode())
+
+    def check_controlled_sequence(self, state, operation_key):
+        if operation_key in state["operations"]:
+            raise Stopped("duplicate_operation")
+        permit = self.live[0]
+        if permit["cal_id"] == "Q02":
+            prior = state["operations"].get(self.campaign + "/calibration/" + CAL_WIRES["Q01"][0], {})
+            if (prior.get("state") != "settled"
+                    or prior.get("permit_sha") != permit["cal01_permit_sha"]
+                    or prior.get("calibration_scope") != self.calibration_scope()
+                    or prior.get("calibration_result", {}).get("finish_reason") != "stop"):
+                raise Stopped("cal01_not_confirmed")
+
     def turn(self, state, request, question, pages, docs, history, now, mode, bound, context):
         now = self.now(now)
         if mode == "calibration":
             question_key = self.campaign + "/calibration/" + context["wire_sha256_without_handles"]
         else:
             question_key = self.run + "/question/" + digest(request.rsplit("/", 1)[-1].encode())
+        if self.controlled:
+            self.check_controlled_sequence(state, question_key)
         ops = {}
         uploads = {}
         references = {}
@@ -322,6 +420,8 @@ class NativeD1:
                 rejected.add(sha)
                 continue
             binding = self.binding(state, sha)
+            if binding and self.controlled:
+                raise Stopped("calibration_existing_binding")
             if binding and binding["expires"] > now + CHAT_TIMEOUT + 30:
                 if now - binding["checked"] >= STATUS_INTERVAL:
                     key = question_key + "/status/" + sha
@@ -342,16 +442,27 @@ class NativeD1:
             uploads[key] = sha, raw, count
         context["file_cache_hits"] = len(unique) - len(uploads) - len(rejected)
         billing_bound = bound or (NORMAL if mode == "normal" else EXTENDED)
-        reserve = cold_cost(billing_bound) if mode == "calibration" else (50_000 if mode == "normal" else 90_000)
+        reserve = (CAL_POST_RESERVE if self.controlled else cold_cost(billing_bound) if mode == "calibration"
+                   else 50_000 if mode == "normal" else 90_000)
         slot = "extended" if mode == "calibration" else mode
         ops[question_key] = dict(kind=mode, slot=slot, reserve=reserve)
+        if self.controlled:
+            ops[question_key].update(permit_sha=self.permit_sha, calibration_scope=self.calibration_scope())
+            context["upload_latency_ms"] = {}
         self.ledger.reserve(state, self.run, self.permit_sha, "owner", now, self.limits, ops,
                             campaign=self.campaign)
         try:
             for key, (sha, raw, count) in uploads.items():
                 self.check_go()
-                if not self.upload(state, key, sha, raw, now, count):
-                    rejected.add(sha)
+                upload_started = time.monotonic()
+                try:
+                    if not self.upload(state, key, sha, raw, now, count):
+                        rejected.add(sha)
+                finally:
+                    if self.controlled:
+                        elapsed = round((time.monotonic() - upload_started) * 1000)
+                        context["upload_latency_ms"][sha] = elapsed
+                        state["operations"][key]["latency_ms"] = elapsed
             for key, binding in references.items():
                 self.check_go()
                 self.status(state, key, binding, now)
@@ -378,9 +489,21 @@ class NativeD1:
 
             def chat():
                 self.chat_posts += 1
-                return self.send("POST", "/chat/completions", payload=payload, timeout=CHAT_TIMEOUT)
+                chat_started = time.monotonic()
+                try:
+                    return self.send("POST", "/chat/completions", payload=payload, timeout=CHAT_TIMEOUT)
+                finally:
+                    if self.controlled:
+                        state["operations"][question_key]["latency_ms"] = round(
+                            (time.monotonic() - chat_started) * 1000)
 
             def account(result):
+                receipt = None
+                if self.controlled:
+                    row = state["operations"][question_key]
+                    receipt = self.controlled_receipt(result, question, pages, docs, context, row["latency_ms"])
+                    row["calibration_result"] = receipt
+                    context["finish_reason"] = receipt["finish_reason"]
                 usage = result["usage"]
                 if (result["model"] != "deepseek-flash" or usage.get("server_tool_use")
                         or any(choice.get("message", {}).get("server_tool_calls")
@@ -402,8 +525,16 @@ class NativeD1:
                         raise ValueError("invalid_reasoning_usage")
                     counts["reasoning_tokens"] = reasoning
                 context["observed_usage"] = counts
-                return token_cost(prompt, hit, output), dict(usage=counts,
-                    overage=prompt > billing_bound or output > OUTPUT)
+                cost = token_cost(prompt, hit, output)
+                if not self.controlled:
+                    return cost, dict(usage=counts, overage=prompt > billing_bound or output > OUTPUT)
+                hold_reason = None
+                if self.live[0]["expires"] <= time.time():
+                    hold_reason = "go_expired"
+                elif receipt["finish_reason"] != "stop":
+                    hold_reason = "calibration_finish_not_stop"
+                return cost, dict(usage=counts, calibration_result=receipt, hold_reason=hold_reason,
+                                  overage=total > MODEL_CONTEXT or output > OUTPUT)
 
             result = self.ledger.operate(state, question_key, chat, account)
         finally:
