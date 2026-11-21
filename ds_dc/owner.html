@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DS-консультант</title>
+  <link rel="stylesheet" href="/owner.css">
+  <script src="/owner.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="brand">DS-консультант <span id="profile"></span></div>
+    <button id="reset" type="button">Новый диалог</button>
+  </header>
+  <main>
+    <section id="timeline" aria-label="Диалог" aria-live="polite"></section>
+    <p id="notice" role="status"></p>
+    <form>
+      <label for="question">Ваш технический вопрос</label>
+      <textarea id="question" rows="3" required placeholder="Для чего предназначена система СЛДКС-1?"></textarea>
+      <div class="actions">
+        <label class="navigation"><input id="p0" type="checkbox"> Только источники</label>
+        <button id="send">Отправить</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

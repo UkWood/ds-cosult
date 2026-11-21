@@ -1,0 +1,278 @@
+{
+  "base_head": "664e80e5a25c77825e4bb76b0a9d45a26f994d1f",
+  "site_commit": "084d759487bfab6e111549c9b5469711ac5fc13e",
+  "manifest_sha256": "13fd98159f05809c019dd11a522b1c87fff3faebc505621bde7318880e3051f9",
+  "questions_file_sha256": "eda83041d26a32871860d3581fc363e6a3a61f73e8e47e560aa8d93c99dabee0",
+  "real_api_calls": 0,
+  "pdfs": [
+    {
+      "sha256": "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a",
+      "scope": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "physical_pages": 65,
+      "original_bytes": 3024578,
+      "extracted_characters": 121144,
+      "extracted_utf8_bytes": 185318,
+      "extracted_local_tokens": 28993,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "127961f757901dcb6d1292607a930fe8a03b2a3739f2e27f62b792bd53fefbf5",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 11,
+      "original_bytes": 1033424,
+      "extracted_characters": 6153,
+      "extracted_utf8_bytes": 10361,
+      "extracted_local_tokens": 1965,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "496ddc2786b8fb2cdfd8970947fadde6b7a045e7d86e20737f2ef694425d5890",
+      "scope": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "physical_pages": 8,
+      "original_bytes": 392090,
+      "extracted_characters": 20751,
+      "extracted_utf8_bytes": 36490,
+      "extracted_local_tokens": 5645,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "5eb9f8066e68c659378fcc2d5158cd6dee223e4d02a6035014bed324e4b5356f",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 32,
+      "original_bytes": 8284454,
+      "extracted_characters": 15603,
+      "extracted_utf8_bytes": 27495,
+      "extracted_local_tokens": 5105,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "6860bd9774b3e4e440e3f3bb1635b7fc6c4840612efd96082024cd7588988335",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 13,
+      "original_bytes": 1481237,
+      "extracted_characters": 16950,
+      "extracted_utf8_bytes": 25676,
+      "extracted_local_tokens": 4670,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "83bbf87d653f147c5ce68c8e83c4d31488303ab7376baf1f4a6bcc19d45cbeaa",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 37,
+      "original_bytes": 767850,
+      "extracted_characters": 76590,
+      "extracted_utf8_bytes": 124242,
+      "extracted_local_tokens": 20352,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "944cfc483a6961beefffe948e092f644c15c478d1567bd28ba3d5ce2186bc3ec",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 58,
+      "original_bytes": 1097018,
+      "extracted_characters": 187056,
+      "extracted_utf8_bytes": 234330,
+      "extracted_local_tokens": 42558,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "959f515c588ea8758cae0ccfdd17efaf396b31c84c4315e1b195c745d59db5db",
+      "scope": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "physical_pages": 5,
+      "original_bytes": 230917,
+      "extracted_characters": 9332,
+      "extracted_utf8_bytes": 15273,
+      "extracted_local_tokens": 2351,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "bf07da30d1221f61a3ecdde5b40f542b90ca2a646c5dc6019997326a2c570148",
+      "scope": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "physical_pages": 2,
+      "original_bytes": 167325,
+      "extracted_characters": 4910,
+      "extracted_utf8_bytes": 8410,
+      "extracted_local_tokens": 1374,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "c127ed20684fc47e8e5649b27ab91e738d483a04b21d1dbde12b063c512d59e2",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 14,
+      "original_bytes": 1526778,
+      "extracted_characters": 20954,
+      "extracted_utf8_bytes": 32194,
+      "extracted_local_tokens": 5999,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "cf6a52838c40700aac8ee9a0f8bdf81a0811491385dbf00d974c76ed8baa4905",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 13,
+      "original_bytes": 1326953,
+      "extracted_characters": 20661,
+      "extracted_utf8_bytes": 31278,
+      "extracted_local_tokens": 5943,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "e61e8fbcf81f020554c802d23ae05c774d8a7603f0f705089f3f3d4a136e7e89",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 49,
+      "original_bytes": 5452399,
+      "extracted_characters": 120468,
+      "extracted_utf8_bytes": 200501,
+      "extracted_local_tokens": 31452,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "ee407d5d32b26aff28ba193f19788df996cf1d83891ac264da70e51bed75da60",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 93,
+      "original_bytes": 2438820,
+      "extracted_characters": 194573,
+      "extracted_utf8_bytes": 305795,
+      "extracted_local_tokens": 51377,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    },
+    {
+      "sha256": "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f",
+      "scope": [
+        "saturn:system:sldks-1"
+      ],
+      "physical_pages": 83,
+      "original_bytes": 5017331,
+      "extracted_characters": 202567,
+      "extracted_utf8_bytes": 331132,
+      "extracted_local_tokens": 55188,
+      "parsed_provider_bytes": null,
+      "verified_upper_bound_tokens": null
+    }
+  ],
+  "requests": {
+    "Q01": {
+      "question": "Что проверить, если на БКД-ПК-RF.2 не горит зелёный Link, а возможная причина — обрыв кабеля?",
+      "ground_truth": "GT01",
+      "scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available"
+      },
+      "estimate": 53289,
+      "verified_upper_bound": null,
+      "observed_usage": null,
+      "system": 383,
+      "pages_and_metadata": 3400,
+      "question_tokens": 37,
+      "wire_without_history": 4268,
+      "history": 0,
+      "pdf": 38363,
+      "margin": 1.25,
+      "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1 / Poppler pdftotext -layout",
+      "sparse_pages": 0,
+      "input_mode": "normal",
+      "unique_files": 4,
+      "physical_pages": 80,
+      "wire_sha256_without_handles": "7498d9920faf9cf25dfbf461c0bc64a75701089423a1c142c1b45cb85e9b9afd",
+      "scope_wire_sha256_without_handles": "3185d63d45cc8e130cc9ced5223a70e868f93258f88c3435b36a7227953418e5",
+      "max_wire_bytes": 15532,
+      "site_raw_local_tokens": 1958,
+      "site_raw_utf8_bytes": 8544,
+      "metadata_without_site_raw_local_tokens": 1312
+    },
+    "Q02": {
+      "question": "Для чего предназначена СЛДКС-1 и между какими точками работает двусторонняя связь?",
+      "ground_truth": "GT02",
+      "scope": {
+        "saturn:system:sldks-1": "full_available"
+      },
+      "estimate": 315380,
+      "verified_upper_bound": null,
+      "observed_usage": null,
+      "system": 383,
+      "pages_and_metadata": 25868,
+      "question_tokens": 25,
+      "wire_without_history": 27695,
+      "history": 0,
+      "pdf": 224609,
+      "margin": 1.25,
+      "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1 / Poppler pdftotext -layout",
+      "sparse_pages": 1,
+      "input_mode": "over_cap",
+      "unique_files": 10,
+      "physical_pages": 403,
+      "wire_sha256_without_handles": "d6c1ac408cf46c62c1f653a222c4e5af54d07fbc9981f65c21bb622b55303513",
+      "scope_wire_sha256_without_handles": "401db63b1f0e636acc98b239a3b046c4d292f1285a7ef3555ad2c9fb16072c7e",
+      "max_wire_bytes": 122929,
+      "site_raw_local_tokens": 20181,
+      "site_raw_utf8_bytes": 103443,
+      "metadata_without_site_raw_local_tokens": 4753
+    },
+    "Q10": {
+      "question": "Сравните БКД-ПК-RF.2 и СЛДКС-1 по назначению.",
+      "ground_truth": "GT10",
+      "scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available",
+        "saturn:system:sldks-1": "full_available"
+      },
+      "estimate": 368015,
+      "verified_upper_bound": null,
+      "observed_usage": null,
+      "system": 383,
+      "pages_and_metadata": 29259,
+      "question_tokens": 25,
+      "wire_without_history": 31440,
+      "history": 0,
+      "pdf": 262972,
+      "margin": 1.25,
+      "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1 / Poppler pdftotext -layout",
+      "sparse_pages": 1,
+      "input_mode": "over_cap",
+      "unique_files": 14,
+      "physical_pages": 483,
+      "wire_sha256_without_handles": "be384a978fd11d0fb754ed713a652e8e988d55afdfb0f5a3c3f7224666452d73",
+      "scope_wire_sha256_without_handles": "f240bc5a002ae596fc7c9d557117592969ba89e980523f3b5c23f20d02dc4d2f",
+      "max_wire_bytes": 135693,
+      "site_raw_local_tokens": 22139,
+      "site_raw_utf8_bytes": 111987,
+      "metadata_without_site_raw_local_tokens": 6056
+    }
+  }
+}

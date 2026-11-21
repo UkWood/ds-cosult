@@ -13,6 +13,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 import pdfplumber
 import yaml
 
+from ds_dc.pdf_policy import OWNER_EXCLUDED
+
 from .catalog import COMMIT, EXPANDED, PINS, SITE, EvidenceRef, Fact
 from .material import Passage
 
@@ -68,6 +70,8 @@ def read_bounded(stream):
 
 
 def download(source):
+    if source.url in OWNER_EXCLUDED:
+        raise ValueError("EXCLUDED_BY_OWNER")
     req = Request(source.url, headers={"Accept": "application/pdf", "Accept-Encoding": "identity"})
     with build_opener(NoRedirect()).open(req, timeout=20) as response:
         if response.geturl() != source.url or response.status != 200:
@@ -304,6 +308,24 @@ def region_ref(source, sha, number, block, order, route, quote=None):
                        source.url + f"#page={number}", PARSER, structure)
 
 
+def checked_pdf_receipt(path, root, source):
+    receipt = json.loads(path.read_text())
+    sha = receipt["sha256"]
+    if not re.fullmatch("[0-9a-f]{64}", sha):
+        raise ValueError("Invalid PDF cache pin")
+    with (root / (sha + ".pdf")).open("rb") as f:
+        raw = read_bounded(f)
+    digest(raw, source, sha)
+    pages = extract(raw)
+    if (receipt["parser"] != PARSER or receipt["url"] != source.url
+            or receipt["commit"] != COMMIT or receipt["page_count"] != len(pages)
+            or receipt["bytes"] != len(raw) or receipt["revision"] != revision_for(source)):
+        raise ValueError("Invalid PDF cache receipt")
+    if any(receipt.get(k) != v for k, v in asdict(source).items() if k != "revision"):
+        raise ValueError("PDF receipt does not match dossier metadata")
+    return receipt, sha, pages
+
+
 def load_pdfs(catalog, data):
     inventory = []
     indexed = {(unit.url, unit.locator) for unit in catalog.index.units if unit.url}
@@ -311,26 +333,20 @@ def load_pdfs(catalog, data):
     for source in sources(data):
         doc = {**asdict(source), "status": "not_downloaded" if source.pdf else "metadata_only"}
         inventory.append(doc)
+        if source.url in OWNER_EXCLUDED:
+            doc["status"] = "EXCLUDED_BY_OWNER"
+            continue
         path = root / f"{source.entity}-{source.index}.json"
         error = root / f"{source.entity}-{source.index}.error"
         if error.exists() and not path.exists():
             doc.update(status="failed", error=error.read_text()[:320])
         if not source.pdf or not path.exists():
             continue
-        receipt = json.loads(path.read_text())
-        sha = receipt["sha256"]
-        if not re.fullmatch("[0-9a-f]{64}", sha):
-            raise ValueError("Invalid PDF cache pin")
-        with (root / (sha + ".pdf")).open("rb") as f:
-            raw = read_bounded(f)
-        digest(raw, source, sha)
-        pages = extract(raw)
-        if (receipt["parser"] != PARSER or receipt["url"] != source.url
-                or receipt["commit"] != COMMIT or receipt["page_count"] != len(pages)
-                or receipt["bytes"] != len(raw) or receipt["revision"] != revision_for(source)):
-            raise ValueError("Invalid PDF cache receipt")
-        if any(receipt.get(k) != v for k, v in asdict(source).items() if k != "revision"):
-            raise ValueError("PDF receipt does not match dossier metadata")
+        try:
+            receipt, sha, pages = checked_pdf_receipt(path, root, source)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            doc.update(status="failed", error=str(exc)[:320])
+            continue
         doc.update(receipt, status="included", pages=[])
         for page in pages:
             n = page["physical_page"]
@@ -389,6 +405,8 @@ def run_command(args, catalog):
         return {"documents": load_pdfs(catalog, args.data)}
     index = PRIMARY[args.entity] if args.document is None else args.document
     source = next((s for s in sources(args.data) if (s.entity, s.index) == (args.entity, index)), None)
+    if source is not None and source.url in OWNER_EXCLUDED:
+        raise ValueError("EXCLUDED_BY_OWNER")
     if source is None or not source.pdf:
         raise ValueError("Select a PDF index from pdf-inventory")
     if args.command == "import-pdf":
