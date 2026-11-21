@@ -714,3 +714,149 @@ def test_controlled_calibration_holds_and_stops(tmp_path, corpus, monkeypatch, f
     count = len(calls)
     assert ask(factory("Q02", prior=first.provider.permit_sha), "Q02")["status"] == "cal01_not_confirmed"
     assert len(calls) == count
+
+
+@pytest.mark.parametrize(("fault", "stage", "reason", "status", "received"), [
+    ("connect", "transport", "connect_timeout", None, False),
+    ("read", "transport", "read_timeout", None, False),
+    ("write", "transport", "write_timeout", None, False),
+    ("network", "transport", "network_error", None, False),
+    ("response_read", "response_read", "read_timeout", 200, True),
+    (400, "http_status", "http_error", 400, True),
+    (401, "http_status", "http_error", 401, True),
+    (402, "http_status", "http_error", 402, True),
+    (408, "http_status", "http_error", 408, True),
+    (413, "http_status", "http_error", 413, True),
+    (429, "http_status", "http_error", 429, True),
+    (500, "http_status", "http_error", 500, True),
+    (504, "http_status", "http_error", 504, True),
+    ("invalid_json", "json_decode", "invalid_json", 200, True),
+    ("schema", "response_schema_validation", "expected_object", 200, True),
+    ("missing_id", "file_metadata_validation", "id_missing", 200, True),
+    ("wrong_type", "file_metadata_validation", "bytes_type", 200, True),
+    ("wrong_ttl", "file_metadata_validation", "ttl_mismatch", 200, True),
+])
+def test_calr_upload_failure_is_safe_and_holds(tmp_path, corpus, monkeypatch, fault, stage, reason, status, received):
+    factory, ask, _, ledger = controlled_operator(tmp_path, corpus, monkeypatch)
+    base = mock_transport()
+    calls = []
+
+    class BrokenBody(httpx.SyncByteStream):
+        def __iter__(self):
+            raise httpx.ReadTimeout("unsafe request detail")
+
+    def handle(request):
+        calls.append(request.url.path)
+        errors = {"connect": httpx.ConnectTimeout, "read": httpx.ReadTimeout,
+                  "write": httpx.WriteTimeout, "network": httpx.ConnectError}
+        if fault in errors:
+            raise errors[fault]("unsafe request detail")
+        if type(fault) is int:
+            if fault == 504:
+                return httpx.Response(fault, text="<html>unsafe provider data</html>")
+            return httpx.Response(fault, json={"error": {"code": 402 if fault == 402 else "unsafe provider data",
+                "message": "unsafe request detail", "nested": {"authorization": "private datum"}}})
+        if fault == "response_read":
+            return httpx.Response(200, stream=BrokenBody())
+        if fault == "invalid_json":
+            return httpx.Response(200, content=b'{"secret":"unsafe provider data"')
+        if fault == "schema":
+            return httpx.Response(200, json=["unsafe provider data"])
+        payload = base.handle_request(request).json()
+        if fault == "missing_id":
+            del payload["id"]
+        elif fault == "wrong_type":
+            payload["bytes"] = True
+        else:
+            payload["expires_at"] += 1
+        return httpx.Response(200, json=payload)
+
+    monkeypatch.setattr(httpx, "HTTPTransport", lambda **_: httpx.MockTransport(handle))
+    answer = ask(factory("Q01"), "Q01")
+    assert answer["status"] == "provider_unknown"
+    failure = answer["context"]["provider_failure"]
+    assert (failure["failure_stage"], failure["safe_reason_code"], failure["http_status"],
+            failure["response_received"]) == (stage, reason, status, received)
+    assert failure["operation_kind"] == "upload"
+    assert failure["provider_error_code"] == ("402" if fault == 402 else None)
+    assert failure["financial_outcome_unknown"] and failure["elapsed_ms"] >= 0
+    saved = ledger.file.read_text()
+    assert "unsafe" not in saved and "private datum" not in saved
+    assert not json.loads(saved)["bindings"]
+    assert answer["context"]["budget"]["held_micro_usd"] == 65 * 225
+    assert ask(factory("Q01"), "Q01", "new-id")["status"] == "duplicate_operation"
+    assert calls == ["/files"]
+
+
+@pytest.mark.parametrize(("field", "wrong_value", "reason"), [
+    ("id", "invalid", "id_format"),
+    ("object", "wrong", "object_mismatch"),
+    ("purpose", "wrong", "purpose_mismatch"),
+    ("filename", "wrong", "filename_mismatch"),
+    ("bytes", 2, "bytes_mismatch"),
+    ("created_at", 999999, "created_at_future"),
+    ("expires_at", 999, "expires_at_elapsed"),
+])
+def test_calr_all_metadata_fields(tmp_path, field, wrong_value, reason):
+    from ds_dc.provider_failure import ProviderFailure
+
+    adapter = NativeD1(tmp_path, Ledger(tmp_path / "ledger"), manifest={"files": []})
+    sha = "a" * 64
+    valid = dict(id="file-api-fixture", object="file", purpose="text_recognition",
+                 filename=sha + ".pdf", bytes=1, created_at=1000, expires_at=4600)
+    missing = {name: value for name, value in valid.items() if name != field}
+    for payload, code in ((missing, field + "_missing"), (valid | {field: None}, field + "_type"),
+                          (valid | {field: wrong_value}, reason)):
+        with pytest.raises(ProviderFailure) as error:
+            adapter.file_snapshot(payload, sha, 1, 1000)
+        assert error.value.stage == "file_metadata_validation"
+        assert error.value.reason == code
+
+
+def test_calr_ledger_accounting_and_legacy_rows(tmp_path):
+    from ds_dc.native import ProviderObject
+
+    ledger = Ledger(tmp_path / "ledger")
+    legacy = dict(operations={"old": dict(kind="extended", run="previous", reserve=15, cost=15, state="settled")},
+                  bindings={}, runs={})
+    ledger.save(legacy)
+    with ledger.transaction() as state:
+        assert state["operations"]["old"] == legacy["operations"]["old"]
+        ledger.reserve(state, "fixture", "permit", "owner", time.time(), OWNER,
+                       {"new": dict(kind="calibration", slot="extended", reserve=330000)})
+
+        def fail(_):
+            raise RuntimeError("unsafe accounting detail")
+
+        with pytest.raises(Stopped, match="provider_unknown"):
+            ledger.operate(state, "new", lambda: ProviderObject({}, 200), fail)
+        failure = state["operations"]["new"]["provider_failure"]
+        assert failure["failure_stage"] == "financial_accounting"
+        assert failure["safe_reason_code"] == "accounting_error"
+        assert failure["operation_kind"] == "chat"
+        assert failure["http_status"] == 200 and failure["response_received"]
+        assert failure["financial_outcome_unknown"]
+        assert ledger.accounted(state["operations"]["new"]) == 330000
+    assert "unsafe accounting detail" not in ledger.file.read_text()
+    with ledger.transaction() as state:
+        with pytest.raises(Stopped, match="provider_unknown"):
+            ledger.reserve(state, "next", "permit", "owner", time.time(), OWNER,
+                           {"other": dict(kind="extended", reserve=90000)})
+
+
+def test_calr_file_handle_collision(tmp_path):
+    from ds_dc.corpus import digest
+
+    ledger = Ledger(tmp_path / "ledger")
+    adapter = NativeD1(tmp_path, ledger, manifest={"files": []}, fixture=mock_transport())
+    raw = b"fixture PDF"
+    sha = digest(raw)
+    with ledger.transaction() as state:
+        state["bindings"]["prior"] = {"id": "file-api-" + sha, "sha256": "b" * 64, "expires": time.time() + 3600}
+        ledger.reserve(state, "prep", "permit", "owner", time.time(), OWNER,
+                       {"upload": dict(kind="upload", reserve=225, pages=1)})
+        with pytest.raises(Stopped, match="provider_unknown"):
+            adapter.upload(state, "upload", sha, raw, time.time(), 1)
+        assert state["operations"]["upload"]["provider_failure"]["safe_reason_code"] == "id_collision"
+        assert len(state["bindings"]) == 1
+        assert ledger.accounted(state["operations"]["upload"]) == 225

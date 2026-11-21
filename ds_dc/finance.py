@@ -11,6 +11,7 @@ import time
 from zoneinfo import ZoneInfo
 
 from .context import OUTPUT
+from .provider_failure import ProviderFailure
 
 RATES = {"miss": "0.30", "hit": "0.006", "completion": "1.20", "page": "225"}
 PUBLIC = {"month": 30_000_000, "day": 2_000_000, "peer_day": 500_000, "warning": 24_000_000}
@@ -139,18 +140,41 @@ class Ledger:
         row = state["operations"][key]
         row["state"] = "inflight"
         self.save(state)
+        started = time.monotonic()
+        returned = False
+        result = None
         try:
             result = call()
+            returned = True
             cost, facts = interpret(result)
-        except Exception:
+            if type(cost) is not int or cost < 0:
+                raise ProviderFailure("financial_accounting", "invalid_cost")
+        except Exception as error:
+            if isinstance(error, ProviderFailure):
+                failure = error
+            elif returned and isinstance(error, (KeyError, TypeError)):
+                failure = ProviderFailure("response_schema_validation", "invalid_response_schema")
+            elif returned:
+                failure = ProviderFailure("financial_accounting", "accounting_error")
+            else:
+                failure = ProviderFailure("transport", "operation_call_failed")
             row["state"] = "unknown"
+            row["provider_failure"] = failure.diagnostic(row["kind"], round((time.monotonic() - started) * 1000),
+                response_received=True if returned else None, http_status=getattr(result, "http_status", None))
             self.save(state)
             raise Stopped("provider_unknown") from None
         row.update(state="settled", cost=cost, **facts)
+        elapsed = round((time.monotonic() - started) * 1000)
+        if "provider_failure" in facts:
+            row["provider_failure"]["elapsed_ms"] = elapsed
         overage = cost > row["reserve"] or facts.get("overage")
         stop = "provider_overage" if overage else facts.get("hold_reason")
         if stop:
             row["state"] = "unknown"
+            reason = stop if stop in {"provider_overage", "go_expired", "calibration_finish_not_stop"} else "accounting_hold"
+            stage = "response_schema_validation" if reason == "calibration_finish_not_stop" else "financial_accounting"
+            row["provider_failure"] = ProviderFailure(stage, reason).diagnostic(
+                row["kind"], elapsed, response_received=True, http_status=getattr(result, "http_status", None))
             self.save(state)
             raise Stopped(stop)
         self.save(state)

@@ -9,6 +9,7 @@ import httpx
 from .context import EXTENDED, FILE_LIMIT, NORMAL, OUTPUT, TOKENIZER_NAME, get_counter, size, wire
 from .corpus import MAX_SIZE, digest, encoded
 from .finance import Ledger, OWNER, RATES, Stopped, cold_cost, token_cost
+from .provider_failure import ProviderFailure, transport_failure
 from .runtime import PURPOSE, abstention, verify
 
 ORIGIN = "https://api.deepseek.com"
@@ -48,6 +49,35 @@ def controlled_permit(go):
             and go["limits"] == dict(budget=CAL_POST_RESERVE + pages * PAGE_PRICE,
                 normal=0, extended=1, chats=1, pages=pages, upload=uploads,
                 status=0, delete=0, calibration=1))
+
+
+class ProviderObject(dict):
+    def __init__(self, content, status):
+        super().__init__(content)
+        self.http_status = status
+
+
+def safe_http_error_code(response):
+    # The public error reference documents numeric HTTP categories. Accept only the
+    # matching documented number from an optional, small JSON error envelope.
+    if response.status_code not in {400, 401, 402, 408, 413, 422, 429, 500, 503, 504}:
+        return None
+    mime = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    if mime != "application/json":
+        return None
+    try:
+        raw = bytearray()
+        for chunk in response.iter_bytes():
+            if len(raw) + len(chunk) > 4096:
+                return None
+            raw.extend(chunk)
+        code = json.loads(raw)["error"]["code"]
+    except (httpx.RequestError, KeyError, TypeError, ValueError, RecursionError):
+        return None
+    expected = str(response.status_code)
+    if type(code) in (str, int) and str(code) == expected:
+        return expected
+    return None
 
 
 def wire_identity(question, pages, docs, history):
@@ -144,17 +174,32 @@ class NativeD1:
             raise ValueError("unknown_provider_operation")
         transport = self.fixture if self.fixture is not None else httpx.HTTPTransport(retries=0)
         key = self.live[2] if self.live else "fixture"
-        with httpx.Client(base_url=ORIGIN, transport=transport, trust_env=False, follow_redirects=False,
-                          timeout=httpx.Timeout(timeout, connect=8)) as client:
-            with client.stream(method, route, headers={"Authorization": "Bearer " + key},
-                               json=payload, data=data, files=files) as response:
-                response.raise_for_status()
-                raw = bytearray()
-                for chunk in response.iter_bytes():
-                    raw.extend(chunk)
-                    if len(raw) > 2_000_000:
-                        raise ValueError("provider_response_size")
-        return json.loads(raw)
+        stage, status = "transport", None
+        try:
+            with httpx.Client(base_url=ORIGIN, transport=transport, trust_env=False, follow_redirects=False,
+                              timeout=httpx.Timeout(timeout, connect=8)) as client:
+                with client.stream(method, route, headers={"Authorization": "Bearer " + key},
+                                   json=payload, data=data, files=files) as response:
+                    status = response.status_code
+                    if not response.is_success:
+                        raise ProviderFailure("http_status", "http_error", exception_class="HTTPStatusError",
+                                              http_status=status, provider_code=safe_http_error_code(response))
+                    stage = "response_read"
+                    raw = bytearray()
+                    for chunk in response.iter_bytes():
+                        raw.extend(chunk)
+                        if len(raw) > 2_000_000:
+                            raise ProviderFailure(stage, "response_too_large", http_status=status)
+        except httpx.RequestError as error:
+            raise transport_failure(error, stage, status) from None
+        try:
+            result = json.loads(raw)
+        except (ValueError, RecursionError):
+            raise ProviderFailure("json_decode", "invalid_json", exception_class="JSONDecodeError",
+                                  http_status=status) from None
+        if not isinstance(result, dict):
+            raise ProviderFailure("response_schema_validation", "expected_object", http_status=status)
+        return ProviderObject(result, status)
 
     def bound(self, approval):
         if not self.live:
@@ -195,15 +240,28 @@ class NativeD1:
         return digest(encoded([self.account, self.project, self.principal, PURPOSE, PURPOSE, sha]).encode())
 
     def file_snapshot(self, result, sha, raw_length, now):
-        handle = result["id"]
-        created = result["created_at"]
-        expires = result["expires_at"]
-        if (not isinstance(handle, str) or not FILE_ID.fullmatch(handle)
-                or result["object"] != "file" or result["purpose"] != PURPOSE
-                or result["filename"] != sha + ".pdf" or result["bytes"] != raw_length
-                or type(created) is not int or type(expires) is not int
-                or created > now + 30 or expires <= now or expires - created != PARSE_TTL):
-            raise ValueError("ambiguous_file_metadata")
+        stage = "file_metadata_validation"
+        fields = {"id": str, "object": str, "purpose": str, "filename": str,
+                  "bytes": int, "created_at": int, "expires_at": int}
+        for field, kind in fields.items():
+            if field not in result:
+                raise ProviderFailure(stage, field + "_missing")
+            if type(result[field]) is not kind:
+                raise ProviderFailure(stage, field + "_type")
+        handle, created, expires = result["id"], result["created_at"], result["expires_at"]
+        checks = {
+            "id_format": FILE_ID.fullmatch(handle),
+            "object_mismatch": result["object"] == "file",
+            "purpose_mismatch": result["purpose"] == PURPOSE,
+            "filename_mismatch": result["filename"] == sha + ".pdf",
+            "bytes_mismatch": result["bytes"] == raw_length,
+            "created_at_future": created <= now + 30,
+            "expires_at_elapsed": expires > now,
+            "ttl_mismatch": expires - created == PARSE_TTL,
+        }
+        for reason, valid in checks.items():
+            if not valid:
+                raise ProviderFailure(stage, reason)
         return dict(id=handle, sha256=sha, bytes=raw_length, expires=expires,
                     checked=now, created=created, account=self.account,
                     project=self.project, purpose=PURPOSE, parser=PURPOSE)
@@ -214,27 +272,30 @@ class NativeD1:
                 return self.send("POST", "/files", data={"purpose": PURPOSE,
                     "expires_after[anchor]": "created_at", "expires_after[seconds]": str(PARSE_TTL)},
                     files={"file": (sha + ".pdf", raw, "application/pdf")}, timeout=UPLOAD_TIMEOUT)
-            except httpx.HTTPStatusError as error:
-                if self.controlled or error.response.status_code != 413:
+            except ProviderFailure as error:
+                if self.controlled or error.http_status != 413 or error.stage != "http_status":
                     raise
-                return None
+                return error
 
         def parse(result):
-            if result is None:
-                return 0, {"upload_rejected": self.file_key(sha)}
+            if isinstance(result, ProviderFailure):
+                return 0, {"upload_rejected": self.file_key(sha), "provider_failure": result.diagnostic(
+                    "upload", 0, financial_outcome_unknown=False)}
             snapshot = self.file_snapshot(result, sha, len(raw), self.now(now))
             if any(b["id"] == snapshot["id"] and b["sha256"] != sha for b in state["bindings"].values()):
-                raise ValueError("file_id_collision")
+                raise ProviderFailure("file_metadata_validation", "id_collision")
             state["bindings"][self.file_key(sha)] = snapshot
             return pages * PAGE_PRICE, {}
 
-        return self.ledger.operate(state, key, call, parse) is not None
+        return not isinstance(self.ledger.operate(state, key, call, parse), ProviderFailure)
 
     def status(self, state, key, binding, now):
         def parse(result):
             fresh = self.file_snapshot(result, binding["sha256"], binding["bytes"], self.now(now))
             if any(fresh[field] != binding[field] for field in ("id", "created", "expires")):
-                raise ValueError("binding_metadata_changed")
+                field = next(field for field in ("id", "created", "expires") if fresh[field] != binding[field])
+                reason = {"id": "id_changed", "created": "created_at_changed", "expires": "expires_at_changed"}
+                raise ProviderFailure("file_metadata_validation", reason[field])
             binding["checked"] = fresh["checked"]
             return 0, {}
 
@@ -323,14 +384,6 @@ class NativeD1:
                        site=[{k: v for k, v in page.items() if k != "raw"} for page in pages],
                        estimate=context["estimate"], wire_sha256=self.live[0]["wire_sha256"],
                        upload_latency_ms=context["upload_latency_ms"], chat_latency_ms=chat_ms)
-        usage = value.get("usage")
-        serialized_usage = encoded(usage)
-        try:
-            serialized_usage.encode("utf-8")
-        except UnicodeError:
-            return receipt
-        if not FILE_ID.search(serialized_usage) and self.live[2] not in serialized_usage:
-            receipt["provider_usage"] = usage
         return receipt
 
     def dispatch(self, request, question, pages, documents, history, now, cap=None):
@@ -373,6 +426,10 @@ class NativeD1:
                     result = self.turn(state, request, question, pages, documents, history,
                                        now, mode, bound, context)
                 finally:
+                    for row in reversed(tuple(state["operations"].values())):
+                        if row.get("run") == self.run and "provider_failure" in row:
+                            context["provider_failure"] = row["provider_failure"]
+                            break
                     context["budget"] = self.ledger.summary(state, self.run, self.limits["budget"])
                     if self.campaign:
                         context["campaign_budget"] = self.ledger.summary(
@@ -502,27 +559,28 @@ class NativeD1:
                 if self.controlled:
                     row = state["operations"][question_key]
                     receipt = self.controlled_receipt(result, question, pages, docs, context, row["latency_ms"])
-                    row["calibration_result"] = receipt
                     context["finish_reason"] = receipt["finish_reason"]
-                usage = result["usage"]
+                usage = result.get("usage")
+                if not isinstance(usage, dict):
+                    raise ProviderFailure("financial_accounting", "usage_missing_or_invalid")
                 if (result["model"] != "deepseek-flash" or usage.get("server_tool_use")
                         or any(choice.get("message", {}).get("server_tool_calls")
                                or choice.get("message", {}).get("tool_calls")
                                for choice in result.get("choices", []))):
-                    raise ValueError("provider_contract_drift")
+                    raise ProviderFailure("response_schema_validation", "provider_contract_drift")
                 keys = ("prompt_tokens", "completion_tokens", "total_tokens",
                         "prompt_cache_hit_tokens", "prompt_cache_miss_tokens")
-                counts = {k: usage[k] for k in keys}
+                counts = {k: usage.get(k) for k in keys}
                 if any(type(v) is not int or v < 0 for v in counts.values()):
-                    raise ValueError("incomplete_usage")
+                    raise ProviderFailure("financial_accounting", "incomplete_usage")
                 prompt, output, total, hit, miss = (counts[k] for k in keys)
                 if total != prompt + output or prompt != hit + miss:
-                    raise ValueError("incomplete_usage")
+                    raise ProviderFailure("financial_accounting", "incomplete_usage")
                 details = usage.get("completion_tokens_details") or {}
                 if "reasoning_tokens" in details:
                     reasoning = details["reasoning_tokens"]
                     if type(reasoning) is not int or not 0 <= reasoning <= output:
-                        raise ValueError("invalid_reasoning_usage")
+                        raise ProviderFailure("financial_accounting", "invalid_reasoning_usage")
                     counts["reasoning_tokens"] = reasoning
                 context["observed_usage"] = counts
                 cost = token_cost(prompt, hit, output)

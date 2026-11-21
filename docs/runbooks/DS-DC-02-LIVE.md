@@ -1,6 +1,6 @@
 # DS-DC-02 · Протокол закрытого пилота
 
-**Действие сейчас** · CAL-PREP. После отдельного GO владелец запускает один CAL-01 в доверенной WSL. Обычный live остаётся за строгим допуском. [Решение A-DS-DC-04](../architecture/A-DS-DC-04-CONTROLLED-CALIBRATION.md)
+**Действие сейчас** · CAL-INC-01 остановил платную серию. CAL-R добавляет диагностику для офлайн-приёмки. Перед любым новым действием требуется сверка и отдельное решение владельца. Инструкции запуска ниже относятся к уже разрешённой кампании после снятия блокировки по утверждённой процедуре. [Проект сверки CAL-INC-01](ds-dc-02/CAL-INC-01-RECOVERY-DRAFT.md)
 
 ## Пакет freeze
 
@@ -206,6 +206,26 @@ export DS_DC_CAL01_PERMIT_SHA
 | Два extended-слота, 0 GET/List/DELETE, 0 retry | $0,768675 |
 
 Приведённые суммы регулируют локальный допуск. Внешний расход может оказаться выше. Для обычных вопросов по окончании CAL действует самостоятельный строгий допуск. [Цены](https://api-docs.deepseek.com/quick_start/pricing/) · [Документы и разбор](https://api-docs.deepseek.com/guides/document_parsing/)
+
+## Безопасное чтение отказа
+
+В приватном журнале операций откройте только поле `provider_failure`. Например, при уже заданном `DS_DC_LEDGER`:
+
+```sh
+env -u DEEPSEEK_API_KEY python - <<'PYFAIL'
+import json
+import os
+from pathlib import Path
+
+state = json.loads((Path(os.environ["DS_DC_LEDGER"]) / "ledger.json").read_text())
+for row in state["operations"].values():
+    failure = row.get("provider_failure")
+    if failure and row["state"] == "unknown":
+        print(json.dumps(failure, ensure_ascii=False))
+PYFAIL
+```
+
+Для CAL-INC-01 на исходном HEAD поле отсутствует. Само чтение ничего не отправляет и не записывает. Даже если `response_received=false`, считайте начисление неопределённым и сохраняйте удержание. До отдельного решения не создавайте новый ledger и не повторяйте Q01. [Схема диагностики](../architecture/A-DS-DC-05-PROVIDER-OBSERVABILITY.md)
 
 ## Критерии и остановка
 
