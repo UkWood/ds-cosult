@@ -516,7 +516,7 @@ class Pilot:
         dossiers = [self.dossiers[key] for key in selected if key in self.dossiers]
         response["dossier_ids"] = [d["id"] for d in dossiers]
         same_scope = tuple(selected) == session.active
-        history = (session.history if self.owner_dc02 else session.history[-4:]) if same_scope else []
+        history = (session.history.copy() if self.owner_dc02 else session.history[-4:]) if same_scope else []
         if not same_scope:
             session.active = ()
             session.history.clear()
@@ -574,7 +574,7 @@ class Pilot:
             response["chat_posts"] = self.provider.chat_posts - before
             if state == "over_cap":
                 response["message"] = "Уточните предмет. Оператор может явно выбрать карточку и основное РЭ."
-            if state not in {"provider_unknown", "provider_overage", "calibration_observed"}:
+            if not self.provider.calibration and state not in {"provider_unknown", "provider_overage"}:
                 session.active = tuple(selected)
                 session.history = history + [dict(role="user", text=question, unresolved=[question])]
         else:

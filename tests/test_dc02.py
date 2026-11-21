@@ -144,11 +144,18 @@ def test_candidate_failures_settle_usage_and_do_not_retry(tmp_path, corpus, fini
     assert sum(r.url.path == "/chat/completions" for r in requests) == 1
 
 
-def test_unknown_holds_after_restart_and_allows_p0(tmp_path, corpus):
+@pytest.mark.parametrize("failure", ["timeout", 400, 401, 429, "partial_usage"])
+def test_unknown_holds_after_restart_and_allows_p0(tmp_path, corpus, failure):
     def respond(request, base):
-        if request.url.path == "/chat/completions":
+        if request.url.path != "/chat/completions":
+            return base.handle_request(request)
+        if failure == "timeout":
             raise httpx.ReadTimeout("fixture timeout")
-        return base.handle_request(request)
+        if failure == "partial_usage":
+            payload = response("{}").json()
+            del payload["usage"]["prompt_cache_miss_tokens"]
+            return httpx.Response(200, json=payload)
+        return httpx.Response(failure, json={"error": {"message": "fixture rejection"}})
 
     first, requests = app(tmp_path, corpus, respond)
     now = time.time()
@@ -323,7 +330,7 @@ def test_live_key_and_local_approval_are_insufficient_without_reviewed_exact_bou
         account="account", project="dc02", ledger_path=str(tmp_path / "ledger"), rates=RATES,
         key_sha256=digest(key.encode()), contract_sha=digest(encoded(contract).encode()),
         manifest_sha=digest(encoded(manifest).encode()),
-        limits={k: v for k, v in OWNER.items() if k != "reserve_disabled"})
+        limits={k: 0 if k == "delete" else v for k, v in OWNER.items() if k != "reserve_disabled"})
     adapter = NativeD1(tmp_path, Ledger(tmp_path / "ledger"), manifest=manifest,
                        live=(go, head, key, contract))
     calls = []
@@ -350,6 +357,13 @@ def test_live_key_and_local_approval_are_insufficient_without_reviewed_exact_bou
         row = next(iter(state["operations"].values()))
         assert row["reserve"] == cold_cost(bound)
         assert row["kind"] == "calibration"
+    restarted = NativeD1(tmp_path, Ledger(tmp_path / "ledger"), manifest=manifest,
+                         live=(go, head, key, contract))
+    monkeypatch.setattr(restarted, "send", fixture)
+    assert restarted.dispatch("new-request-id", question, [], [], [], now)[0] == "duplicate_operation"
+    assert row["slot"] == "extended"
+    with pytest.raises(Stopped, match="cleanup_not_authorized"):
+        adapter.cleanup("0" * 64, now)
     assert adapter.dispatch("another", "Question changed.", [], [], [], now)[0] == "native_bound_unverified"
     assert len(calls) == 1
 
@@ -527,3 +541,41 @@ def test_approved_scope_envelope_covers_followups_without_heuristic_admission(tm
     provider.live[0]["kind"] = "calibration"
     with pytest.raises(Stopped, match="native_bound_unverified"):
         provider.bound(first)
+
+
+def test_compacted_history_is_used_for_the_next_turn(tmp_path, monkeypatch):
+    from ds_dc import native
+
+    now = time.time()
+    row = dict(kind="device", draft=False, title="БКД-ПК-RF.2", canonical="https://example.org",
+               body="", features={}, path="bkd.md")
+    dossier = dict(id="bkd", state="ready", pages=[], docs=[], issues=[], included_docs=[],
+                   completeness="complete")
+    adapter = NativeD1(tmp_path, Ledger(tmp_path / "ledger"), manifest={"files": []},
+                       fixture=mock_transport())
+    pilot = Pilot({BKD: row}, {BKD: dossier}, tmp_path, Journal(tmp_path / "audit"),
+                  adapter, cap=None, owner_dc02=True)
+    peer = "192.0.2.1"
+    token = pilot.open(peer, now)
+    session = pilot.sessions[peer]
+    session.active = (BKD,)
+    session.history = [
+        {"text": "resolved old turn", "unresolved": []},
+        {"text": "open old turn", "unresolved": ["open old turn"]},
+    ]
+    original_size = native.size
+
+    def sizing(question, pages, documents, history, cache):
+        measured = original_size(question, pages, documents, history, cache)
+        if any(turn["text"] == "resolved old turn" for turn in history):
+            measured["estimate"] = 300_000
+        return measured
+
+    monkeypatch.setattr(native, "size", sizing)
+    first = pilot.ask(peer, token, "first", "Какие интерфейсы?", now=now)
+    assert first["chat_posts"] == 1
+    assert first["context"]["compacted_turns"] == 1
+    assert session.history[0]["text"] == "open old turn"
+    second = pilot.ask(peer, token, "second", "Резервное питание?", now=now + 1)
+    assert second["chat_posts"] == 1
+    assert second["context"]["compacted_turns"] == 0

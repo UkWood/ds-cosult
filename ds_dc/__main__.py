@@ -164,6 +164,8 @@ def dc02(args, parser):
         if git("status", "--porcelain"):
             parser.error("live GO requires an exact, clean published revision")
         approval = json.loads(args.live_go.read_text())
+        if bool(args.cleanup_sha) != (approval.get("kind") == "cleanup"):
+            parser.error("cleanup requires a dedicated GO and --cleanup-sha")
         live = (approval, git("rev-parse", "HEAD"), os.getenv("DEEPSEEK_API_KEY", ""),
                 json.loads(args.contract.read_text()))
         provider = NativeD1(args.cache, Ledger(args.ledger), manifest=manifest, live=live)

@@ -79,7 +79,7 @@ class NativeD1:
                                for value in contract["approved_bound_ids"])
                     or not isinstance(contract["paid_operation_evidence"], str)
                     or not contract["paid_operation_evidence"].startswith("https://api-docs.deepseek.com/")
-                    or go["kind"] not in {"regular", "calibration"}
+                    or go["kind"] not in {"regular", "calibration", "cleanup"}
                     or type(go["expires"]) is not int or go["expires"] <= time.time()
                     or go["ledger_path"] != str(self.ledger.path.resolve())
                     or not all(isinstance(go[name], str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", go[name])
@@ -88,7 +88,11 @@ class NativeD1:
                     or set(limits) != set(OWNER) - {"reserve_disabled"}
                     or any(type(n) is not int or not 0 <= n <= OWNER[k] for k, n in limits.items())
                     or type(go["expires"]) is not int or go["expires"] > contract["reviewed_at"] + 86400
-                    or (go["kind"] == "regular" and limits["calibration"])):
+                    or (go["kind"] == "regular" and limits["calibration"])
+                    or (go["kind"] != "cleanup" and limits["delete"])
+                    or (go["kind"] == "cleanup" and (go.get("cleanup_sha") not in self.approved
+                        or limits["delete"] != 1
+                        or any(value for name, value in limits.items() if name != "delete")))):
                 raise ValueError("invalid_live_go")
             self.run = go["run"]
             self.campaign = "dc02-live"
@@ -215,6 +219,10 @@ class NativeD1:
     def cleanup(self, sha, now):
         """Operator only. The transaction excludes consumers during acknowledgement."""
         self.check_go()
+        if self.live:
+            permit = self.live[0]
+            if permit["kind"] != "cleanup" or permit["cleanup_sha"] != sha:
+                raise Stopped("cleanup_not_authorized")
         if sha not in self.approved:
             raise Stopped("binding_unavailable")
         now = self.now(now)
@@ -243,12 +251,20 @@ class NativeD1:
             raise Stopped("binding_unavailable")
         return binding
 
+    @property
+    def calibration(self):
+        return self.live is not None and self.live[0]["kind"] == "calibration"
+
     def dispatch(self, request, question, pages, documents, history, now, cap=None):
+        """Compact the caller's working copy of the dialogue before sizing and sending."""
+        if self.live and self.live[0]["kind"] == "cleanup":
+            return "live_disabled", None, {}
+        if self.calibration:
+            history = []
         context = size(question, pages, documents, history, self.cache)
         if context["unique_files"] > FILE_LIMIT:
             return "provider_file_limit", None, context
         # Only resolved user turns can be compacted. Preserve unresolved turns and their order.
-        history = list(history)
         original_turns = len(history)
         while context["estimate"] > min(cap if cap is not None else EXTENDED, EXTENDED):
             removable = next((i for i, turn in enumerate(history) if not turn.get("unresolved")), None)
@@ -267,7 +283,7 @@ class NativeD1:
             bound = self.bound(approval)
             context["verified_upper_bound"] = bound
             effective = bound if bound is not None else context["estimate"]
-            mode = ("calibration" if self.live and self.live[0]["kind"] == "calibration"
+            mode = ("calibration" if self.calibration
                     else "normal" if effective <= NORMAL else "extended")
             context["input_mode"] = mode
             context["provider"] = "live" if self.live else "http_fixture"
@@ -288,7 +304,10 @@ class NativeD1:
 
     def turn(self, state, request, question, pages, docs, history, now, mode, bound, context):
         now = self.now(now)
-        question_key = self.run + "/question/" + digest(request.rsplit("/", 1)[-1].encode())
+        if mode == "calibration":
+            question_key = self.campaign + "/calibration/" + context["wire_sha256_without_handles"]
+        else:
+            question_key = self.run + "/question/" + digest(request.rsplit("/", 1)[-1].encode())
         ops = {}
         uploads = {}
         references = {}
@@ -324,8 +343,7 @@ class NativeD1:
         context["file_cache_hits"] = len(unique) - len(uploads) - len(rejected)
         billing_bound = bound or (NORMAL if mode == "normal" else EXTENDED)
         reserve = cold_cost(billing_bound) if mode == "calibration" else (50_000 if mode == "normal" else 90_000)
-        slot = mode if mode != "calibration" else (
-            "normal" if context["estimate"] <= NORMAL else "extended")
+        slot = "extended" if mode == "calibration" else mode
         ops[question_key] = dict(kind=mode, slot=slot, reserve=reserve)
         self.ledger.reserve(state, self.run, self.permit_sha, "owner", now, self.limits, ops,
                             campaign=self.campaign)
@@ -344,6 +362,8 @@ class NativeD1:
                 docs = [doc for doc in docs if doc["sha256"] not in rejected]
                 approval = wire_approval(question, pages, docs, history)
                 context["outgoing_wire_sha256_without_handles"] = approval["wire_sha256_without_handles"]
+                if self.calibration:
+                    raise Stopped("calibration_wire_changed")
                 if self.live:
                     narrowed_bound = self.bound(approval)
                     if narrowed_bound > billing_bound:
