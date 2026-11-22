@@ -73,7 +73,7 @@ def test_preparation_checkout_pins_branch_and_leaves_existing_repo_clean(tmp_pat
     git, base, pin = make_repo(tmp_path / "upstream")
     monkeypatch.setattr(runner, "REMOTE", str(tmp_path / "upstream"))
     monkeypatch.setattr(runner, "REF", "refs/heads/draft")
-    monkeypatch.setattr(runner, "R1_BASE", base)
+    monkeypatch.setattr(runner, "ACCEPTANCE_BASE", base)
     env = runner.prep_environment() | {"GIT_ALLOW_PROTOCOL": "file"}
     runner.prepare_checkout(tmp_path / "prepared", pin, env)
     assert runner.git(env, tmp_path / "prepared", "rev-parse", "HEAD") == pin
@@ -81,7 +81,7 @@ def test_preparation_checkout_pins_branch_and_leaves_existing_repo_clean(tmp_pat
     assert git("rev-parse", "HEAD") == pin and not git("status", "--porcelain")
     with pytest.raises(ValueError, match="commit_not_in_draft_branch"):
         runner.prepare_checkout(tmp_path / "wrong", "f" * 40, env)
-    with pytest.raises(ValueError, match="commit_not_after_r1_baseline"):
+    with pytest.raises(ValueError, match="commit_not_after_acceptance_baseline"):
         runner.prepare_checkout(tmp_path / "old", base, env)
 
 

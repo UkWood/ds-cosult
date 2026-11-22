@@ -97,8 +97,9 @@ def pdf_fragment(page, quote, entity):
         unknown = any(value and HEADER_ROLES.get(word(heading)) is None for heading, value in fields)
         rows.append(dict(text="; ".join(f"{label or 'Колонка без заголовка'}: {value}" for label, value in fields),
                          context=[b["text"] for b in row.context],
-                         action_present=any(value and HEADER_ROLES.get(word(label)) == "action"
-                                            for label, value in fields),
+                         action_present=(any(value and HEADER_ROLES.get(word(label)) == "action"
+                                             for label, value in fields)
+                                         or any(entry["category"] == "safety" for entry in row.context_evidence)),
                          context_limited=(unknown or bool(variant and variant != [entity.label])
                                           or unresolved_table_context(row)),
                          locator={"table": row.table, "group_rows": [row.row],

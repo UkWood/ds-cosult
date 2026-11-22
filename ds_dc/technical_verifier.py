@@ -78,17 +78,22 @@ def claim_valid(item, registry):
             and len({loc["role"] for loc in item["evidence"]}) == len(item["evidence"]))
 
 
-def context_unproved(row, columns, entity, kind):
-    if any(cell is None or not role and (nfc_text(cell["text"]) or QUALIFICATION.search(header[1]))
+def context_issues(row, columns, entity, kind):
+    issues = []
+    if any(cell is None for cell in row.cells):
+        issues.append("missing_row_cell")
+    if any(cell and not role and (nfc_text(cell["text"]) or QUALIFICATION.search(header[1]))
            for role, cell, header in zip(columns, row.cells, row.headers, strict=True)):
-        return True
+        issues.append("unresolved_column")
     if unresolved_table_context(row):
-        return True
+        issues.append("unresolved_table_context")
     allowed = ({"symptom", "cause", "action"} if kind in {"symptom", "possible_cause", "conditional_action"}
                else {"subject", "value", "unit", "condition", "qualifier"})
-    return any(nfc_text(cell["text"]) and (
-        role != "variant" or nfc_text(cell["text"]) != nfc_text(entity.label))
-        for role, cell in zip(columns, row.cells, strict=True) if role and role not in allowed)
+    if any(cell and nfc_text(cell["text"]) and (
+            role != "variant" or nfc_text(cell["text"]) != nfc_text(entity.label))
+            for role, cell in zip(columns, row.cells, strict=True) if role and role not in allowed):
+        issues.append("unproved_row_applicability")
+    return issues
 
 
 def relation(item, cells, roles):
@@ -196,16 +201,19 @@ def inspect_claim(item, registry, extract, *, applies=None):
                            "revision": sources[0].revision, "page": loc["page"], "table": table_id,
                            **{k: cells[loc["role"]][k] for k in ("row", "column", "bbox")}}
                           for loc in locations]
-    result["physical_rows"] = [asdict(matches[key][0]) for key in sorted(common)]
+    matched_rows = [matches[key] for key in sorted(common)]
+    result["physical_rows"] = [asdict(row) for row, _, _ in matched_rows]
+    result["context_evidence"] = list(matched_rows[0][0].context_evidence)
+    result["context_issues"] = sorted({issue for row, columns, _ in matched_rows
+                                       for issue in context_issues(row, columns, entity, item["kind"])})
+    status, code = relation(item, cells, roles)
+    result["relation_verified"] = status in {"supported", "contradicted"}
     if not result["applicability_verified"]:
         return finish("semantic_pending", "applicability_unproved")
-    if any(context_unproved(row, columns, entity, item["kind"])
-           for row, columns, _ in (matches[key] for key in common)):
+    if result["context_issues"]:
         return finish("semantic_pending", "unproved_row_context_or_variant")
-    status, code = relation(item, cells, roles)
-    if status in {"supported", "contradicted"}:
+    if result["relation_verified"]:
         result["verified_fields"] = {role: nfc_text(cell["text"]) for role, cell in cells.items() if cell}
-    result["relation_verified"] = status in {"supported", "contradicted"}
     return finish(status, code)
 
 

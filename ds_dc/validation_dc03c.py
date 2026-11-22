@@ -47,6 +47,19 @@ Q01_REASONS = {
     "v1_component_unproved", "v1_action_condition_unproved", "v1_condition_or_coordinate_unproved",
 }
 
+# Safe geometry from the independent R1 acceptance report. This is an
+# acceptance assertion only. The verifier receives no fixed page or row.
+Q01_LOCATOR_ROWS = (
+    ((2, 0),), ((2, 1), (2, 0)), ((2, 2), (2, 1)), ((3, 1), (2, 0)), ((3, 2), (3, 1)),
+)
+Q01_CELL_BOXES = {
+    (2, 0): (79.704, 539.110, 233.930, 613.390),
+    (2, 1): (233.930, 539.110, 389.950, 583.630),
+    (2, 2): (389.950, 539.110, 558.740, 583.630),
+    (3, 1): (233.930, 583.630, 389.950, 613.390),
+    (3, 2): (389.950, 583.630, 558.740, 613.390),
+}
+
 
 
 def require(test, reason):
@@ -117,25 +130,49 @@ def historical(entries, dossiers, manifest, cache):
 
 
 def q01_evidence(packet):
+    context_reasons = {
+        "formatting": {"running_document_id", "physical_page_number"},
+        "navigation": {"table_caption", "table_reference"},
+        "safety": {"general_work_safety"},
+        "applicability": {"applicability_text"},
+        "unresolved": {"unresolved_linked_text"},
+        "unlinked": {"detached_text"},
+    }
+    context_issues = {"missing_row_cell", "unresolved_column", "unresolved_table_context",
+                      "unproved_row_applicability"}
+
+    def safe_box(bbox):
+        if not isinstance(bbox, (list, tuple)) or len(bbox) != 4 or any(
+                type(n) not in (float, int) or not math.isfinite(n) or abs(n) > 10**6 for n in bbox):
+            return None
+        return list(bbox)
+
     def locator(value):
         keys = ("page", "table", "row", "column")
         if any(type(value.get(key)) is not int or not 0 <= value[key] <= 10000 for key in keys):
             return None
-        bbox = value.get("bbox")
-        if not isinstance(bbox, (list, tuple)) or len(bbox) != 4 or any(
-                type(n) not in (float, int) or not math.isfinite(n) or abs(n) > 10**6 for n in bbox):
+        bbox = safe_box(value.get("bbox"))
+        return {key: value[key] for key in keys} | {"bbox": bbox} if bbox else None
+
+    def context(entry):
+        category, reason = entry.get("category"), entry.get("reason")
+        if reason not in context_reasons.get(category, ()):
             return None
-        return {key: value[key] for key in keys} | {"bbox": list(bbox)}
+        boxes = [safe_box(bbox) for bbox in entry["boxes"][:12]]
+        return {"category": category, "reason": reason, "boxes": [box for box in boxes if box is not None]}
 
     rows = []
     for index, row in enumerate(packet["v2_claims"][:5], 1):
         status = row.get("technical_status")
         locators = [locator(item) for item in row.get("locators", [])[:8]]
+        evidence = [context(item) for item in row.get("context_evidence", [])[:16]]
         rows.append({"claim": index, "id_matches": row.get("id") == str(index),
                      "verdict": status if status in VERDICTS else "unknown",
                      "flags": {flag: row.get(flag) if type(row.get(flag)) is bool else None for flag in Q01_FLAGS},
                      "reasons": [reason for reason in row.get("reason_codes", []) if reason in Q01_REASONS],
-                     "locators": [item for item in locators if item is not None]})
+                     "locators": [item for item in locators if item is not None],
+                     "context_issues": [issue for issue in row.get("context_issues", []) if issue in context_issues],
+                     "context_evidence": [item for item in evidence if item is not None]})
     legacy = packet["v1"]["legacy"]
     coverage = packet["coverage"]
     count = len(packet["v2_claims"])
@@ -147,6 +184,15 @@ def q01_evidence(packet):
             "actual_new_model_candidate": False}
 
 
+def q01_locators_preserved(claims):
+    observed = [tuple((loc["page"], loc["table"], loc["row"], loc["column"],
+                       tuple(round(value, 3) for value in loc["bbox"]))
+                      for loc in claim["locators"]) for claim in claims]
+    expected = [tuple((60, 1, row, column, Q01_CELL_BOXES[row, column]) for row, column in locations)
+                for locations in Q01_LOCATOR_ROWS]
+    return observed == expected
+
+
 def authentic(site, cache):
     try:
         packet = replay(Path(os.environ["DS_DC_Q01_CANDIDATE"]), site, cache)
@@ -155,11 +201,12 @@ def authentic(site, cache):
         return {"passed": False, "reason": reason if reason in
                 {"fixture_corpus_mismatch", "fixture_wire_mismatch", "shadow_not_executed"} else "replay_failed"}
     result = q01_evidence(packet)
+    result["locators_preserved"] = q01_locators_preserved(result["claims"])
     result["passed"] = (
         result["v1"] == "invalid_locator" and result["coverage"] == "semantic_pending"
         and result["historical_wire_matches"] and result["confirmed_ids_match"]
-        and result["claim_count"] == result["confirmed"] == 5
-        and all(row["id_matches"] and row["locators"] for row in result["claims"]))
+        and result["claim_count"] == result["confirmed"] == 5 and result["locators_preserved"]
+        and all(row["id_matches"] for row in result["claims"]))
     return result
 
 

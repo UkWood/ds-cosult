@@ -17,7 +17,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 BASE = "d3bff92af8fa204b8cc506d1b63154c2e16beef0"
-R1_BASE = "4d928d9cdd0dcbb944e82e267b57d34ada2c3ee0"
+ACCEPTANCE_BASE = "aad05323ac35b2aecfd7961d962a93a1133f42cb"
 REMOTE = "https://github.com/UkWood/ds-cosult.git"
 REF = "refs/heads/feat/ds-dc-01-document-centric-pilot"
 DEFAULT_OUTPUT = Path("/mnt/c/DS-Validation/Reports")
@@ -33,9 +33,7 @@ PROTECTED = ("requirements.txt", "requirements-dev.txt", "ds_dc/context.py", "ds
              "ds_dc/recovery.py", "ds_dc/owner_web.py", "ds_dc/candidate_fixture.py",
              "ds_dc/evidence_lab.py", "ds_pilot", "tests/test_structural_evidence.py",
              "docs/runbooks/ds-dc-02", "docs/reports/ds-dc-02", "docs/runbooks/ds-dc-03b")
-PROTECTED_R1 = ("ds_dc/evidence_answer.py", "ds_dc/evidence_extract.py", "ds_dc/evidence_integration.py",
-                "ds_dc/structural_pdf.py", "ds_dc/structural_shadow.py", "ds_dc/technical_registry.py",
-                "ds_dc/technical_verifier.py")
+PROTECTED_R2 = ("ds_dc/evidence_integration.py", "ds_dc/structural_shadow.py", "ds_dc/technical_registry.py")
 PDFS = ("030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a",
         "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f")
 CACHE_PDFS = {
@@ -203,7 +201,7 @@ class Run:
                 "tracked_protected_files_changed")
         require(not local("diff", "--name-only", "--no-ext-diff", "--diff-filter=MDRT", BASE, "HEAD", "--", "tests"),
                 "historical_tests_changed")
-        require(not local("diff", "--name-only", "--no-ext-diff", R1_BASE, "HEAD", "--", *PROTECTED_R1),
+        require(not local("diff", "--name-only", "--no-ext-diff", ACCEPTANCE_BASE, "HEAD", "--", *PROTECTED_R2),
                 "evidence_first_track_changed")
         local("merge-base", "--is-ancestor", BASE, self.pin)
 
@@ -342,6 +340,10 @@ class Run:
                  True, structural_matrix),
                 ("v2_r01_provenance", enabled, pytest("tests/test_dc03c.py", "-k",
                     "not test_pinned_site_function_without_pdf_gate"), True, usefulness),
+                ("evidence_context_r2", enabled, pytest("tests/test_dc03c_r2_context.py", "-k",
+                    "not frozen_original"), True, None),
+                ("frozen_pdf_context_r2", enabled and frozen,
+                 pytest("tests/test_dc03c_r2_context.py::test_frozen_original_table_context"), True, None),
                 ("pinned_site_source_identity", enabled and site,
                  pytest("tests/test_dc03c.py::test_pinned_site_function_without_pdf_gate"), True, None),
                 ("runner_packaging", enabled, pytest("tests/test_dc03c_runner.py", "tests/test_dc03c_r1_acceptance.py"), True, None),
@@ -385,10 +387,10 @@ class Run:
         return all(step["status"] == "PASS" or step.get("optional") for step in self.steps.values())
 
     def package(self, passed):
-        result = {"task": "DS-DC-03C-R1", "environment": self.env_name, "pin": self.pin,
+        result = {"task": "DS-DC-03C-R2", "environment": self.env_name, "pin": self.pin,
                   "site_pin": SITE, "isolation": self.isolation, "status": "PASS" if passed else "FAIL",
                   "checks": {key: step["status"] for key, step in self.steps.items()}}
-        header = [f'# DS-DC-03C-R1 · Final Acceptance · {result["status"]}', "",
+        header = [f'# DS-DC-03C-R2 · Final Acceptance · {result["status"]}', "",
                   f"- Environment: {self.env_name}", f"- Checkout pin: {self.pin or 'unavailable'}",
                   f"- Isolation: {self.isolation}", "", "| Check | Status | Exit | Milliseconds |",
                   "|---|---|---:|---:|"]
@@ -447,7 +449,7 @@ def matrix(log):
 
 def regression(log):
     counts = junit_counts(log.with_suffix(".xml"))
-    require(counts["tests"] >= 273 and not counts["skipped"], "regression_count_or_skip")
+    require(counts["tests"] >= 282 and not counts["skipped"], "regression_count_or_skip")
     return {}
 
 
@@ -607,12 +609,12 @@ def prepare_checkout(path, pin, env):
             (path.parent / "git-preparation.stderr").write_bytes(error.stderr)
         raise ValueError("draft_checkout_fetch_failed") from error
     for ancestor, tip, reason in ((pin, "FETCH_HEAD", "commit_not_in_draft_branch"),
-                                  (R1_BASE, pin, "commit_not_after_r1_baseline")):
+                                  (ACCEPTANCE_BASE, pin, "commit_not_after_acceptance_baseline")):
         try:
             call("merge-base", "--is-ancestor", ancestor, tip)
         except subprocess.CalledProcessError as error:
             raise ValueError(reason) from error
-    require(pin != R1_BASE, "commit_not_after_r1_baseline")
+    require(pin != ACCEPTANCE_BASE, "commit_not_after_acceptance_baseline")
     call("checkout", "--quiet", "--detach", pin)
     require(git(env, path, "rev-parse", "HEAD") == pin, "prepared_checkout_pin_mismatch")
     require(not git(env, path, "status", "--porcelain", "--untracked-files=all"), "prepared_checkout_dirty")

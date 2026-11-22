@@ -262,6 +262,8 @@ def assemble(raw, registry, wire, extract_pdf, site_pages, *, reviewed_coverage=
                      "В документации указано другое значение. " if verdict == "contradicted" else "Справочно. ")
             if reference_only:
                 label += "Уточните исполнение и условия по документации или в службе поддержки."
+                if any(entry["category"] == "safety" for entry in checked.get("context_evidence", ())):
+                    label += " Соблюдайте требования безопасности из источника."
             else:
                 label += text
             emit(label, origins)

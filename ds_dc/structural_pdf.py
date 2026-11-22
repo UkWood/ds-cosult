@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from unicodedata import normalize
 
 from .pdf_policy import MAX_PAGES, MAX_SIZE
 
@@ -88,50 +89,152 @@ class PhysicalRow:
     cells: tuple
     context: tuple
     boxed: bool
+    context_evidence: tuple
 
 
 QUALIFICATION = re.compile(
-    r"примечан|ограничен|применим|исполнени|модификаци|только|режим|услови|"
-    r"\b(?:notes?|only|except|unless|variant|mode|condition|applicability)\b", re.I)
+    r"примечан|ограничен|применим|исполнени|модификаци|модел[ьи]|только|режим|услови|испытан|температур|"
+    r"\b(?:при|notes?|only|except|unless|variant|mode|condition|applicability|under)\b", re.I)
 _TROUBLESHOOTING_TITLE = (
     r"(?:перечень )?возможн(?:ые|ых) неисправност(?:и|ей)"
     r"(?: и (?:методы|способы|действия) (?:по )?(?:их )?устранени[яю])?")
 NEUTRAL_CAPTION = re.compile(
     r"^(?:таблица\s+\d+(?:\.\d+)*|table\s+\d+)"
     r"(?:\s*[.\-–—:]\s*" + _TROUBLESHOOTING_TITLE + r")?\.?$|"
-    r"^(?:\d+(?:\.\d+)*\.?\s+)?" + _TROUBLESHOOTING_TITLE + r"\.?$|"
-    r"^возможные неисправности и (?:методы|способы) их устранения "
-    r"приведены в таблице\s+\d+(?:\.\d+)*\.?$", re.I)
+    r"^(?:\d+(?:\.\d+)*\.?\s+)?" + _TROUBLESHOOTING_TITLE + r"\.?$", re.I)
+TABLE_REFERENCE = re.compile(
+    r"(?:признаки проявления неисправности, возможные причины и действия по устранению неисправности"
+    r"|возможные неисправности и (?:методы|способы) их устранения)"
+    r" приведены в таблице\s+\d+(?:\.\d+)*\.?", re.I)
+DOCUMENT_ID = re.compile(r"[A-ZА-ЯЁ]{2,8}\.\d{3,8}\.\d{3,8}[A-ZА-ЯЁ]{1,4}")
+PAGE_NUMBER = re.compile(r"(?:[Сс]тр\.\s*|[Pp]age\s+)?([1-9][0-9]{0,3})")
+# Full sentences only. Additional wording (including a scope qualifier) must
+# remain in evidence, even if it mentions one of these work-safety rules.
+WORK_SAFETY = tuple(re.compile(pattern + r"\.?", re.I) for pattern in (
+    r"работы по (?:текущему )?(?:ремонту|техническому обслуживанию)"
+    r"(?: контроллера| изделия| оборудования| устройства)? должны проводиться"
+    r" (?:обученным )?квалифицированным персоналом",
+    r"перед поиском неисправности и (?:текущим )?ремонтом необходимо ознакомиться"
+    r" с принципом действия и работой (?:контроллера|изделия|оборудования|устройства)",
+    r"измерительные приборы и оборудование, подлежащие заземлению, должны быть над[её]жно заземлены",
+    r"оборудование должно быть (?:над[её]жно )?заземлено",
+))
 
 
 def unresolved_table_context(row):
-    return any(not NEUTRAL_CAPTION.fullmatch(" ".join(block["text"].split())) for block in row.context)
+    return any(item["category"] in {"applicability", "unresolved"} for item in row.context_evidence)
+
+
+def line_text(text):
+    return " ".join(normalize("NFC", text).split())
+
+
+def line_box(block):
+    return [block[key] for key in ("x0", "top", "x1", "bottom")]
+
+
+def margin_role(page, table_box, block):
+    size = page.get("size")
+    if not size:
+        return None
+    width, height = size
+    text = line_text(block["text"])
+    if 0 <= block["top"] <= block["bottom"] <= min(42, height * .10) and DOCUMENT_ID.fullmatch(text):
+        return "running_document_id"
+    match = PAGE_NUMBER.fullmatch(text)
+    if (match and int(match[1]) == page.get("identity", {}).get("page")
+            and 0 <= height - block["bottom"] <= min(48, height * .09)
+            and block["top"] >= height * .9
+            and abs((block["x0"] + block["x1"] - table_box[0] - table_box[2]) / 2) <= min(24, width * .06)):
+        return "physical_page_number"
+    return None
+
+
+def lines_join(previous, line):
+    old_height = previous["bottom"] - previous["top"]
+    height = line["bottom"] - line["top"]
+    return (old_height > 0 and .8 <= height / old_height <= 1.25
+            and 0 <= line["top"] - previous["bottom"] <= min(7, .65 * old_height)
+            and min(abs(line[key] - previous[key]) for key in ("x0", "x1")) <= 38
+            and line["x0"] < previous["x1"] and line["x1"] > previous["x0"])
+
+
+def outside_table_lines(page):
+    return sorted((line for line in page.get("blocks", ())
+                   if not any(line["x0"] < t["bbox"][2] and line["x1"] > t["bbox"][0]
+                              and line["top"] < t["bbox"][3] and line["bottom"] > t["bbox"][1]
+                              for t in page["tables"])),
+                  key=lambda line: (line["top"], line["x0"]))
+
+
+def context_groups(page, table, outside):
+    left, top, right, bottom = table["bbox"]
+    groups = []
+    for line in outside:
+        if line["x0"] >= right or line["x1"] <= left:
+            continue
+        margin = margin_role(page, table["bbox"], line)
+        if groups and not (groups[-1][0] or margin) and lines_join(groups[-1][1][-1], line):
+            groups[-1][1].append(line)
+        else:
+            groups.append((margin, [line]))
+
+    neighbors = []
+    for margin, lines in groups:
+        gap = top - lines[-1]["bottom"] if lines[-1]["bottom"] <= top else lines[0]["top"] - bottom
+        if 0 <= gap <= 32:
+            neighbors.append((margin, lines, gap, " ".join(line_text(line["text"]) for line in lines)))
+    captions = [lines[0]["top"] for margin, lines, gap, text in neighbors
+                if not margin and gap <= 12 and NEUTRAL_CAPTION.fullmatch(text)]
+    retained, evidence = [], []
+    for margin, lines, gap, text in neighbors:
+        retain = True
+        if margin:
+            classifications = [("formatting", margin)]
+            retain = False
+        elif NEUTRAL_CAPTION.fullmatch(text):
+            classifications = [("navigation", "table_caption")]
+            retain = False
+        else:
+            # White space alone does not prove a heading or note is unrelated.
+            # A detached nearby line must sit mostly outside the table column.
+            in_lane = any(min(right, line["x1"]) - max(left, line["x0"])
+                          >= .5 * (line["x1"] - line["x0"]) for line in lines)
+            attached = (gap <= 12 or in_lane or QUALIFICATION.search(text)
+                        or any(0 <= start - lines[-1]["bottom"] <= 12 for start in captions))
+            classifications = []
+            for sentence in re.split(r"(?<=[.!?])\s+(?=[A-ZА-ЯЁ])", text):
+                if TABLE_REFERENCE.fullmatch(sentence):
+                    classifications.append(("navigation", "table_reference"))
+                elif any(rule.fullmatch(sentence) for rule in WORK_SAFETY):
+                    classifications.append(("safety", "general_work_safety"))
+                elif QUALIFICATION.search(sentence):
+                    classifications.append(("applicability", "applicability_text"))
+                elif attached:
+                    classifications.append(("unresolved", "unresolved_linked_text"))
+                else:
+                    classifications.append(("unlinked", "detached_text"))
+            retain = any(kind in {"safety", "applicability", "unresolved"} for kind, _ in classifications)
+        if retain:
+            retained.extend(lines)
+        boxes = [line_box(line) for line in lines]
+        evidence.extend({"category": category, "reason": reason, "boxes": boxes}
+                        for category, reason in dict.fromkeys(classifications))
+    return tuple(retained), tuple(evidence)
 
 
 def physical_rows(page):
-    """Retain unknown columns and geolocated context before interpreting roles."""
+    """Keep row context and classify adjacent document text before verifying claims."""
+    outside = outside_table_lines(page)
     for index, table in enumerate(page["tables"]):
         if len(table["rows"]) < 2:
             continue
-        left, top, right, bottom = table["bbox"]
-        nearby = sorted((b for b in page.get("blocks", ())
-                         if b["x0"] < right and b["x1"] > left
-                         and (0 <= top - b["bottom"] <= 32 or 0 <= b["top"] - bottom <= 32)
-                         and not any(b["x0"] < t["bbox"][2] and b["x1"] > t["bbox"][0]
-                                     and b["top"] < t["bbox"][3] and b["bottom"] > t["bbox"][1]
-                                     for t in page["tables"])),
-                        key=lambda b: (b["top"], b["x0"]))
-        # A closely adjoining line can qualify the table without a note prefix.
-        preceding = [b for b in nearby if b["bottom"] <= top]
-        following = [b for b in nearby if b["top"] >= bottom]
-        has_following_context = any(b["top"] - bottom <= 12 or QUALIFICATION.search(b["text"])
-                                    for b in following)
-        context = preceding + following if has_following_context else preceding
+        context, evidence = context_groups(page, table, outside)
         headers = tuple(table["rows"][0])
         boxed = all(h is not None for h in headers) and all(
             len(row) == len(headers) for row in table["rows"])
         for row in range(1, len(table["rows"])):
-            yield PhysicalRow(index, row, headers, tuple(row_cells(table, row)), tuple(context), boxed)
+            yield PhysicalRow(index, row, headers, tuple(row_cells(table, row)), context, boxed, evidence)
 
 
 if __name__ == "__main__":
