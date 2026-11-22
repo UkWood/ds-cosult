@@ -1,14 +1,17 @@
 """Offline child checks for the independent DC-03C runner."""
 import argparse
 import json
+import math
 import os
+import re
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from ds_pilot.discovery import front
 
 from . import context
-from .corpus import BKD, SLD
+from .corpus import BKD, SLD, encoded
 from .evidence_integration import MockReply, OfflineConsultant
 from .finance import Ledger
 from .native import CAL_WIRES, NativeD1, wire_approval
@@ -21,9 +24,29 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORTS = ROOT / "docs/reports/ds-dc-02"
 QUESTIONS = ROOT / "docs/runbooks/ds-dc-02/live-questions.json"
 OLD_WIRES = {
-    "Q01": ("7498d9920faf9cf25dfbf461c0bc64a75701089423a1c142c1b45cb85e9b9afd", 4, 80, 53289, 15532),
-    "Q02": ("d6c1ac408cf46c62c1f653a222c4e5af54d07fbc9981f65c21bb622b55303513", 10, 403, 315380, 122929),
+    "Q01": ("7498d9920faf9cf25dfbf461c0bc64a75701089423a1c142c1b45cb85e9b9afd", 4, 80),
+    "Q02": ("d6c1ac408cf46c62c1f653a222c4e5af54d07fbc9981f65c21bb622b55303513", 10, 403),
 }
+WSL_ESTIMATES = {"Q01": 53287, "Q02": 315382}
+SIZING_FIELDS = ("system", "pages_and_metadata", "question_tokens", "wire_without_history", "history",
+                 "sparse_pages", "input_mode", "unique_files", "physical_pages", "margin",
+                 "verified_upper_bound", "observed_usage")
+WIRE_FIELDS = ("wire_sha256_without_handles", "scope_wire_sha256_without_handles", "max_wire_bytes")
+VERDICTS = {"supported", "semantic_pending", "contradicted", "invalid"}
+Q01_FLAGS = ("schema_valid", "source_identity_verified", "applicability_verified",
+             "evidence_verified", "relation_verified")
+Q01_REASONS = {
+    "invalid_claim_schema", "foreign_entity_or_source_or_page", "cross_source_or_non_pdf_relation_unproved",
+    "evidence_unavailable", "quote_or_structure_unproved", "crossed_rows_or_tables",
+    "ambiguous_structural_relation", "merged_value_or_action_unproved", "applicability_unproved",
+    "unproved_row_context_or_variant", "unproved_troubleshooting_relation",
+    "unproved_modality_subject_or_condition", "verified_table_relation", "unproved_quantity_context",
+    "numeric_format_unproved", "verified_quantity", "different_numeric_value", "unproved_quantity_modality",
+    "unhandled_v1_shape", "v1_identity_unresolved", "unhandled_v1_technical_fields",
+    "v1_literal_quote_conflict", "v1_symptom_fields_unproved", "v1_value_literal_conflict",
+    "v1_component_unproved", "v1_action_condition_unproved", "v1_condition_or_coordinate_unproved",
+}
+
 
 
 def require(test, reason):
@@ -41,18 +64,34 @@ def local_corpus(site, cache):
 
 def historical(entries, dossiers, manifest, cache):
     questions = {row["id"]: row["question"] for row in json.loads(QUESTIONS.read_text())["questions"]}
-    for question_id, (expected_sha, files, pages, size, max_bytes) in OLD_WIRES.items():
+    pinned = json.loads((REPORTS / "r1-calibration-sizing.json").read_text())["requests"]
+    count, _ = context.get_counter(cache / context.TOKENIZER_NAME)
+    version = subprocess.run(["pdftotext", "-v"], capture_output=True, text=True, timeout=10, check=True)
+    match = re.search(r"pdftotext version (\d{1,3}\.\d{1,3}(?:\.\d{1,3})?)", version.stderr + version.stdout)
+    observations = {}
+    for question_id, cal_wire in OLD_WIRES.items():
+        expected = {key: pinned[question_id][key] for key in SIZING_FIELDS + WIRE_FIELDS}
+        expected["estimate"] = WSL_ESTIMATES[question_id]
+        site_fields = ("site_raw_local_tokens", "site_raw_utf8_bytes", "metadata_without_site_raw_local_tokens")
+        expected.update({key: pinned[question_id][key] for key in site_fields})
         with TemporaryDirectory() as directory:
             work = Path(directory)
             provider = NativeD1(cache, Ledger(work / "ledger"), manifest=manifest)
             seen = []
 
             def record(_request, question, site, docs, history, _now, _cap):
-                require(history == [], "historical_history_changed")
                 approval = wire_approval(question, site, docs, history)
                 sizing = context.size(question, site, docs, history, cache)
-                seen.append((approval["wire_sha256_without_handles"], sizing["unique_files"],
-                             sizing["physical_pages"], sizing["estimate"], approval["max_wire_bytes"]))
+                raw = [page["raw"] for page in site]
+                no_raw = [{key: value for key, value in page.items() if key != "raw"} for page in site]
+                metadata = encoded({"pages": no_raw, "documents": docs})
+                seen.append(({key: sizing[key] for key in SIZING_FIELDS} | approval |
+                             {"estimate": sizing["estimate"]}, sizing["pdf"],
+                             {"site_raw_local_tokens": sum(map(count, raw)),
+                              "site_raw_utf8_bytes": sum(len(text.encode()) for text in raw),
+                              "metadata_without_site_raw_local_tokens": count(metadata)},
+                             not any(item.get("unavailable") for item in sizing["per_pdf"].values()),
+                             sizing["method"] == pinned[question_id]["method"], not history))
                 return "offline_wire_checked", None, {}
 
             provider.dispatch = record
@@ -60,23 +99,68 @@ def historical(entries, dossiers, manifest, cache):
             pilot = Pilot(entries, dossiers, cache, Journal(work / "journal"), provider, owner_dc02=True)
             peer = "127.0.0.1"
             result = pilot.ask(peer, pilot.open(peer), "wire", questions[question_id])
-            require(result["status"] == "offline_wire_checked" and provider.chat_posts == 0
-                    and seen == [(expected_sha, files, pages, size, max_bytes)]
-                    and CAL_WIRES[question_id] == (expected_sha, files, pages),
-                    "historical_wire_or_sizing_mismatch")
-    return {"historical_requests_checked": 2, "q01_wire": OLD_WIRES["Q01"][0], "q02_wire": OLD_WIRES["Q02"][0]}
+            checks = {"dispatch": result["status"] == "offline_wire_checked" and len(seen) == 1,
+                      "zero_posts": provider.chat_posts == 0,
+                      "cal_wire": CAL_WIRES[question_id] == cal_wire,
+                      "material_scope": result.get("material_scope") == pinned[question_id]["scope"]}
+            actual, pdf, site_stats = {}, None, {}
+            if seen:
+                actual, pdf, site_stats, available, method_ok, empty_history = seen[0]
+                checks.update(pdf_available=available, tokenizer_method=method_ok, empty_history=empty_history)
+                actual.update(site_stats)
+                checks.update({key: actual.get(key) == value for key, value in expected.items()})
+            observations[question_id.lower()] = {"expected": expected, "actual": actual, "pdf_local_tokens": pdf,
+                                                 "checks": checks,
+                                                 "passed": all(checks.values())}
+    return {"baseline": "independent_wsl_dc03b", "poppler_version": match[1] if match else None,
+            "requests": observations, "passed": all(row["passed"] for row in observations.values())}
+
+
+def q01_evidence(packet):
+    def locator(value):
+        keys = ("page", "table", "row", "column")
+        if any(type(value.get(key)) is not int or not 0 <= value[key] <= 10000 for key in keys):
+            return None
+        bbox = value.get("bbox")
+        if not isinstance(bbox, (list, tuple)) or len(bbox) != 4 or any(
+                type(n) not in (float, int) or not math.isfinite(n) or abs(n) > 10**6 for n in bbox):
+            return None
+        return {key: value[key] for key in keys} | {"bbox": list(bbox)}
+
+    rows = []
+    for index, row in enumerate(packet["v2_claims"][:5], 1):
+        status = row.get("technical_status")
+        locators = [locator(item) for item in row.get("locators", [])[:8]]
+        rows.append({"claim": index, "id_matches": row.get("id") == str(index),
+                     "verdict": status if status in VERDICTS else "unknown",
+                     "flags": {flag: row.get(flag) if type(row.get(flag)) is bool else None for flag in Q01_FLAGS},
+                     "reasons": [reason for reason in row.get("reason_codes", []) if reason in Q01_REASONS],
+                     "locators": [item for item in locators if item is not None]})
+    legacy = packet["v1"]["legacy"]
+    coverage = packet["coverage"]
+    count = len(packet["v2_claims"])
+    return {"claim_count": count, "claims": rows, "v1": legacy if legacy == "invalid_locator" else "unexpected",
+            "coverage": coverage if coverage == "semantic_pending" else "unexpected",
+            "confirmed": sum(row["verdict"] == "supported" for row in rows),
+            "historical_wire_matches": packet.get("historical_wire") == OLD_WIRES["Q01"][0],
+            "confirmed_ids_match": packet["confirmed_claim_ids"] == ["1", "2", "3", "4", "5"],
+            "actual_new_model_candidate": False}
 
 
 def authentic(site, cache):
-    packet = replay(Path(os.environ["DS_DC_Q01_CANDIDATE"]), site, cache)
-    require(packet["v1"]["legacy"] == "invalid_locator" and packet["coverage"] == "semantic_pending"
-            and packet["historical_wire"] == OLD_WIRES["Q01"][0]
-            and packet["confirmed_claim_ids"] == ["1", "2", "3", "4", "5"]
-            and all(row["technical_status"] == "supported" for row in packet["v2_claims"]),
-            "authentic_q01_verdict_changed")
-    return {"supported": 5, "v1": "invalid_locator", "coverage": "semantic_pending",
-            "fixture_sha256": packet["fixture_sha256"], "actual_new_model_candidate": False,
-            "locators": sum(len(row["locators"]) for row in packet["v2_claims"])}
+    try:
+        packet = replay(Path(os.environ["DS_DC_Q01_CANDIDATE"]), site, cache)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        reason = str(error)
+        return {"passed": False, "reason": reason if reason in
+                {"fixture_corpus_mismatch", "fixture_wire_mismatch", "shadow_not_executed"} else "replay_failed"}
+    result = q01_evidence(packet)
+    result["passed"] = (
+        result["v1"] == "invalid_locator" and result["coverage"] == "semantic_pending"
+        and result["historical_wire_matches"] and result["confirmed_ids_match"]
+        and result["claim_count"] == result["confirmed"] == 5
+        and all(row["id_matches"] and row["locators"] for row in result["claims"]))
+    return result
 
 
 def new_wire(entries, dossiers, cache):
@@ -131,7 +215,8 @@ def main():
             require(set(dossiers) == {BKD, SLD}, "pilot_scope_changed")
             result = {"manifest_sha256": MANIFEST}
     print(json.dumps(result))
+    return 0 if result.get("passed", True) else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

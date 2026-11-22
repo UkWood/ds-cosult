@@ -16,7 +16,7 @@ from test_structural_evidence import candidate, grid, registry
     ("unknown-merged-geometry", "Оговорка", None, "", "semantic_pending"),
     ("unknown-empty-value", "Столбец", "", "", "supported"),
 ])
-def test_r01(case, header, extra, claim_condition, expected):
+def test_r01(case, header, extra, claim_condition, expected, record_property):
     reg = registry()
     proof = dict(subject="speed", value="≤10", unit="m/s")
     if claim_condition:
@@ -26,6 +26,12 @@ def test_r01(case, header, extra, claim_condition, expected):
     if extra is None:
         page["tables"][0]["rows"][1][-1] = None
     result = verify(packet, reg, lambda *_: page)
+    record_property("r01_expected", expected)
+    record_property("r01_verdict", result["claims"][0]["technical_status"])
+    reasons = result["claims"][0]["reason_codes"]
+    if reasons:
+        record_property("r01_reason", reasons[0])
+    record_property("r01_confirmed_count", len(result["confirmed_claim_ids"]))
     assert result["claims"][0]["technical_status"] == expected
     assert result["confirmed_claim_ids"] == (["C1"] if expected == "supported" else [])
 
@@ -189,6 +195,18 @@ def test_full_json_mock(synthetic_corpus, mutation, expected_status, kept, extra
     with OfflineConsultant(*synthetic_corpus, transport) as advisor:
         question = "Какая масса БКД-ПК-RF.2? Каков срок хранения?"
         result = advisor.ask(question, request_id="synthetic-test")
+        record_property("manual_expected_retained", kept)
+        record_property("manual_expected_source_extracts", extracts)
+        supported = len(result["confirmed_elements"])
+        record_property("automated_supported_delivered", supported)
+        record_property("automated_source_extracts_delivered", len(result["extracts"]))
+        record_property("automated_false_publications", sum(term in result["answer"] for term in
+                        ("999", "Шунтируйте", "отправляет записи наружу")))
+        record_property("automated_correct_facts_lost", max(0, kept - supported))
+        status = result["status"]
+        record_property("mock_actual_status", status)
+        record_property("mock_expected_status", expected_status)
+        record_property("status_" + (status if status in {"partial", "reference", "invalid_contract"} else "other"), 1)
         assert advisor.ask(question, request_id="synthetic-test") == result
         assert advisor.mock_calls == 1
     assert result["status"] == expected_status
@@ -205,13 +223,7 @@ def test_full_json_mock(synthetic_corpus, mutation, expected_status, kept, extra
     if extracts == 2:
         assert result["extracts"][0]["citations"][0]["commit"] == "1" * 40
         assert result["extracts"][1]["citations"][0]["boxes"]
-    record_property("manual_expected_retained", kept)
-    record_property("manual_expected_source_extracts", extracts)
-    record_property("automated_supported_delivered", len(result["confirmed_elements"]))
-    record_property("automated_source_extracts_delivered", len(result["extracts"]))
-    record_property("automated_false_publications", 0)
-    record_property("automated_correct_facts_lost", kept - len(result["confirmed_elements"]))
-    record_property("status_" + expected_status, 1)
+
 
 
 def test_full_flow_guard_history_wire_change_and_no_public_switch(synthetic_corpus, monkeypatch):
