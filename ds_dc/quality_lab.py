@@ -449,10 +449,11 @@ class MockLab:
         return candidate, verified, telemetry, actual
 
 
-def run_live():
-    # Deliberate unconditional stop. A future GO needs a separately approved implementation
-    # and exact-wire review against the actual ledger. No credential is consulted here.
-    raise Stopped("live_not_authorized")
+def run_live(args=None):
+    if args is None or args.stage is None:
+        raise Stopped("live_not_authorized")
+    from .dc04b import cli
+    return cli(args)
 
 
 def git_head():
@@ -491,11 +492,15 @@ def main():
     offline.add_argument("--cache", type=Path, default=os.getenv("DS_DC_CACHE"))
     offline.add_argument("--commit", required=True)
     offline.add_argument("--ledger", type=Path)
-    commands.add_parser("live")
+    live = commands.add_parser("live")
+    live.add_argument("--stage", choices=("replay", "preflight"), help=argparse.SUPPRESS)
+    live.add_argument("--commit", help=argparse.SUPPRESS)
+    for name in ("site", "cache", "ledger", "receipt", "output", "offline-summary", "history-archive"):
+        live.add_argument("--" + name, type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     try:
         if args.command == "live":
-            run_live()
+            return run_live(args)
         require(args.site and args.cache, "offline_inputs_missing")
         data = preflight(args.site, args.cache, args.commit, args.ledger)
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:

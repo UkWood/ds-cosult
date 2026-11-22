@@ -109,11 +109,20 @@ class Ledger:
             return row["cost"]
         return max(row.get("cost", 0), row["reserve"])
 
-    def reserve(self, state, run, permit_sha, peer, now, limits, ops, *, public=False, campaign=None, recovery=None):
+    def reserve(self, state, run, permit_sha, peer, now, limits, ops, *, public=False, campaign=None,
+                recovery=None, dc04b_permit=None):
         if state["runs"].get(run, permit_sha) != permit_sha:
             raise Stopped("go_changed")
         existing = list(state["operations"].values())
         ignored = None
+        dc04b_event = None
+        if dc04b_permit is not None:
+            from .dc04b_permit import validate_reservation
+            from .recovery import ORIGINAL_UPLOAD
+            dc04b_event = validate_reservation(
+                state, dc04b_permit, run, permit_sha, now, limits, ops,
+                public=public, campaign=campaign, recovery_route=recovery)
+            ignored = ORIGINAL_UPLOAD
         if recovery:
             from .recovery import ORIGINAL_UPLOAD
             if public or campaign != "dc02-live" or not state.get("recovery_events") or (
@@ -160,6 +169,8 @@ class Ledger:
         state["operations"].update(new)
         if recovery and recovery.get("consumption"):
             state["recovery_events"].append(recovery["consumption"])
+        if dc04b_event:
+            state["dc04b_events"] = [dc04b_event]
         self.save(state)
 
     def operate(self, state, key, call, interpret):
