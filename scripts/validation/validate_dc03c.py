@@ -1,4 +1,4 @@
-"""One-command DC-03C acceptance. Raw test output stays in a private directory."""
+"""One-command DC-04A acceptance. Raw test output stays in a private directory."""
 import argparse
 import hashlib
 import importlib.metadata
@@ -17,7 +17,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 BASE = "d3bff92af8fa204b8cc506d1b63154c2e16beef0"
-ACCEPTANCE_BASE = "aad05323ac35b2aecfd7961d962a93a1133f42cb"
+ACCEPTANCE_BASE = "78fdbfbc9a9a7a310bbd74148b2f3c3fddc97f83"
 REMOTE = "https://github.com/UkWood/ds-cosult.git"
 REF = "refs/heads/feat/ds-dc-01-document-centric-pilot"
 DEFAULT_OUTPUT = Path("/mnt/c/DS-Validation/Reports")
@@ -33,7 +33,10 @@ PROTECTED = ("requirements.txt", "requirements-dev.txt", "ds_dc/context.py", "ds
              "ds_dc/recovery.py", "ds_dc/owner_web.py", "ds_dc/candidate_fixture.py",
              "ds_dc/evidence_lab.py", "ds_pilot", "tests/test_structural_evidence.py",
              "docs/runbooks/ds-dc-02", "docs/reports/ds-dc-02", "docs/runbooks/ds-dc-03b")
-PROTECTED_R2 = ("ds_dc/evidence_integration.py", "ds_dc/structural_shadow.py", "ds_dc/technical_registry.py")
+PROTECTED_R2 = ("ds_dc/evidence_integration.py", "ds_dc/structural_shadow.py", "ds_dc/technical_registry.py",
+                "ds_dc/evidence_answer.py", "ds_dc/evidence_extract.py", "ds_dc/structural_pdf.py",
+                "ds_dc/technical_verifier.py", "ds_dc/prep.py", "ds_dc/validation_dc03c.py",
+                "docs/runbooks/ds-dc-03c")
 PDFS = ("030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a",
         "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f")
 CACHE_PDFS = {
@@ -53,6 +56,7 @@ CACHE_PDFS = {
     "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f": 5017331,
 }
 ALLOWLIST = ("FINAL-ACCEPTANCE.md", "summary.json", "checks.json", "screening.json", "SHA256SUMS")
+AB_REPORTS = ("dc04a-ab.json", "dc04a-ab.md")
 PYTHON = sys.executable
 R01_CASES = ("R01-A", "R01-B", "R01-B-positive-control", "R01-C1", "R01-C2", "R01-C-applicability-control",
              "unknown-empty-heading", "unknown-merged-geometry", "unknown-empty-value")
@@ -170,6 +174,7 @@ class Run:
         self.env_name = "WSL" if "microsoft" in os.uname().release.lower() else "Linux"
         self.isolation = "not_run"
         self.steps = {}
+        self.ab_reports = {}
         self.prefix = []
 
     def record(self, key, status, elapsed=0, exit_code=None, **details):
@@ -282,9 +287,10 @@ class Run:
         exit_code = None
         report = {}
         try:
+            env = self.env | ({"DC04A_REPORT_DIRECTORY": str(self.private)} if key == "dc04a_mock" else {})
             with log.open("wb") as stream:
                 proc = subprocess.run(self.prefix + arguments + (["--junitxml", str(xml)] if junit else []),
-                                      cwd=ROOT, env=self.env, stdout=stream, stderr=subprocess.STDOUT,
+                                      cwd=ROOT, env=env, stdout=stream, stderr=subprocess.STDOUT,
                                       timeout=600)
             exit_code = proc.returncode
             if junit and xml.is_file():
@@ -292,6 +298,8 @@ class Run:
                 report.update(junit_evidence(xml, reviewer=key == "independent_tests"))
             if details and (exit_code == 0 or xml.is_file() and junit or details is child_evidence):
                 report.update(details(log))
+                if "status" in report:
+                    report["child_status"] = report.pop("status")
                 if report.get("usefulness_valid") is False:
                     report["failure"] = "mock_usefulness_regression"
                 if report.get("passed") is False:
@@ -334,7 +342,16 @@ class Run:
         enabled = code and deps and network and sealed
         baseline = (self.command("canonical_freeze", child("freeze"), details=safe_object)
                     if enabled and site and frozen else self.record("canonical_freeze", "BLOCKED"))
-        jobs = [("historical_matrix", enabled, [PYTHON, "-m", "ds_dc.evidence_lab", "matrix"], False, matrix),
+        preflight = [PYTHON, "-m", "ds_dc.quality_lab", "preflight", "--commit", self.pin or ""]
+        if getattr(self.args, "financial_ledger", None):
+            preflight.extend(["--ledger", str(self.args.financial_ledger)])
+        jobs = [("dc04a_mock", enabled, pytest("tests/test_dc04a.py", "tests/test_quality_report.py",
+                                              "-k", "not pinned_material_exact_http_wire"), True, None),
+                ("dc04a_preflight", baseline, preflight, False, child_evidence),
+                ("dc04a_pinned_wire_mock", baseline,
+                 pytest("tests/test_dc04a.py::test_pinned_material_exact_http_wire_without_fabricated_claims"),
+                 True, None),
+                ("historical_matrix", enabled, [PYTHON, "-m", "ds_dc.evidence_lab", "matrix"], False, matrix),
                 ("structural_matrix", enabled, pytest("tests/test_structural_evidence.py", "-k",
                     "test_structural_numeric_values or test_numeric_mutations or test_troubleshooting_links"),
                  True, structural_matrix),
@@ -355,8 +372,12 @@ class Run:
         for key, ready, command, junit, details in jobs:
             if ready:
                 self.command(key, command, junit=junit, details=details)
+                if key == "dc04a_mock":
+                    self.inspect("dc04a_ab_export", self.ab_report_evidence)
             else:
                 self.record(key, "BLOCKED")
+        if not enabled:
+            self.record("dc04a_ab_export", "BLOCKED")
         if self.args.extra_tests and baseline:
             self.command("independent_tests", pytest(*map(str, self.args.extra_tests)), junit=True)
         else:
@@ -386,11 +407,28 @@ class Run:
             self.record("offline_audit", "BLOCKED")
         return all(step["status"] == "PASS" or step.get("optional") for step in self.steps.values())
 
+    def ab_report_evidence(self):
+        verified = {}
+        for name in AB_REPORTS:
+            path = self.private / name
+            require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 512 * 1024,
+                    "ab_report_missing_or_oversize")
+            verified[name] = path.read_bytes()
+            screen(verified[name].decode("utf-8"))
+        report = json.loads(verified[AB_REPORTS[0]])
+        require({"A", "B", "expert_score", "provenance"} <= report.keys()
+                and report["expert_score"] == "NOT RUN"
+                and report["provenance"].get("request_mode") == "mock_native", "ab_report_invalid")
+        self.ab_reports = verified
+        return {"synthetic": True}
+
     def package(self, passed):
-        result = {"task": "DS-DC-03C-R2", "environment": self.env_name, "pin": self.pin,
+        members = (ALLOWLIST[:-1] + AB_REPORTS + ALLOWLIST[-1:]
+                   if self.steps.get("dc04a_ab_export", {}).get("status") == "PASS" else ALLOWLIST)
+        result = {"task": "DS-DC-04A", "environment": self.env_name, "pin": self.pin,
                   "site_pin": SITE, "isolation": self.isolation, "status": "PASS" if passed else "FAIL",
                   "checks": {key: step["status"] for key, step in self.steps.items()}}
-        header = [f'# DS-DC-03C-R2 · Final Acceptance · {result["status"]}', "",
+        header = [f'# DS-DC-04A · Final Acceptance · {result["status"]}', "",
                   f"- Environment: {self.env_name}", f"- Checkout pin: {self.pin or 'unavailable'}",
                   f"- Isolation: {self.isolation}", "", "| Check | Status | Exit | Milliseconds |",
                   "|---|---|---:|---:|"]
@@ -399,22 +437,32 @@ class Run:
         (self.private / ALLOWLIST[0]).write_text("\n".join(header + rows) + "\n", encoding="utf-8")
         write_json(self.private / ALLOWLIST[1], result)
         write_json(self.private / ALLOWLIST[2], self.steps)
-        write_json(self.private / ALLOWLIST[3], {"included": list(ALLOWLIST),
+        write_json(self.private / ALLOWLIST[3], {"included": list(members),
             "excluded": ["raw command output", "raw JUnit", "source documents and original fixtures",
                          "private operational records", "local paths and machine metadata"],
             "method": "explicit allowlist of generated summaries, forbidden-pattern scan, CRC and SHA-256"})
-        sums = "".join(f"{digest(self.private / name)}  {name}\n" for name in ALLOWLIST[:-1])
+        def packaged_bytes(name):
+            if name in self.ab_reports:
+                return self.ab_reports[name]
+            return (self.private / name).read_bytes()
+
+        contents = {name: packaged_bytes(name) for name in members[:-1]}
+        sums = "".join(f"{sha_of_bytes(raw)}  {name}\n" for name, raw in contents.items())
         (self.private / ALLOWLIST[4]).write_text(sums, encoding="ascii")
-        for name in ALLOWLIST:
-            screen((self.private / name).read_text(encoding="utf-8"))
+        contents[ALLOWLIST[4]] = sums.encode("ascii")
+        for raw in contents.values():
+            screen(raw.decode("utf-8"))
         fd, filename = tempfile.mkstemp(prefix="dc03c-", suffix=".zip", dir=self.private)
         os.close(fd)
         archive = Path(filename)
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
-            for name in ALLOWLIST:
-                output.write(self.private / name, name)
+            for name, raw in contents.items():
+                output.writestr(name, raw)
         verify_archive(archive)
         protected = (self.args.site, self.args.cache) if self.preparing else (ROOT, self.args.site, self.args.cache)
+        ledger = getattr(self.args, "financial_ledger", None)
+        if ledger is not None:
+            protected += (ledger.resolve(),)
         require(not any(path and self.args.output.is_relative_to(path) for path in protected), "unsafe_report_directory")
         self.args.output.mkdir(parents=True, exist_ok=True)
         fd, staged = tempfile.mkstemp(prefix=".dc03c-", dir=self.args.output)
@@ -449,7 +497,7 @@ def matrix(log):
 
 def regression(log):
     counts = junit_counts(log.with_suffix(".xml"))
-    require(counts["tests"] >= 282 and not counts["skipped"], "regression_count_or_skip")
+    require(counts["tests"] >= 295 and not counts["skipped"], "regression_count_or_skip")
     return {}
 
 
@@ -498,7 +546,7 @@ def child_evidence(log):
         if isinstance(value, list):
             return len(value) <= 32 and all(safe(item, depth + 1) for item in value)
         if isinstance(value, str):
-            return bool(re.fullmatch(r"[a-z0-9_.-]{1,64}", value))
+            return value in {"Q01-N", "evidence-integration/1"} or bool(re.fullmatch(r"[a-z0-9_.-]{1,64}", value))
         return value is None or type(value) is bool or (
             type(value) in (int, float) and math.isfinite(value) and abs(value) <= 10**9)
 
@@ -508,7 +556,7 @@ def child_evidence(log):
 
 def screen(content):
     pattern = (r"(?i)file-api-|\bsk-[a-z0-9_-]{8,}|bearer\s+\S+|private key|"
-               r"[\w.+%-]+@[\w.-]+\.[a-z]{2,}|(?:[a-z]:[\\/]|/(?:mnt|workspace|tmp|home|users)/)|"
+               r"[\w.+%-]+@[\w.-]+\.[a-z]{2,}|(?:(?<!\w)[a-z]:[\\/]|/(?:mnt|workspace|tmp|home|users)/)|"
                r"(?<![\d.])(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?![\d.])|"
                r"\b[0-9a-f]{0,4}:(?:[0-9a-f]{0,4}:){2,}[0-9a-f]{0,4}\b")
     match = re.search(pattern, content)
@@ -518,8 +566,10 @@ def screen(content):
 
 def verify_archive(path):
     with zipfile.ZipFile(path) as archive:
-        require(tuple(archive.namelist()) == ALLOWLIST and archive.testzip() is None, "zip_crc_or_members")
-        expected = "".join(f"{sha_of_bytes(archive.read(name))}  {name}\n" for name in ALLOWLIST[:-1])
+        members = tuple(archive.namelist())
+        require(members in (ALLOWLIST, ALLOWLIST[:-1] + AB_REPORTS + ALLOWLIST[-1:])
+                and archive.testzip() is None, "zip_crc_or_members")
+        expected = "".join(f"{sha_of_bytes(archive.read(name))}  {name}\n" for name in members[:-1])
         require(archive.read("SHA256SUMS").decode() == expected, "zip_member_sha_mismatch")
 
 
@@ -662,6 +712,8 @@ def prepare(args):
                    "--site", str(args.site), "--cache", str(args.cache), "--fixture", str(args.fixture),
                    "--output", str(args.output), "--network", args.network,
                    "--preparation-record", str(report), "--receipt", str(receipt)]
+        if args.financial_ledger:
+            command.extend(["--financial-ledger", str(args.financial_ledger)])
         for flag, values in (("--extra-tests", args.extra_tests), ("--protected-file", args.protected_file)):
             for value in values:
                 command.extend([flag, str(value)])
@@ -711,6 +763,7 @@ def main():
     for name in ("site", "cache", "fixture"):
         parser.add_argument("--" + name, type=lambda text: input_path(text).resolve())
     parser.add_argument("--python", type=input_path, help="Python interpreter in the prepared 3.12 environment")
+    parser.add_argument("--financial-ledger", type=input_path, help="optional existing ledger for read-only preflight")
     parser.add_argument("--extra-tests", action="append", default=[], type=lambda text: input_path(text).resolve())
     parser.add_argument("--protected-file", action="append", default=[], type=lambda text: input_path(text).resolve())
     parser.add_argument("--network", choices=("auto", "namespace", "python"), default="auto")
