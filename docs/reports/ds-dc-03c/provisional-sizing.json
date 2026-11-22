@@ -1,0 +1,38 @@
+{
+  "status": "provisional_local_estimates",
+  "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1",
+  "pdf_signal": "historical pinned CAL local PDF text",
+  "assumptions": "No current PDF bytes, no provider parsing measurement or historical usage bound.",
+  "verified_upper_bound": null,
+  "provider_parsed_bytes_limit": 8388608,
+  "requests": [
+    {
+      "entity": "saturn:device:bkd-pk-rf-2",
+      "probe_question": "Какие данные БКД-ПК-RF.2 считывает из памяти приборов?",
+      "provisional_wire_identity": "fc038bcea514b93d90cd7c641fc6ebcd399baeebc60415d77143cda5e7e81df4",
+      "wire_bytes_with_max_placeholder_handles": 14925,
+      "wire_tokens": 3717,
+      "inherited_local_pdf_tokens": 38363,
+      "local_estimate": 52600,
+      "local_cap": 256000,
+      "local_cap_result": "within_local_estimate",
+      "unique_files": 4,
+      "physical_pages": 80,
+      "indicative_cold_micro_usd": 43611
+    },
+    {
+      "entity": "saturn:system:sldks-1",
+      "probe_question": "Для чего предназначена СЛДКС-1?",
+      "provisional_wire_identity": "885f7605a1f3cdaf7af55e13225e4bf55f3838775e85ab7ca50dc49b44450596",
+      "wire_bytes_with_max_placeholder_handles": 116405,
+      "wire_tokens": 24876,
+      "inherited_local_pdf_tokens": 224609,
+      "local_estimate": 311857,
+      "local_cap": 256000,
+      "local_cap_result": "over_cap",
+      "unique_files": 10,
+      "physical_pages": 403,
+      "indicative_cold_micro_usd": 194063
+    }
+  ]
+}

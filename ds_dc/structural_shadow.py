@@ -85,7 +85,8 @@ def project_v1(claim, registry, extract_page):
     except (OSError, ValueError, subprocess.SubprocessError):
         return None, "evidence_unavailable"
     matches = {}
-    for table, row, cells in table_rows(page):
+    for physical, _, cells in table_rows(page):
+        table, row = physical.table, physical.row
         if not cells.get(target) or nfc_text(cells[target]["text"]) != nfc_text(loc["quote"]):
             continue
         top = page["tables"][table]["bbox"][1]

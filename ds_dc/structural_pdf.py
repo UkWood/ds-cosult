@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 
 from .pdf_policy import MAX_PAGES, MAX_SIZE
 
@@ -77,6 +78,60 @@ def row_cells(table, index):
                     matches.append({"row": origin, "column": column, "bbox": box, "text": text})
         result.append(matches[0] if len(matches) == 1 else None)
     return result
+
+
+@dataclass(frozen=True)
+class PhysicalRow:
+    table: int
+    row: int
+    headers: tuple
+    cells: tuple
+    context: tuple
+    boxed: bool
+
+
+QUALIFICATION = re.compile(
+    r"примечан|ограничен|применим|исполнени|модификаци|только|режим|услови|"
+    r"\b(?:notes?|only|except|unless|variant|mode|condition|applicability)\b", re.I)
+_TROUBLESHOOTING_TITLE = (
+    r"(?:перечень )?возможн(?:ые|ых) неисправност(?:и|ей)"
+    r"(?: и (?:методы|способы|действия) (?:по )?(?:их )?устранени[яю])?")
+NEUTRAL_CAPTION = re.compile(
+    r"^(?:таблица\s+\d+(?:\.\d+)*|table\s+\d+)"
+    r"(?:\s*[.\-–—:]\s*" + _TROUBLESHOOTING_TITLE + r")?\.?$|"
+    r"^(?:\d+(?:\.\d+)*\.?\s+)?" + _TROUBLESHOOTING_TITLE + r"\.?$|"
+    r"^возможные неисправности и (?:методы|способы) их устранения "
+    r"приведены в таблице\s+\d+(?:\.\d+)*\.?$", re.I)
+
+
+def unresolved_table_context(row):
+    return any(not NEUTRAL_CAPTION.fullmatch(" ".join(block["text"].split())) for block in row.context)
+
+
+def physical_rows(page):
+    """Retain unknown columns and geolocated context before interpreting roles."""
+    for index, table in enumerate(page["tables"]):
+        if len(table["rows"]) < 2:
+            continue
+        left, top, right, bottom = table["bbox"]
+        nearby = sorted((b for b in page.get("blocks", ())
+                         if b["x0"] < right and b["x1"] > left
+                         and (0 <= top - b["bottom"] <= 32 or 0 <= b["top"] - bottom <= 32)
+                         and not any(b["x0"] < t["bbox"][2] and b["x1"] > t["bbox"][0]
+                                     and b["top"] < t["bbox"][3] and b["bottom"] > t["bbox"][1]
+                                     for t in page["tables"])),
+                        key=lambda b: (b["top"], b["x0"]))
+        # A closely adjoining line can qualify the table without a note prefix.
+        preceding = [b for b in nearby if b["bottom"] <= top]
+        following = [b for b in nearby if b["top"] >= bottom]
+        has_following_context = any(b["top"] - bottom <= 12 or QUALIFICATION.search(b["text"])
+                                    for b in following)
+        context = preceding + following if has_following_context else preceding
+        headers = tuple(table["rows"][0])
+        boxed = all(h is not None for h in headers) and all(
+            len(row) == len(headers) for row in table["rows"])
+        for row in range(1, len(table["rows"])):
+            yield PhysicalRow(index, row, headers, tuple(row_cells(table, row)), tuple(context), boxed)
 
 
 if __name__ == "__main__":

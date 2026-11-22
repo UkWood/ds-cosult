@@ -7,6 +7,15 @@ from types import MappingProxyType
 from .corpus import encoded
 
 VERSION = "candidate-answer/2"
+COVER_REQUIRED = "exact_model_and_edition_cover_required"
+
+
+def applicability_proved(source, entity, applies):
+    if not source.applicability:
+        return False
+    if applies is not None:
+        return bool(applies(source, entity))
+    return source.applicability != COVER_REQUIRED
 
 
 @dataclass(frozen=True)

@@ -1,11 +1,12 @@
 """Deterministic verification of mechanically supported technical table relations."""
+from dataclasses import asdict
 from decimal import Decimal
 import re
 import subprocess
 
 from .evidence_lab import nfc_text
-from .structural_pdf import row_cells
-from .technical_registry import VERSION
+from .structural_pdf import physical_rows, QUALIFICATION, unresolved_table_context
+from .technical_registry import VERSION, applicability_proved
 
 KINDS = {"quantity", "quantity_limit", "quantity_range", "symptom", "possible_cause", "conditional_action"}
 FIELDS = {"id", "entity", "kind", "subject", "value", "unit", "comparator",
@@ -17,6 +18,7 @@ HEADER_ROLES = {
     "параметр": "subject", "parameter": "subject", "значение": "value", "value": "value",
     "единица": "unit", "unit": "unit", "условие": "condition", "condition": "condition",
     "квалификатор": "qualifier", "qualifier": "qualifier",
+    "исполнение": "variant", "модификация": "variant", "variant": "variant",
 }
 NUM = r"[+-]?[0-9]{1,18}(?:[.,][0-9]{1,18})?"
 LIMITS = {"не более": "le", "не менее": "ge", "≤": "le", "≥": "ge", "<": "lt", ">": "gt"}
@@ -41,16 +43,14 @@ def numeric(text):
 
 
 def table_rows(page):
-    for table_id, table in enumerate(page["tables"]):
-        if not table["rows"] or any(cell is None for cell in table["rows"][0]):
+    for row in physical_rows(page):
+        if not row.boxed:
             continue
-        roles = [HEADER_ROLES.get(word(cell[1])) for cell in table["rows"][0]]
+        roles = [HEADER_ROLES.get(word(cell[1])) for cell in row.headers]
         known = [role for role in roles if role]
         if len(known) != len(set(known)):
             continue
-        for row_id in range(1, len(table["rows"])):
-            cells = row_cells(table, row_id)
-            yield table_id, row_id, {role: cell for role, cell in zip(roles, cells, strict=True) if role}
+        yield row, roles, {role: cell for role, cell in zip(roles, row.cells, strict=True) if role}
 
 
 def locator_valid(loc):
@@ -76,6 +76,19 @@ def claim_valid(item, registry):
             and isinstance(item["evidence"], list) and 1 <= len(item["evidence"]) <= 8
             and all(locator_valid(loc) for loc in item["evidence"])
             and len({loc["role"] for loc in item["evidence"]}) == len(item["evidence"]))
+
+
+def context_unproved(row, columns, entity, kind):
+    if any(cell is None or not role and (nfc_text(cell["text"]) or QUALIFICATION.search(header[1]))
+           for role, cell, header in zip(columns, row.cells, row.headers, strict=True)):
+        return True
+    if unresolved_table_context(row):
+        return True
+    allowed = ({"symptom", "cause", "action"} if kind in {"symptom", "possible_cause", "conditional_action"}
+               else {"subject", "value", "unit", "condition", "qualifier"})
+    return any(nfc_text(cell["text"]) and (
+        role != "variant" or nfc_text(cell["text"]) != nfc_text(entity.label))
+        for role, cell in zip(columns, row.cells, strict=True) if role and role not in allowed)
 
 
 def relation(item, cells, roles):
@@ -115,7 +128,7 @@ def relation(item, cells, roles):
     return "semantic_pending", "unproved_quantity_modality"
 
 
-def inspect_claim(item, registry, extract):
+def inspect_claim(item, registry, extract, *, applies=None):
     result = dict(id=item.get("id") if isinstance(item, dict) else None, schema_valid=False,
                   source_identity_verified=False, applicability_verified=False, evidence_verified=False,
                   relation_verified=False, technical_status="invalid", covered_parts=[],
@@ -134,10 +147,9 @@ def inspect_claim(item, registry, extract):
     if not entity or any(source is None or loc["page"] > source.pages for loc, source in zip(locations, sources)):
         return finish("invalid", "foreign_entity_or_source_or_page")
     # Registry lookup alone does not verify the source bytes.
-    if any((s.canonical_entity, s.generation) != (entity.canonical_id, entity.generation)
-           or not s.applicability for s in sources):
-        return finish("semantic_pending", "applicability_unproved")
-    result["applicability_verified"] = True
+    result["applicability_verified"] = all(
+        (s.canonical_entity, s.generation) == (entity.canonical_id, entity.generation)
+        and applicability_proved(s, entity, applies) for s in sources)
     if any(s.kind != "pdf" for s in sources) or len({(loc["source"], loc["page"]) for loc in locations}) != 1:
         return finish("semantic_pending", "cross_source_or_non_pdf_relation_unproved")
     try:
@@ -147,11 +159,13 @@ def inspect_claim(item, registry, extract):
     result["source_identity_verified"] = True
 
     # Resolve each quote within a role's physical cell. Then intersect candidate table rows.
+    rows = list(table_rows(page))
     row_sets = []
     matches = {}
     for loc in locations:
         candidates = set()
-        for table_id, row_id, cells in table_rows(page):
+        for row, columns, cells in rows:
+            table_id, row_id = row.table, row.row
             cell = cells.get(loc["role"])
             if cell is None or nfc_text(cell["text"]) != nfc_text(loc["quote"]):
                 continue
@@ -159,7 +173,7 @@ def inspect_claim(item, registry, extract):
             if "hint" in loc and loc["hint"] != coordinate:
                 continue
             candidates.add((table_id, row_id))
-            matches[(table_id, row_id)] = cells
+            matches[(table_id, row_id)] = row, columns, cells
         if not candidates:
             return finish("semantic_pending", "quote_or_structure_unproved")
         row_sets.append(candidates)
@@ -169,20 +183,28 @@ def inspect_claim(item, registry, extract):
         return finish("semantic_pending", "crossed_rows_or_tables")
     roles = {loc["role"] for loc in locations}
     # A merged symptom can have one physical identity across multiple body rows.
-    signatures = {tuple((table_id, matches[(table_id, row_id)][loc["role"]]["row"],
-                         matches[(table_id, row_id)][loc["role"]]["column"]) for loc in locations)
+    signatures = {tuple((table_id, matches[(table_id, row_id)][2][loc["role"]]["row"],
+                         matches[(table_id, row_id)][2][loc["role"]]["column"]) for loc in locations)
                   for table_id, row_id in common}
     if len(signatures) != 1 or (item["kind"] != "symptom" and len(common) != 1):
         return finish("semantic_pending", "ambiguous_structural_relation")
     table_id, row_id = min(common)
-    cells = matches[(table_id, row_id)]
+    _, _, cells = matches[(table_id, row_id)]
     if any(cells[role]["row"] != row_id for role in roles & {"cause", "action", "value"}):
         return finish("semantic_pending", "merged_value_or_action_unproved")
     result["locators"] = [{"source": loc["source"], "doc_id": sources[0].doc_id, "sha256": sources[0].sha256,
                            "revision": sources[0].revision, "page": loc["page"], "table": table_id,
                            **{k: cells[loc["role"]][k] for k in ("row", "column", "bbox")}}
                           for loc in locations]
+    result["physical_rows"] = [asdict(matches[key][0]) for key in sorted(common)]
+    if not result["applicability_verified"]:
+        return finish("semantic_pending", "applicability_unproved")
+    if any(context_unproved(row, columns, entity, item["kind"])
+           for row, columns, _ in (matches[key] for key in common)):
+        return finish("semantic_pending", "unproved_row_context_or_variant")
     status, code = relation(item, cells, roles)
+    if status in {"supported", "contradicted"}:
+        result["verified_fields"] = {role: nfc_text(cell["text"]) for role, cell in cells.items() if cell}
     result["relation_verified"] = status in {"supported", "contradicted"}
     return finish(status, code)
 
