@@ -26,6 +26,19 @@ ACTION = re.compile(r"подать|обесточ|подсоед|подключ�
 ELECTRICAL = re.compile(r"\b(?:power|voltage|volt|mains|wire|wiring|\d+\s*(?:v|a|в|а))\b", re.I)
 
 
+# This narrow grammar covers checking a state or inspecting for a defect.
+# It does not authorize a technique or a sequence of operations.
+DOCUMENTED_CHECK = re.compile(
+    r"проверить (?:(?:работоспособность|состояние|наличие|индикацию|целостность) (?P<state_target>[\w -]+)"
+    r"|(?P<defect_target>[\w -]+) на (?:обрыв|повреждение|износ|замыкание)"
+    r"(?: или (?:обрыв|повреждение|износ|замыкание))?)",
+    re.I)
+PROCEDURE_WORDING = re.compile(
+    r"вскры|снят|откры|вытащ|извлеч|встав|резать|отрез|зачист|паять|замкну|включи|отключи|отсоедин|"
+    r"рук[аой]|пальц|вручн|ощуп|враща|движущ|замыка|вывод|"
+    r"\b(?:при|после|пут[её]м|затем|используя|нажать)\b", re.I)
+
+
 def risky(text):
     return any(pattern.search(text) for pattern in (RISK, ACTION, ELECTRICAL))
 
@@ -196,6 +209,15 @@ def incompatible(a, b):
     return separated(upper_a, lower_b) or separated(upper_b, lower_a)
 
 
+def diagnostic_row(item, checked):
+    fields = checked["verified_fields"]
+    loc = checked["locators"][0]
+    cause = next(loc for evidence, loc in zip(item["evidence"], checked["locators"], strict=True)
+                 if evidence["role"] == "cause")
+    return (item["entity"], loc["source"], cause["page"], cause["table"], cause["row"], cause["column"],
+            fields["symptom"], fields["cause"], fields["action"])
+
+
 def assemble(raw, registry, wire, extract_pdf, site_pages, *, reviewed_coverage=None, applies=None):
     """Optional server review binds exact part, item and provenance digests to this wire."""
     try:
@@ -218,6 +240,14 @@ def assemble(raw, registry, wire, extract_pdf, site_pages, *, reviewed_coverage=
     chosen = set(payload["answer_claim_ids"])
     risk = any(risky(part) for part in registry.parts.values())
     confirmed, output_extracts, citations, passages = {}, [], [], {}
+    documented_actions = []
+    causes = {
+        diagnostic_row(item, checked): item["id"]
+        for item, checked in zip(payload["claims"], claims, strict=True)
+        if checked["technical_status"] == "supported" and item["kind"] == "possible_cause"
+        and item["id"] in chosen and not risky(claim_text(
+            item["kind"], checked["verified_fields"], registry.entities[item["entity"]].label))
+    }
     deferred, covered = set(), set()
 
     def emit(text, origins):
@@ -255,6 +285,27 @@ def assemble(raw, registry, wire, extract_pdf, site_pages, *, reviewed_coverage=
         scope = origins[0]["applicability"]
         if scope and scope.startswith(entity + ", "):
             text += f" Область документа — {scope}."
+        if item["kind"] == "conditional_action":
+            cause = causes.get(diagnostic_row(item, checked))
+            safety = checked.get("work_safety")
+            action = fields["action"]
+            check = DOCUMENTED_CHECK.fullmatch(action)
+            if (safety and cause and check and not risky(text)
+                    and not PROCEDURE_WORDING.search(check["state_target"] or check["defect_target"])):
+                context = citation(registry.sources[checked["locators"][0]["source"]],
+                                   {"page": origins[0]["page"], "bbox": safety["bbox"]})
+                conditions = safety["conditions"]
+                action_origins = [*origins, context]
+                text += " Здесь указано направление проверки. Порядок и способ выполнения уточняются по руководству."
+                emit(text, action_origins)
+                emit("Ограничения руководства для этих работ. " + " ".join(conditions), [context])
+                documented_actions.append(dict(claim_id=key, cause_claim_id=cause, text=text,
+                                               citations=action_origins, safety_conditions=conditions))
+                checked["publication_reason"] = "documented_conditional_action"
+                deferred.update(item["parts"])
+                continue
+            checked["publication_reason"] = ("unproved_paired_cause" if not cause else
+                                              "unproved_work_safety" if not safety else "hazardous_or_unreviewed_action")
         restricted = item["kind"] == "conditional_action" or risky(text)
         if restricted or key in conflicts or verdict == "contradicted":
             reference_only = restricted and ("value" not in fields or not fields.get("condition"))
@@ -314,8 +365,11 @@ def assemble(raw, registry, wire, extract_pdf, site_pages, *, reviewed_coverage=
         lines.insert(0, "Подтверждённых сведений по запросу не найдено.")
     status = ("full" if not unresolved else "partial" if confirmed else
               "reference" if citations else "needs_support")
-    return dict(answer="\n\n".join(lines), status=status, confirmed_elements=list(confirmed.values()),
-                extracts=output_extracts, citations=citations, unresolved=unresolved,
-                diagnostics={"claims": claims, "evidence_extracts": extracts,
-                             "source_conflicts": len(conflicts), "technical_verdicts": dict(
-                                 Counter(row["technical_status"] for row in claims))})
+    result = dict(answer="\n\n".join(lines), status=status, confirmed_elements=list(confirmed.values()),
+                  extracts=output_extracts, citations=citations, unresolved=unresolved,
+                  diagnostics={"claims": claims, "evidence_extracts": extracts,
+                               "source_conflicts": len(conflicts), "technical_verdicts": dict(
+                                   Counter(row["technical_status"] for row in claims))})
+    if documented_actions:
+        result["documented_actions"] = documented_actions
+    return result

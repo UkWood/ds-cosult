@@ -121,6 +121,31 @@ WORK_SAFETY = tuple(re.compile(pattern + r"\.?", re.I) for pattern in (
 ))
 
 
+def context_sentences(text):
+    return re.split(r"(?<=[.!?])\s+(?=[A-ZА-ЯЁ])", text)
+
+
+def work_safety(row):
+    """Return exact work rules explicitly linked to the same troubleshooting table."""
+    numbers = {entry["table_number"] for entry in row.context_evidence
+               if entry["reason"] == "table_caption" and "table_number" in entry}
+    if len(numbers) != 1:
+        return None
+    linked = [entry["boxes"] for entry in row.context_evidence
+              if entry["reason"] == "table_reference" and entry.get("table_number") in numbers]
+    groups = [entry["boxes"] for entry in row.context_evidence if entry["category"] == "safety"]
+    if not groups or any(boxes not in linked for boxes in groups):
+        return None
+    boxes = [box for group in groups for box in group]
+    lines = [line_text(line["text"]) for line in row.context if line_box(line) in boxes]
+    rules = [sentence for sentence in context_sentences(" ".join(lines))
+             if any(rule.fullmatch(sentence) for rule in WORK_SAFETY)]
+    if not any(WORK_SAFETY[0].fullmatch(rule) for rule in rules):
+        return None
+    return dict(conditions=rules, bbox=[min(box[0] for box in boxes), min(box[1] for box in boxes),
+                                        max(box[2] for box in boxes), max(box[3] for box in boxes)])
+
+
 def unresolved_table_context(row):
     return any(item["category"] in {"applicability", "unresolved"} for item in row.context_evidence)
 
@@ -189,11 +214,18 @@ def context_groups(page, table, outside):
     retained, evidence = [], []
     for margin, lines, gap, text in neighbors:
         retain = True
+        table_numbers = {}
         if margin:
             classifications = [("formatting", margin)]
             retain = False
         elif NEUTRAL_CAPTION.fullmatch(text):
             classifications = [("navigation", "table_caption")]
+            number = re.match(r"(?:таблица|table)\s+(\d+(?:\.\d+)*)", text, re.I)
+            above = [other for other in page["tables"]
+                     if 0 <= other["bbox"][1] - lines[-1]["bottom"] <= 12
+                     and lines[0]["x0"] < other["bbox"][2] and lines[0]["x1"] > other["bbox"][0]]
+            if number and len(above) == 1 and above[0] is table:
+                table_numbers["table_caption"] = {number[1]}
             retain = False
         else:
             # White space alone does not prove a heading or note is unrelated.
@@ -203,9 +235,11 @@ def context_groups(page, table, outside):
             attached = (gap <= 12 or in_lane or QUALIFICATION.search(text)
                         or any(0 <= start - lines[-1]["bottom"] <= 12 for start in captions))
             classifications = []
-            for sentence in re.split(r"(?<=[.!?])\s+(?=[A-ZА-ЯЁ])", text):
+            for sentence in context_sentences(text):
                 if TABLE_REFERENCE.fullmatch(sentence):
                     classifications.append(("navigation", "table_reference"))
+                    number = re.search(r"(\d+(?:\.\d+)*)\.?$", sentence)
+                    table_numbers.setdefault("table_reference", set()).add(number[1])
                 elif any(rule.fullmatch(sentence) for rule in WORK_SAFETY):
                     classifications.append(("safety", "general_work_safety"))
                 elif QUALIFICATION.search(sentence):
@@ -218,8 +252,11 @@ def context_groups(page, table, outside):
         if retain:
             retained.extend(lines)
         boxes = [line_box(line) for line in lines]
-        evidence.extend({"category": category, "reason": reason, "boxes": boxes}
-                        for category, reason in dict.fromkeys(classifications))
+        for category, reason in dict.fromkeys(classifications):
+            entry = {"category": category, "reason": reason, "boxes": boxes}
+            if len(table_numbers.get(reason, ())) == 1:
+                entry["table_number"] = next(iter(table_numbers[reason]))
+            evidence.append(entry)
     return tuple(retained), tuple(evidence)
 
 

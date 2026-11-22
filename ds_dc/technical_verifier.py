@@ -5,10 +5,15 @@ import re
 import subprocess
 
 from .evidence_lab import nfc_text
-from .structural_pdf import physical_rows, QUALIFICATION, unresolved_table_context
+from .structural_pdf import physical_rows, QUALIFICATION, unresolved_table_context, work_safety
 from .technical_registry import VERSION, applicability_proved
 
 KINDS = {"quantity", "quantity_limit", "quantity_range", "symptom", "possible_cause", "conditional_action"}
+DIAGNOSTIC_ROLES = {
+    "symptom": ("symptom", None, "observed"),
+    "possible_cause": ("cause", "symptom", "possible"),
+    "conditional_action": ("action", "cause", "conditional"),
+}
 FIELDS = {"id", "entity", "kind", "subject", "value", "unit", "comparator",
           "qualifier", "condition", "parts", "evidence"}
 HEADER_ROLES = {
@@ -87,7 +92,7 @@ def context_issues(row, columns, entity, kind):
         issues.append("unresolved_column")
     if unresolved_table_context(row):
         issues.append("unresolved_table_context")
-    allowed = ({"symptom", "cause", "action"} if kind in {"symptom", "possible_cause", "conditional_action"}
+    allowed = ({"symptom", "cause", "action"} if kind in DIAGNOSTIC_ROLES
                else {"subject", "value", "unit", "condition", "qualifier"})
     if any(cell and nfc_text(cell["text"]) and (
             role != "variant" or nfc_text(cell["text"]) != nfc_text(entity.label))
@@ -97,17 +102,12 @@ def context_issues(row, columns, entity, kind):
 
 
 def relation(item, cells, roles):
-    required = {
-        "symptom": {"symptom"}, "possible_cause": {"symptom", "cause"},
-        "conditional_action": {"cause", "action"},
-    }.get(item["kind"])
-    if required is not None:
+    if item["kind"] in DIAGNOSTIC_ROLES:
+        target, prerequisite, qualifier = DIAGNOSTIC_ROLES[item["kind"]]
+        required = {target, prerequisite} - {None}
         if roles != required or not {"symptom", "cause", "action"} <= cells.keys():
             return "semantic_pending", "unproved_troubleshooting_relation"
-        target = {"symptom": "symptom", "possible_cause": "cause", "conditional_action": "action"}[item["kind"]]
-        prerequisite = {"possible_cause": "symptom", "conditional_action": "cause"}.get(item["kind"])
         expected_condition = word(cells[prerequisite]["text"]) if prerequisite else ""
-        qualifier = {"symptom": "observed", "possible_cause": "possible", "conditional_action": "conditional"}[item["kind"]]
         if (word(item["subject"]) == word(cells[target]["text"]) and word(item["condition"]) == expected_condition
                 and item["qualifier"] == qualifier and item["value"] == item["unit"] == item["comparator"] == ""):
             return "supported", "verified_table_relation"
@@ -133,13 +133,42 @@ def relation(item, cells, roles):
     return "semantic_pending", "unproved_quantity_modality"
 
 
+def normalize_diagnostic(item, cells, roles):
+    """Translate an exact legacy layout after its physical relation has been located."""
+    target, prerequisite, qualifier = DIAGNOSTIC_ROLES[item["kind"]]
+    if (roles != ({target, prerequisite} - {None})
+            or any(not cells.get(role) or not word(cells[role]["text"])
+                   for role in ("symptom", "cause", "action"))
+            or any(item[key] != "" for key in ("qualifier", "unit", "comparator"))):
+        return None
+    target_text = word(cells[target]["text"])
+    if prerequisite:
+        condition = word(cells[prerequisite]["text"])
+        if target_text == condition or (word(item["subject"]), word(item["value"]), word(item["condition"])) != (
+                condition, target_text, condition):
+            return None
+        form, transformation = "condition_in_subject", "relocate_value_and_infer_qualifier"
+    else:
+        if word(item["subject"]) != target_text or item["value"] != "" or item["condition"] != "":
+            return None
+        form, transformation = "missing_observed_qualifier", "infer_qualifier"
+    return (dict(item, subject=cells[target]["text"], value="", qualifier=qualifier), form, transformation)
+
+
 def inspect_claim(item, registry, extract, *, applies=None):
     result = dict(id=item.get("id") if isinstance(item, dict) else None, schema_valid=False,
                   source_identity_verified=False, applicability_verified=False, evidence_verified=False,
                   relation_verified=False, technical_status="invalid", covered_parts=[],
                   reason_codes=[], locators=[])
 
+    diagnostic = isinstance(item, dict) and isinstance(item.get("kind"), str) and item["kind"] in DIAGNOSTIC_ROLES
+    if diagnostic:
+        result["normalization"] = dict(input_form="unverified", transformation="none", status="rejected",
+                                       verified_fields=[])
+
     def finish(status, code):
+        if diagnostic:
+            result["normalization"]["reason"] = code
         result.update(technical_status=status, reason_codes=[code])
         return result
 
@@ -212,6 +241,22 @@ def inspect_claim(item, registry, extract, *, applies=None):
         return finish("semantic_pending", "applicability_unproved")
     if result["context_issues"]:
         return finish("semantic_pending", "unproved_row_context_or_variant")
+    if diagnostic:
+        trace = result["normalization"]
+        trace["input_form"] = "unrecognized"
+        if status == "supported":
+            trace.update(input_form="canonical", status="canonical")
+        elif normalized := normalize_diagnostic(item, cells, roles):
+            canonical, form, transformation = normalized
+            trace.update(input_form=form, transformation=transformation)
+            status, code = relation(canonical, cells, roles)
+            if status == "supported":
+                trace["status"] = "normalized"
+        result["relation_verified"] = status == "supported"
+        if result["relation_verified"]:
+            trace["verified_fields"] = ["subject", "value", "unit", "comparator", "qualifier", "condition"]
+            if item["kind"] == "conditional_action":
+                result["work_safety"] = work_safety(matched_rows[0][0])
     if result["relation_verified"]:
         result["verified_fields"] = {role: nfc_text(cell["text"]) for role, cell in cells.items() if cell}
     return finish(status, code)

@@ -48,6 +48,24 @@ Field — точное поле Markdown/YAML, например summary, feature
 для целого абзаца. Для PDF дай целый абзац либо всю ячейку нужной строки с контекстом.
 Используй локальные ID формата ASCII буква, затем буквы, цифры, дефис или подчёркивание.
 Не включай свободный текст ответа, хеши, URL, эталонные координаты и непроверенные выводы."""
+FUTURE_PROMPT_VERSION = "evidence-integration/2"
+PROMPTS = {
+    PROMPT_VERSION: PROMPT,
+    FUTURE_PROMPT_VERSION: PROMPT.replace(
+        """Symptom (observed) использует symptom. Possible_cause (possible) использует symptom и cause,
+condition — текст symptom. Conditional_action (conditional) использует cause и action,
+condition — текст cause. Неприменимые строковые поля заполняй пустой строкой.""",
+        """Для symptom, possible_cause и conditional_action value, unit и comparator — пустые строки.
+symptom: subject — текст ячейки symptom, condition — пустая строка, qualifier — observed,
+роль evidence — symptom.
+possible_cause: subject — текст ячейки cause, condition — текст ячейки symptom,
+qualifier — possible, роли evidence — symptom и cause из одной доказанной строки.
+conditional_action: subject — текст ячейки action, condition — текст ячейки cause,
+qualifier — conditional, роли evidence — cause и action из одной доказанной строки.
+Копируй тексты ячеек целиком. Сохраняй связь причины с признаком, действия с причиной
+и область применимости. Не превращай возможную причину в диагноз или действие в команду.
+Неприменимые строковые поля заполняй пустой строкой."""),
+}
 MAX_EXTRACT_PAGES = 12
 
 
@@ -60,7 +78,9 @@ def split_parts(question):
     return {f"P{i}": part for i, part in enumerate(parts, 1)}
 
 
-def build_request(request_id, question, history, pages, docs, entries, manifest_sha):
+def build_request(request_id, question, history, pages, docs, entries, manifest_sha, *, prompt_version=PROMPT_VERSION):
+    if prompt_version not in PROMPTS:
+        raise ValueError("unknown_evidence_prompt_version")
     selected = list(dict.fromkeys(entity for page in pages for entity in page["scope"]))
     entities = {key: Entity(key, entries[key]["title"], entries[key].get("variant") or key) for key in selected}
     sources = []
@@ -89,7 +109,7 @@ def build_request(request_id, question, history, pages, docs, entries, manifest_
                               split_parts(question))
     unique = {doc["sha256"]: doc["pages"] for doc in docs}
     pdf_parts = {sha: n for n, sha in enumerate(unique, 1)}
-    info = dict(version=VERSION, request_id=request_id, prompt_version=PROMPT_VERSION,
+    info = dict(version=VERSION, request_id=request_id, prompt_version=prompt_version,
                 parts=dict(registry.parts), entities={key: e.label for key, e in registry.entities.items()},
                 sources={})
     site = {page["id"]: page for page in pages}
@@ -107,13 +127,13 @@ def build_request(request_id, question, history, pages, docs, entries, manifest_
                          for source, doc in zip(doc_sources, docs, strict=True)]
     payload = dict(model="deepseek-flash", thinking={"type": "enabled"}, reasoning_effort="high",
                    stream=False, max_tokens=context.OUTPUT, response_format={"type": "json_object"},
-                   messages=[dict(role="system", content=PROMPT), dict(role="user", content=[
+                   messages=[dict(role="system", content=PROMPTS[prompt_version]), dict(role="user", content=[
                        *[dict(type="file", file_id=f"OFFLINE_SLOT_{part}") for part in pdf_parts.values()],
                        dict(type="text", text=encoded(info)),
                        dict(type="text", text=encoded(dict(question=question, history=history))),
                    ])])
     # Avoid a recursive commitment to the field that carries this identity.
-    wire = digest(encoded([PROMPT_VERSION, registry.wire_identity, list(pdf_parts.items()), payload]).encode())
+    wire = digest(encoded([prompt_version, registry.wire_identity, list(pdf_parts.items()), payload]).encode())
     info["wire_identity"] = wire
     payload["messages"][-1]["content"][-2]["text"] = encoded(info)
     return registry, wire, payload, site, unique
@@ -146,7 +166,11 @@ class MockReply:
 
 
 class OfflineConsultant:
-    def __init__(self, entries, dossiers, cache, transport, *, cap=context.EXTENDED, reviewed_coverage=()):
+    def __init__(self, entries, dossiers, cache, transport, *, cap=context.EXTENDED, reviewed_coverage=(),
+                 prompt_version=PROMPT_VERSION):
+        if prompt_version not in PROMPTS:
+            raise ValueError("unknown_evidence_prompt_version")
+        self._prompt_version = prompt_version
         self.cache = Path(cache)
         self._work = TemporaryDirectory(prefix="ds-dc-03c-")
         work = Path(self._work.name)
@@ -166,11 +190,12 @@ class OfflineConsultant:
         self.mock_calls = 0
 
     @classmethod
-    def from_site(cls, site, cache, transport, *, reviewed_coverage=()):
+    def from_site(cls, site, cache, transport, *, reviewed_coverage=(), prompt_version=PROMPT_VERSION):
         entries, dossiers, _ = load(site, cache)
         if freeze_digest(freeze(entries, dossiers)) != MANIFEST:
             raise ValueError("pinned_full_dossier_unavailable")
-        return cls(entries, dossiers, cache, transport, reviewed_coverage=reviewed_coverage)
+        return cls(entries, dossiers, cache, transport, reviewed_coverage=reviewed_coverage,
+                   prompt_version=prompt_version)
 
     def __enter__(self):
         return self
@@ -211,7 +236,7 @@ class OfflineConsultant:
             return refused("incomplete_dossier", "Закреплённое досье недоступно целиком.")
         registry, wire, payload, site, unique = build_request(request.rsplit("/", 1)[1], question,
                                                              history, pages, docs, self._entries,
-                                                             self._manifest_sha)
+                                                             self._manifest_sha, prompt_version=self._prompt_version)
         operator.update(model_payload=payload, wire_identity=wire, registry_fingerprint=registry.wire_identity)
         if len(unique) > min(context.FILE_LIMIT, OWNER["upload"]) or sum(unique.values()) > OWNER["pages"]:
             return refused("over_cap", "Досье выходит за пределы одной проверки. Уточните изделие.")

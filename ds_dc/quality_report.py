@@ -204,6 +204,20 @@ class _Export:
                 status["source_verified_text"] = self.safe_text(row["text"], 1200)
         else:
             status["context_issues"] = [code for code in _items(row.get("context_issues")) if _enum(code, _REASON)]
+            if trace := _mapping(row.get("normalization")):
+                status["normalization"] = _compact(dict(
+                    input_form=_enum(trace.get("input_form"), {
+                        "unverified", "unrecognized", "canonical", "condition_in_subject", "missing_observed_qualifier"}),
+                    transformation=_enum(trace.get("transformation"), {
+                        "none", "infer_qualifier", "relocate_value_and_infer_qualifier"}),
+                    status=_enum(trace.get("status"), {"rejected", "canonical", "normalized"}),
+                    reason=_enum(trace.get("reason"), _REASON),
+                    verified_fields=[field for field in _items(trace.get("verified_fields")) if field in _CLAIM_TEXT],
+                ))
+            if reason := _enum(row.get("publication_reason"), {
+                    "documented_conditional_action", "unproved_paired_cause",
+                    "unproved_work_safety", "hazardous_or_unreviewed_action"}):
+                status["publication_reason"] = reason
         return _compact(status)
 
     def native_row(self, row, local_id, *, extract):
@@ -272,6 +286,8 @@ def _publication(row, diagnostic, raw_id, selected, result, *, extract):
         return {"contradicted": "candidate_claim_contradicted", "invalid": "invalid_claim"}.get(
             status, "technical_verification_unproved")
     if row.get("kind") == "conditional_action":
+        if any(raw_id == action.get("claim_id") for action in map(_mapping, _items(result.get("documented_actions")))):
+            return "published_as_documented_conditional_action"
         return "conditional_action_restricted"
     return "supported_claim_not_published_as_verified_fact"
 
@@ -345,6 +361,14 @@ def _assembly(export, result, id_map):
             text=export.safe_text(row.get("text"), 2000),
             citations=[export.location(loc) for loc in _items(row.get("citations"), 512)],
         ))
+    if actions := _items(result.get("documented_actions")):
+        answer["documented_actions"] = [
+            dict(claim_id=id_map.get(row.get("claim_id")), cause_claim_id=id_map.get(row.get("cause_claim_id")),
+                 text=export.safe_text(row.get("text"), 2000),
+                 citations=[export.location(loc) for loc in _items(row.get("citations"), 512)],
+                 safety_conditions=[export.safe_text(text, 600) for text in _items(row.get("safety_conditions"), 8)])
+            for row in map(_mapping, actions)
+        ]
     for row in map(_mapping, _items(result.get("extracts"))):
         if row.get("source_verified") is not True:
             continue
