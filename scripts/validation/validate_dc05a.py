@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
@@ -32,7 +33,9 @@ OWNER_LAUNCHER = "scripts/validation/launch_dc05a.py"
 PREVIOUS_LAUNCHER = "scripts/validation/validate_dc04b_r1.py"
 HANDOFF = "docs/handoffs/DS-DC-05A-HANDOFF.md"
 CR01_HANDOFF = "docs/handoffs/DS-DC-05A-CR01-HANDOFF.md"
-REPORT_BASE = "922c1ef01af812fe8f4b7d73e6ffd52fa09da395"
+FINAL_HANDOFF = "docs/handoffs/DS-DC-05A-CR01-FINAL-HANDOFF.md"
+REPORT_BASE = "05a6096c58804598087a3ef3ce394b7aaf00c9c4"
+WORKSPACE_FD = "DC05A_WORKSPACE_FD"
 RUNBOOK = "docs/runbooks/DS-DC-05A-OWNER-TRIAL.md"
 ARCHITECTURE = "docs/architecture/A-DS-DC-12-OWNER-DRIVEN-PRACTICAL-EVALUATION.md"
 SMOKE_NODE = "tests/test_dc05a_pipeline.py::test_acceptance_smoke"
@@ -138,7 +141,7 @@ def validate_scope(raw):
     changes = {}
     for header, filename in zip(fields[::2], fields[1::2]):
         require(filename not in changes and (
-            filename in {LAUNCHER, OWNER_LAUNCHER, HANDOFF, CR01_HANDOFF, RUNBOOK, ARCHITECTURE, "ds_dc/evidence_integration.py"}
+            filename in {LAUNCHER, OWNER_LAUNCHER, HANDOFF, CR01_HANDOFF, FINAL_HANDOFF, RUNBOOK, ARCHITECTURE, "ds_dc/evidence_integration.py"}
             or NEW_SOURCE.fullmatch(filename) or NEW_TEST.fullmatch(filename)
         ), "scope_path_forbidden")
         expected = (":100644", "100644", "M") if filename == "ds_dc/evidence_integration.py" else (
@@ -174,11 +177,12 @@ def verify_checkout(args, checkout, baseline):
 def verify_handoff(args, checkout, scope):
     require({ARCHITECTURE, RUNBOOK} <= scope.keys(), "trial_runbook_or_architecture_missing")
     raw = git(checkout, "diff", "--raw", "--no-renames", "--no-ext-diff", "-z", args.commit, "FETCH_HEAD")
-    require(raw and validate_scope(raw) == {CR01_HANDOFF: "A"}, "handoff_descendant_missing")
+    require(raw and validate_scope(raw) == {FINAL_HANDOFF: "A"}, "handoff_descendant_missing")
     require(git_text(checkout, "merge-base", REPORT_BASE, args.commit) == REPORT_BASE
-            and git_text(checkout, "diff", "--name-only", REPORT_BASE, args.commit) == LAUNCHER,
+            and set(git_text(checkout, "diff", "--name-only", REPORT_BASE, args.commit).splitlines())
+                == {LAUNCHER, "tests/test_dc05a_launcher.py"},
             "cr01_scope_mismatch")
-    handoff = git(checkout, "show", f"FETCH_HEAD:{CR01_HANDOFF}")
+    handoff = git(checkout, "show", f"FETCH_HEAD:{FINAL_HANDOFF}")
     require(args.commit.encode() in handoff and args.blob.encode() in handoff, "handoff_launch_pins_missing")
     require(not SOURCE_LEAK.search(handoff), "handoff_forbidden_secret_pattern")
     return {"commit": git_text(checkout, "rev-parse", "FETCH_HEAD"), "runbook_present": True,
@@ -501,19 +505,34 @@ def ensure_isolated():
             and {name for _, name in socket.if_nameindex()} == {"lo"}, "mandatory_network_isolation_missing")
 
 
+def verify_worker_workspace(work):
+    fd = int(os.environ.get(WORKSPACE_FD, "-1"))
+    require(fd >= 3, "worker_workspace_descriptor_missing")
+    opened = os.fstat(fd)
+    named = work.lstat()
+    require(stat.S_ISDIR(opened.st_mode) and stat.S_ISDIR(named.st_mode)
+            and opened.st_uid == os.getuid() and not opened.st_mode & 0o077
+            and (opened.st_dev, opened.st_ino) == (named.st_dev, named.st_ino)
+            and work.resolve() == work
+            and Path(__file__).resolve() == work / "trial" / LAUNCHER,
+            "worker_workspace_mismatch")
+
+
 def isolated(work, prepared):
     try:
         ensure_isolated()
-    except (ValueError, OSError):
-        return EXIT["BLOCKED"]
-    evidence = {}
-    try:
-        (work / "isolated").touch()
+        verify_worker_workspace(work)
         checkout, baseline = work / "trial", work / "baseline"
         values = read_object(work / "inputs.json")
         args = SimpleNamespace(**{key: Path(value) if value is not None and key not in {"commit", "blob"} else value
                                   for key, value in values.items()})
         verify_checkout(args, checkout, baseline)
+    except PAYLOAD_ERRORS:
+        return EXIT["BLOCKED"]
+
+    evidence = {}
+    try:
+        (work / "isolated").touch()
         r1 = load_module(checkout / PREVIOUS_LAUNCHER)
         prior = r1.prior_runner(checkout)
         if not prepared:
@@ -555,12 +574,16 @@ def conduct(args, work):
     command = ["unshare", "--user", "--map-root-user", "--net", "--", "sh", "-c",
                'ip link set lo up && exec "$@"', "dc05a", sys.executable, str(checkout / LAUNCHER),
                "--isolated", str(work)]
+    fd = os.open(work, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         with (work / "isolated.log").open("wb") as log:
-            result = subprocess.run(command, cwd=checkout, env=env, stdin=subprocess.DEVNULL, stdout=log,
+            result = subprocess.run(command, cwd=checkout, env=env | {WORKSPACE_FD: str(fd)},
+                                    pass_fds=(fd,), stdin=subprocess.DEVNULL, stdout=log,
                                     stderr=log, timeout=7200)
     except FileNotFoundError as error:
         raise Blocked("network_namespace_unavailable") from error
+    finally:
+        os.close(fd)
     if not (work / "isolated").is_file():
         raise Blocked("network_namespace_or_socket_audit_unavailable")
     evidence = read_object(work / "result.json", 1 << 20)

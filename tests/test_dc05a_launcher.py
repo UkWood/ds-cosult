@@ -94,3 +94,22 @@ def test_internal_worker_cannot_write_outside_isolation(tmp_path):
     )
     assert result.returncode == 2
     assert not list(tmp_path.iterdir())
+
+
+def test_internal_worker_with_isolation_requires_parent_workspace(tmp_path, monkeypatch):
+    import os
+
+    module = launcher()
+    monkeypatch.setattr(module, "ensure_isolated", lambda: None)
+    monkeypatch.delenv(module.WORKSPACE_FD, raising=False)
+    assert module.isolated(tmp_path, prepared=False) == 2
+    assert not list(tmp_path.iterdir())
+
+    other = tmp_path.parent
+    fd = os.open(other, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        monkeypatch.setenv(module.WORKSPACE_FD, str(fd))
+        assert module.isolated(tmp_path, prepared=True) == 2
+        assert not list(tmp_path.iterdir())
+    finally:
+        os.close(fd)
