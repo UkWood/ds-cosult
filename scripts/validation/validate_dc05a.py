@@ -31,6 +31,8 @@ LAUNCHER = "scripts/validation/validate_dc05a.py"
 OWNER_LAUNCHER = "scripts/validation/launch_dc05a.py"
 PREVIOUS_LAUNCHER = "scripts/validation/validate_dc04b_r1.py"
 HANDOFF = "docs/handoffs/DS-DC-05A-HANDOFF.md"
+CR01_HANDOFF = "docs/handoffs/DS-DC-05A-CR01-HANDOFF.md"
+REPORT_BASE = "922c1ef01af812fe8f4b7d73e6ffd52fa09da395"
 RUNBOOK = "docs/runbooks/DS-DC-05A-OWNER-TRIAL.md"
 ARCHITECTURE = "docs/architecture/A-DS-DC-12-OWNER-DRIVEN-PRACTICAL-EVALUATION.md"
 SMOKE_NODE = "tests/test_dc05a_pipeline.py::test_acceptance_smoke"
@@ -136,7 +138,7 @@ def validate_scope(raw):
     changes = {}
     for header, filename in zip(fields[::2], fields[1::2]):
         require(filename not in changes and (
-            filename in {LAUNCHER, OWNER_LAUNCHER, HANDOFF, RUNBOOK, ARCHITECTURE, "ds_dc/evidence_integration.py"}
+            filename in {LAUNCHER, OWNER_LAUNCHER, HANDOFF, CR01_HANDOFF, RUNBOOK, ARCHITECTURE, "ds_dc/evidence_integration.py"}
             or NEW_SOURCE.fullmatch(filename) or NEW_TEST.fullmatch(filename)
         ), "scope_path_forbidden")
         expected = (":100644", "100644", "M") if filename == "ds_dc/evidence_integration.py" else (
@@ -172,9 +174,11 @@ def verify_checkout(args, checkout, baseline):
 def verify_handoff(args, checkout, scope):
     require({ARCHITECTURE, RUNBOOK} <= scope.keys(), "trial_runbook_or_architecture_missing")
     raw = git(checkout, "diff", "--raw", "--no-renames", "--no-ext-diff", "-z", args.commit, "FETCH_HEAD")
-    require(raw and validate_scope(raw) == {HANDOFF: "A"},
-            "handoff_descendant_missing")
-    handoff = git(checkout, "show", f"FETCH_HEAD:{HANDOFF}")
+    require(raw and validate_scope(raw) == {CR01_HANDOFF: "A"}, "handoff_descendant_missing")
+    require(git_text(checkout, "merge-base", REPORT_BASE, args.commit) == REPORT_BASE
+            and git_text(checkout, "diff", "--name-only", REPORT_BASE, args.commit) == LAUNCHER,
+            "cr01_scope_mismatch")
+    handoff = git(checkout, "show", f"FETCH_HEAD:{CR01_HANDOFF}")
     require(args.commit.encode() in handoff and args.blob.encode() in handoff, "handoff_launch_pins_missing")
     require(not SOURCE_LEAK.search(handoff), "handoff_forbidden_secret_pattern")
     return {"commit": git_text(checkout, "rev-parse", "FETCH_HEAD"), "runbook_present": True,
@@ -242,6 +246,27 @@ def verify_r1_archive(path):
             and replay["A"]["candidate_sha256"] == CANDIDATE
             and replay["grades"]["published_pairs"] == 2, "r1_archive_criteria_mismatch")
     return counts, {key: replay[key] for key in PROJECTED_REPLAY}
+
+
+def regression_diagnostics(junit):
+    """Project identifiers and fixed codes only. Never include parameter values or traceback."""
+    occurrences = Counter()
+    rows = []
+    for item in ElementTree.parse(junit).iter("testcase"):
+        name = item.get("name", "").partition("[")[0]
+        module = item.get("classname", "").split(".")[-1]
+        safe = TEST_NAME.fullmatch(name) and TEST_NAME.fullmatch(module)
+        identifier = f"{module}::{name}" if safe else "test_id_unavailable"
+        occurrences[identifier] += 1
+        for tag in ("failure", "error", "skipped"):
+            node = item.find(tag)
+            if node is None:
+                continue
+            message = node.get("message", "")
+            match = re.match(r"^(AssertionError|PermissionError|FileNotFoundError|TimeoutError|CalledProcessError|ModuleNotFoundError|ValueError|TypeError)(?::|$)", message)
+            rows.append({"test_id": identifier, "case_ordinal": occurrences[identifier],
+                         "code": "pytest_" + tag, "exception": match[1] if match else None})
+    return {"nonpassing_tests": rows}
 
 
 def verify_test_cases(junit, expected):
@@ -360,6 +385,10 @@ def run_acceptance(args, work, checkout, baseline, r1, prior, evidence, accepted
             status = results["full_regression"]["status"]
             checks["regression"] = evidence_status("FAIL" if status == "FAIL" else "BLOCKED",
                                                    "full_regression_unverified")
+        if results["full_regression"]["status"] == "FAIL":
+            diagnostic = attempt(lambda: regression_diagnostics(run.private / "full_regression.xml"),
+                                 "regression_junit_unavailable")
+            checks["regression"]["diagnostics"] = diagnostic
         if lock and all(results[key]["status"] == "PASS" for key in (
                 "dependencies", "offline_network", "pinned_site", "frozen_originals")):
             replay = {}
