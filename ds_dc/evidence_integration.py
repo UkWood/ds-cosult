@@ -159,6 +159,35 @@ def measure(payload, unique, cache):
                 input_mode="normal" if size <= context.NORMAL else "extended" if size <= context.EXTENDED else "over_cap")
 
 
+def verify_reply(content, registry, wire, site, unique, cache, *, reviewed_coverage=()):
+    """Verify a candidate against the locally pinned, exact request sources."""
+    @lru_cache(maxsize=MAX_EXTRACT_PAGES + len(unique))
+    def read(sha, page):
+        return extract(cache, sha, page)
+
+    visited = set()
+
+    @lru_cache(maxsize=context.FILE_LIMIT)
+    def applies(source, entity):
+        if source.applicability == COVER_REQUIRED:
+            try:
+                checked = bound_manual(source, entity, read(source.sha256, 1))
+            except (OSError, ValueError, subprocess.SubprocessError):
+                return False
+            return checked.applicability != source.applicability
+        return bool(source.applicability)
+
+    @lru_cache(maxsize=MAX_EXTRACT_PAGES)
+    def extract_page(source, page):
+        visited.add((source.sha256, page))
+        if len(visited) > MAX_EXTRACT_PAGES:
+            raise ValueError("evidence_page_limit")
+        return read(source.sha256, page)
+
+    return assemble(content, registry, wire, extract_page, site, applies=applies,
+                    reviewed_coverage=reviewed_coverage)
+
+
 @dataclass(frozen=True)
 class MockReply:
     content: bytes
@@ -266,31 +295,8 @@ class OfflineConsultant:
         if type(reply) is not MockReply or reply.finish_reason != "stop":
             return refused("mock_incomplete", "Локальный ответ модели получен не полностью.")
 
-        @lru_cache(maxsize=MAX_EXTRACT_PAGES + len(unique))
-        def read(sha, page):
-            return extract(self.cache, sha, page)
-
-        visited = set()
-
-        @lru_cache(maxsize=context.FILE_LIMIT)
-        def applies(source, entity):
-            if source.applicability == COVER_REQUIRED:
-                try:
-                    checked = bound_manual(source, entity, read(source.sha256, 1))
-                except (OSError, ValueError, subprocess.SubprocessError):
-                    return False
-                return checked.applicability != source.applicability
-            return bool(source.applicability)
-
-        @lru_cache(maxsize=MAX_EXTRACT_PAGES)
-        def extract_page(source, page):
-            visited.add((source.sha256, page))
-            if len(visited) > MAX_EXTRACT_PAGES:
-                raise ValueError("evidence_page_limit")
-            return read(source.sha256, page)
-
-        return done(assemble(reply.content, registry, wire, extract_page, site, applies=applies,
-                             reviewed_coverage=self._reviewed_coverage))
+        return done(verify_reply(reply.content, registry, wire, site, unique, self.cache,
+                                 reviewed_coverage=self._reviewed_coverage))
 
 
 def main():
