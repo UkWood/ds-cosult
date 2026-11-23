@@ -1,0 +1,34 @@
+.trial-header { flex-wrap: wrap; }
+.header-actions, .selectors { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; }
+header [aria-pressed="true"] { background: #cbece5; }
+#profile[data-mode="live"] { color: #ffe2a6; }
+.coverage { padding: .75rem 1rem; margin: 0 0 1.25rem; border: 1px solid #ccdadb;
+  border-radius: .7rem; background: #f8fbfb; overflow-wrap: anywhere; }
+.coverage ul { padding-left: 1.15rem; }
+.coverage li + li { margin-top: .4rem; }
+.coverage p, .turn-status { margin: .45rem 0; }
+.coverage details { margin: .45rem 0; }
+.selectors { align-items: flex-end; }
+.selectors label, .review-form label { display: block; font-size: .9rem; }
+select, input[type="url"] { max-width: 100%; padding: .38rem .5rem; border: 1px solid #829d9e;
+  border-radius: .35rem; color: inherit; background: #fff; font: inherit; }
+.secondary { border: 1px solid #aac4c5; background: #eaf4f2; color: #14534f; }
+button:disabled { cursor: default; }
+.answer { margin: .65rem 0; }
+.turn-status { display: inline-block; padding: .12rem .45rem; background: #e7f1ee;
+  border-radius: .2rem; font-size: .9rem; font-weight: 650; }
+.turn-status[data-status="partial"], .turn-status[data-status="local_error"] { background: #fff3d7; }
+.turn-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin-top: .75rem; }
+.turn-actions label { font-size: .9rem; }
+.expert-data { border-top: 1px solid #d5e0e0; padding-top: .65rem; }
+.expert-data h3 { font-size: 1rem; margin: .9rem 0 .3rem; }
+.expert-data pre { margin: .45rem 0; }
+.financials { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr); gap: .2rem 1rem; }
+.financials dd { margin: 0; }
+.review-form textarea { min-height: 3.25rem; }
+.review-form input[type="url"] { width: 100%; margin: .3rem 0 .6rem; }
+.review-form .review-notice { margin: 0; }
+.review-form button { margin-top: .55rem; }
+.export-panel { margin-top: 1rem; }
+.export-panel p:empty { display: none; }
+[hidden] { display: none !important; }

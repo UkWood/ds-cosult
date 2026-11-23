@@ -1,0 +1,238 @@
+{
+  "normal_cap": 128000,
+  "extended_cap": 256000,
+  "BKD": {
+    "estimate": 53264,
+    "verified_upper_bound": null,
+    "observed_usage": {
+      "prompt_tokens": 1000,
+      "completion_tokens": 100,
+      "total_tokens": 1100,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 1000
+    },
+    "system": 383,
+    "pages_and_metadata": 3400,
+    "question_tokens": 17,
+    "wire_without_history": 4248,
+    "history": 0,
+    "pdf": 38363,
+    "margin": 1.25,
+    "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1 / Poppler pdftotext -layout",
+    "sparse_pages": 0,
+    "per_pdf": {
+      "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a": {
+        "tokens": 28993,
+        "sparse_pages": 0,
+        "text_bytes": 185318
+      },
+      "496ddc2786b8fb2cdfd8970947fadde6b7a045e7d86e20737f2ef694425d5890": {
+        "tokens": 5645,
+        "sparse_pages": 0,
+        "text_bytes": 36490
+      },
+      "959f515c588ea8758cae0ccfdd17efaf396b31c84c4315e1b195c745d59db5db": {
+        "tokens": 2351,
+        "sparse_pages": 0,
+        "text_bytes": 15273
+      },
+      "bf07da30d1221f61a3ecdde5b40f542b90ca2a646c5dc6019997326a2c570148": {
+        "tokens": 1374,
+        "sparse_pages": 0,
+        "text_bytes": 8410
+      }
+    },
+    "input_mode": "normal",
+    "unique_files": 4,
+    "physical_pages": 80,
+    "compacted_turns": 0,
+    "wire_sha256_without_handles": "72a6cebdea9ac572eed0516208558ad7f987fa3d59ea2778f9b22be2f6fe5285",
+    "scope_wire_sha256_without_handles": "3185d63d45cc8e130cc9ced5223a70e868f93258f88c3435b36a7227953418e5",
+    "max_wire_bytes": 15415,
+    "provider": "http_fixture",
+    "file_cache_hits": 0,
+    "finish_reason": "stop",
+    "visible_tokens_estimate": 13,
+    "budget": {
+      "settled_micro_usd": 18420,
+      "held_micro_usd": 0,
+      "remaining_micro_usd": 2481580,
+      "page_attempts": 80,
+      "operations": {
+        "calibration": 0,
+        "delete": 0,
+        "extended": 0,
+        "normal": 1,
+        "status": 0,
+        "upload": 4
+      }
+    },
+    "latency_ms": 227
+  },
+  "SLD": {
+    "estimate": 315364,
+    "verified_upper_bound": null,
+    "observed_usage": null,
+    "system": 383,
+    "pages_and_metadata": 25868,
+    "question_tokens": 12,
+    "wire_without_history": 27682,
+    "history": 0,
+    "pdf": 224609,
+    "margin": 1.25,
+    "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1 / Poppler pdftotext -layout",
+    "sparse_pages": 1,
+    "per_pdf": {
+      "127961f757901dcb6d1292607a930fe8a03b2a3739f2e27f62b792bd53fefbf5": {
+        "tokens": 1965,
+        "sparse_pages": 0,
+        "text_bytes": 10361
+      },
+      "5eb9f8066e68c659378fcc2d5158cd6dee223e4d02a6035014bed324e4b5356f": {
+        "tokens": 5105,
+        "sparse_pages": 1,
+        "text_bytes": 27495
+      },
+      "6860bd9774b3e4e440e3f3bb1635b7fc6c4840612efd96082024cd7588988335": {
+        "tokens": 4670,
+        "sparse_pages": 0,
+        "text_bytes": 25676
+      },
+      "83bbf87d653f147c5ce68c8e83c4d31488303ab7376baf1f4a6bcc19d45cbeaa": {
+        "tokens": 20352,
+        "sparse_pages": 0,
+        "text_bytes": 124242
+      },
+      "944cfc483a6961beefffe948e092f644c15c478d1567bd28ba3d5ce2186bc3ec": {
+        "tokens": 42558,
+        "sparse_pages": 0,
+        "text_bytes": 234330
+      },
+      "c127ed20684fc47e8e5649b27ab91e738d483a04b21d1dbde12b063c512d59e2": {
+        "tokens": 5999,
+        "sparse_pages": 0,
+        "text_bytes": 32194
+      },
+      "cf6a52838c40700aac8ee9a0f8bdf81a0811491385dbf00d974c76ed8baa4905": {
+        "tokens": 5943,
+        "sparse_pages": 0,
+        "text_bytes": 31278
+      },
+      "e61e8fbcf81f020554c802d23ae05c774d8a7603f0f705089f3f3d4a136e7e89": {
+        "tokens": 31452,
+        "sparse_pages": 0,
+        "text_bytes": 200501
+      },
+      "ee407d5d32b26aff28ba193f19788df996cf1d83891ac264da70e51bed75da60": {
+        "tokens": 51377,
+        "sparse_pages": 0,
+        "text_bytes": 305795
+      },
+      "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f": {
+        "tokens": 55188,
+        "sparse_pages": 0,
+        "text_bytes": 331132
+      }
+    },
+    "input_mode": "over_cap",
+    "unique_files": 10,
+    "physical_pages": 403,
+    "compacted_turns": 0,
+    "wire_sha256_without_handles": "98734901e1612a749eb251efac1a838c83c76ec6e6a10eb8e922f7654f074788",
+    "scope_wire_sha256_without_handles": "401db63b1f0e636acc98b239a3b046c4d292f1285a7ef3555ad2c9fb16072c7e",
+    "max_wire_bytes": 122809
+  },
+  "union": {
+    "estimate": 368015,
+    "verified_upper_bound": null,
+    "observed_usage": null,
+    "system": 383,
+    "pages_and_metadata": 29259,
+    "question_tokens": 25,
+    "wire_without_history": 31440,
+    "history": 0,
+    "pdf": 262972,
+    "margin": 1.25,
+    "method": "DeepSeek V4.1 tokenizer 81f64d1248a6 / tokenizers 0.23.1 / Poppler pdftotext -layout",
+    "sparse_pages": 1,
+    "per_pdf": {
+      "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a": {
+        "tokens": 28993,
+        "sparse_pages": 0,
+        "text_bytes": 185318
+      },
+      "127961f757901dcb6d1292607a930fe8a03b2a3739f2e27f62b792bd53fefbf5": {
+        "tokens": 1965,
+        "sparse_pages": 0,
+        "text_bytes": 10361
+      },
+      "496ddc2786b8fb2cdfd8970947fadde6b7a045e7d86e20737f2ef694425d5890": {
+        "tokens": 5645,
+        "sparse_pages": 0,
+        "text_bytes": 36490
+      },
+      "5eb9f8066e68c659378fcc2d5158cd6dee223e4d02a6035014bed324e4b5356f": {
+        "tokens": 5105,
+        "sparse_pages": 1,
+        "text_bytes": 27495
+      },
+      "6860bd9774b3e4e440e3f3bb1635b7fc6c4840612efd96082024cd7588988335": {
+        "tokens": 4670,
+        "sparse_pages": 0,
+        "text_bytes": 25676
+      },
+      "83bbf87d653f147c5ce68c8e83c4d31488303ab7376baf1f4a6bcc19d45cbeaa": {
+        "tokens": 20352,
+        "sparse_pages": 0,
+        "text_bytes": 124242
+      },
+      "944cfc483a6961beefffe948e092f644c15c478d1567bd28ba3d5ce2186bc3ec": {
+        "tokens": 42558,
+        "sparse_pages": 0,
+        "text_bytes": 234330
+      },
+      "959f515c588ea8758cae0ccfdd17efaf396b31c84c4315e1b195c745d59db5db": {
+        "tokens": 2351,
+        "sparse_pages": 0,
+        "text_bytes": 15273
+      },
+      "bf07da30d1221f61a3ecdde5b40f542b90ca2a646c5dc6019997326a2c570148": {
+        "tokens": 1374,
+        "sparse_pages": 0,
+        "text_bytes": 8410
+      },
+      "c127ed20684fc47e8e5649b27ab91e738d483a04b21d1dbde12b063c512d59e2": {
+        "tokens": 5999,
+        "sparse_pages": 0,
+        "text_bytes": 32194
+      },
+      "cf6a52838c40700aac8ee9a0f8bdf81a0811491385dbf00d974c76ed8baa4905": {
+        "tokens": 5943,
+        "sparse_pages": 0,
+        "text_bytes": 31278
+      },
+      "e61e8fbcf81f020554c802d23ae05c774d8a7603f0f705089f3f3d4a136e7e89": {
+        "tokens": 31452,
+        "sparse_pages": 0,
+        "text_bytes": 200501
+      },
+      "ee407d5d32b26aff28ba193f19788df996cf1d83891ac264da70e51bed75da60": {
+        "tokens": 51377,
+        "sparse_pages": 0,
+        "text_bytes": 305795
+      },
+      "f1436a93285cad9a201b6b387ed64a606ad2768cfc7ee70627c188411e9ce61f": {
+        "tokens": 55188,
+        "sparse_pages": 0,
+        "text_bytes": 331132
+      }
+    },
+    "input_mode": "over_cap",
+    "unique_files": 14,
+    "physical_pages": 483,
+    "compacted_turns": 0,
+    "wire_sha256_without_handles": "be384a978fd11d0fb754ed713a652e8e988d55afdfb0f5a3c3f7224666452d73",
+    "scope_wire_sha256_without_handles": "f240bc5a002ae596fc7c9d557117592969ba89e980523f3b5c23f20d02dc4d2f",
+    "max_wire_bytes": 135693
+  }
+}

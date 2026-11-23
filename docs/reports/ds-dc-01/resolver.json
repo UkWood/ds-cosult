@@ -1,0 +1,995 @@
+[
+  {
+    "case": {
+      "id": 1,
+      "question": "Сколько весит БКД-ПК-RF.2?",
+      "expected": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "source": "products/bkd-pk-rf-2.md"
+    },
+    "result": {
+      "question_hash": "a2a043b895dcdd60acf24bd333e9d847c94590014644dbdda1e8f43344ea7d8a",
+      "unresolved": [],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:device:bkd-pk-rf-2"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:device:bkd-pk-rf-2",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "бкд-пк-rf.2"
+            ],
+            "source": "src/content/products/bkd-pk-rf-2.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "61a688ec44023461ee61a8f65b514703b14be8f59ed87a0344d0a4d5cdcda74c"
+      ],
+      "mock_posts": 1,
+      "dossier_completeness": {
+        "saturn:device:bkd-pk-rf-2": "complete"
+      },
+      "document_diagnostics": [],
+      "material_scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available"
+      },
+      "status": "draft",
+      "label": "Черновик для сверки",
+      "candidate": {
+        "answer_candidate": "Черновик: необходима сверка с оригиналами.",
+        "claims": [],
+        "unresolved": [
+          "Сколько весит БКД-ПК-RF.2?"
+        ],
+        "status_hint": "needs_support"
+      },
+      "diagnostics": [],
+      "confirmed_answer": {
+        "status": "complete",
+        "text": "Масса БКД-ПК-RF.2 — не более 0,5 кг (РЭ ЕСАН.426469.012РЭ, физ. стр. 4).",
+        "unresolved": []
+      }
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:device:bkd-pk-rf-2": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 2,
+      "question": "Как работает БКД-ПК-RFF.2?",
+      "expected": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "allow_clarification": true,
+      "source": "products/bkd-pk-rf-2.md"
+    },
+    "result": {
+      "question_hash": "b12a6a4993b13949830faf3043d58249e6e1cc3e920fd34a260af50a3f853e38",
+      "unresolved": [
+        "Как работает БКД-ПК-RFF.2"
+      ],
+      "decision": {
+        "reason": "fuzzy_model",
+        "selected": [
+          "saturn:device:bkd-pk-rf-2"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:device:bkd-pk-rf-2",
+            "score": 0.9,
+            "signals": [
+              "title",
+              "бкд-пк-rf.2",
+              "бкд-пк-rff.2"
+            ],
+            "source": "src/content/products/bkd-pk-rf-2.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "61a688ec44023461ee61a8f65b514703b14be8f59ed87a0344d0a4d5cdcda74c"
+      ],
+      "mock_posts": 1,
+      "dossier_completeness": {
+        "saturn:device:bkd-pk-rf-2": "complete"
+      },
+      "document_diagnostics": [],
+      "material_scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available"
+      },
+      "status": "draft",
+      "label": "Черновик для сверки",
+      "candidate": {
+        "answer_candidate": "Черновик: необходима сверка с оригиналами.",
+        "claims": [],
+        "unresolved": [
+          "Как работает БКД-ПК-RFF.2?"
+        ],
+        "status_hint": "needs_support"
+      },
+      "diagnostics": [],
+      "confirmed_answer": {
+        "status": "insufficient",
+        "text": "Недостаточно подтверждённых сведений: Как работает БКД-ПК-RFF.2",
+        "unresolved": [
+          "Как работает БКД-ПК-RFF.2"
+        ]
+      }
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:device:bkd-pk-rf-2": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 3,
+      "question": "Что умеет СЛДКС-1?",
+      "expected": [
+        "saturn:system:sldks-1"
+      ],
+      "source": "systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md title"
+    },
+    "result": {
+      "question_hash": "ba1b59a6bdc6a74244ee101c7b6ded78ff5b4b93d5dffa3075af4718aeddbca7",
+      "unresolved": [
+        "Что умеет СЛДКС-1?"
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:system:sldks-1"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:system:sldks-1",
+            "score": 1.0,
+            "signals": [
+              "title: designation",
+              "слдкс-1"
+            ],
+            "source": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "418b88e5394a8644b115bc2a1780d4c3e7613875bf061edd1598872de069ede9"
+      ],
+      "mock_posts": 0,
+      "dossier_completeness": {
+        "saturn:system:sldks-1": "partial"
+      },
+      "document_diagnostics": [
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1M%20(8).zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/photos/2278872612744825.pdf",
+          "state": "EXCLUDED_BY_OWNER"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/1.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-l%20m2/RE%20BDK-L%20M2.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk%20m2/RE%20BDK%20M2.zip",
+          "state": "unsupported_format"
+        }
+      ],
+      "material_scope": {
+        "saturn:system:sldks-1": "full_available"
+      },
+      "status": "over_cap"
+    },
+    "verdict": "BLOCKED",
+    "composition": {
+      "saturn:system:sldks-1": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 4,
+      "question": "Опишите БKД–ПK–RF.2.",
+      "expected": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "source": "products/bkd-pk-rf-2.md"
+    },
+    "result": {
+      "question_hash": "a4d27ffe5b3aab58471d481fb80bd70c8bc99ffbe31c60783146ff7f2e84bf53",
+      "unresolved": [
+        "Опишите БKД–ПK–RF.2."
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:device:bkd-pk-rf-2"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:device:bkd-pk-rf-2",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "бкд-пк-rf.2"
+            ],
+            "source": "src/content/products/bkd-pk-rf-2.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "61a688ec44023461ee61a8f65b514703b14be8f59ed87a0344d0a4d5cdcda74c"
+      ],
+      "mock_posts": 1,
+      "dossier_completeness": {
+        "saturn:device:bkd-pk-rf-2": "complete"
+      },
+      "document_diagnostics": [],
+      "material_scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available"
+      },
+      "status": "draft",
+      "label": "Черновик для сверки",
+      "candidate": {
+        "answer_candidate": "Черновик: необходима сверка с оригиналами.",
+        "claims": [],
+        "unresolved": [
+          "Опишите БKД–ПK–RF.2."
+        ],
+        "status_hint": "needs_support"
+      },
+      "diagnostics": [],
+      "confirmed_answer": {
+        "status": "insufficient",
+        "text": "Недостаточно подтверждённых сведений: Опишите БKД–ПK–RF.2.",
+        "unresolved": [
+          "Опишите БKД–ПK–RF.2."
+        ]
+      }
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:device:bkd-pk-rf-2": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 5,
+      "question": "Нужна голосовая связь и диспетчерский контроль за работой лифтов.",
+      "expected": [
+        "saturn:system:sldks-1"
+      ],
+      "allow_clarification": true,
+      "source": "systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md summary"
+    },
+    "result": {
+      "question_hash": "d7ab1556576c7244c2663110c7d23652f7d422d1da6648f8d166094c2fea1256",
+      "unresolved": [
+        "Нужна голосовая связь и диспетчерский контроль за работой лифтов."
+      ],
+      "decision": {
+        "reason": "lexical",
+        "selected": [
+          "saturn:system:sldks-1"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:system:sldks-1",
+            "score": 17.9281,
+            "signals": {
+              "summary": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо"
+              ],
+              "body": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо",
+                "связь"
+              ],
+              "title": [
+                "диспет",
+                "контро",
+                "лифтов"
+              ]
+            },
+            "source": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"
+          },
+          {
+            "id": "saturn:device:arm-sldks",
+            "score": 10.4281,
+            "signals": {
+              "name": [
+                "диспет"
+              ],
+              "features": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо",
+                "связь"
+              ],
+              "specs": [
+                "голосо",
+                "лифтов"
+              ],
+              "body": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо"
+              ]
+            },
+            "source": "src/content/products/arm-sldks.md"
+          },
+          {
+            "id": "saturn:device:bdk-2m",
+            "score": 10.4281,
+            "signals": {
+              "name": [
+                "диспет",
+                "контро"
+              ],
+              "specs": [
+                "лифтов"
+              ],
+              "body": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо",
+                "связь"
+              ]
+            },
+            "source": "src/content/products/bdk-2m.md"
+          },
+          {
+            "id": "saturn:device:bdk-4m2",
+            "score": 10.4281,
+            "signals": {
+              "name": [
+                "диспет",
+                "контро"
+              ],
+              "specs": [
+                "диспет",
+                "контро",
+                "лифтов"
+              ],
+              "body": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо",
+                "связь"
+              ]
+            },
+            "source": "src/content/products/bdk-4m2.md"
+          },
+          {
+            "id": "saturn:device:bdk-l-4m2",
+            "score": 10.4281,
+            "signals": {
+              "name": [
+                "диспет",
+                "контро",
+                "лифтов"
+              ],
+              "specs": [
+                "диспет",
+                "контро",
+                "лифтов"
+              ],
+              "body": [
+                "голосо",
+                "диспет",
+                "контро",
+                "лифтов",
+                "работо",
+                "связь"
+              ]
+            },
+            "source": "src/content/products/bdk-l-4m2.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "418b88e5394a8644b115bc2a1780d4c3e7613875bf061edd1598872de069ede9"
+      ],
+      "mock_posts": 0,
+      "dossier_completeness": {
+        "saturn:system:sldks-1": "partial"
+      },
+      "document_diagnostics": [
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1M%20(8).zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/photos/2278872612744825.pdf",
+          "state": "EXCLUDED_BY_OWNER"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/1.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-l%20m2/RE%20BDK-L%20M2.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk%20m2/RE%20BDK%20M2.zip",
+          "state": "unsupported_format"
+        }
+      ],
+      "material_scope": {
+        "saturn:system:sldks-1": "full_available"
+      },
+      "status": "over_cap"
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:system:sldks-1": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 6,
+      "question": "А сколько он весит и как его хранить?",
+      "active": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "expected": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "source": "products/bkd-pk-rf-2.md"
+    },
+    "result": {
+      "question_hash": "dcbc995be6d852c3ddda8cd905c949af4a059ef57256cc0c00756cf31a88afa2",
+      "unresolved": [
+        "А сколько он весит",
+        "как его хранить"
+      ],
+      "decision": {
+        "reason": "active",
+        "selected": [
+          "saturn:device:bkd-pk-rf-2"
+        ],
+        "unknown": [],
+        "candidates": []
+      },
+      "dossier_ids": [
+        "61a688ec44023461ee61a8f65b514703b14be8f59ed87a0344d0a4d5cdcda74c"
+      ],
+      "mock_posts": 1,
+      "dossier_completeness": {
+        "saturn:device:bkd-pk-rf-2": "complete"
+      },
+      "document_diagnostics": [],
+      "material_scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available"
+      },
+      "status": "draft",
+      "label": "Черновик для сверки",
+      "candidate": {
+        "answer_candidate": "Черновик: необходима сверка с оригиналами.",
+        "claims": [],
+        "unresolved": [
+          "А сколько он весит и как его хранить?"
+        ],
+        "status_hint": "needs_support"
+      },
+      "diagnostics": [],
+      "confirmed_answer": {
+        "status": "insufficient",
+        "text": "Недостаточно подтверждённых сведений: А сколько он весит, как его хранить",
+        "unresolved": [
+          "А сколько он весит",
+          "как его хранить"
+        ]
+      }
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:device:bkd-pk-rf-2": "ready"
+    },
+    "seed_posts": 1,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 7,
+      "question": "Какое назначение у СЛДКС-1?",
+      "active": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "hint": "https://ukwood.github.io/Saturn-Main-Site/products/bkd-pk-rf-2/",
+      "expected": [
+        "saturn:system:sldks-1"
+      ],
+      "source": "systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"
+    },
+    "result": {
+      "question_hash": "837f8afee6303e1480e4aa3b043396cdf61e2ffab28099c3914a7ab67936ce70",
+      "unresolved": [
+        "Какое назначение у СЛДКС-1?"
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:system:sldks-1"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:system:sldks-1",
+            "score": 1.0,
+            "signals": [
+              "title: designation",
+              "слдкс-1"
+            ],
+            "source": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "418b88e5394a8644b115bc2a1780d4c3e7613875bf061edd1598872de069ede9"
+      ],
+      "mock_posts": 0,
+      "dossier_completeness": {
+        "saturn:system:sldks-1": "partial"
+      },
+      "document_diagnostics": [
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1M%20(8).zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/photos/2278872612744825.pdf",
+          "state": "EXCLUDED_BY_OWNER"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/1.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-l%20m2/RE%20BDK-L%20M2.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk%20m2/RE%20BDK%20M2.zip",
+          "state": "unsupported_format"
+        }
+      ],
+      "material_scope": {
+        "saturn:system:sldks-1": "full_available"
+      },
+      "status": "over_cap"
+    },
+    "verdict": "BLOCKED",
+    "composition": {
+      "saturn:system:sldks-1": "ready"
+    },
+    "seed_posts": 1,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 8,
+      "question": "Сравните БКД-ПК-RF.2 и СЛДКС-1 по назначению.",
+      "expected": [
+        "saturn:device:bkd-pk-rf-2",
+        "saturn:system:sldks-1"
+      ],
+      "source": "both root cards"
+    },
+    "result": {
+      "question_hash": "ae41020a0ed0607de33148bddbc96935a5429df555004e9409ddd86f3d69f333",
+      "unresolved": [
+        "Сравните БКД-ПК-RF.2 и СЛДКС-1 по назначению."
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:device:bkd-pk-rf-2",
+          "saturn:system:sldks-1"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:device:bkd-pk-rf-2",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "бкд-пк-rf.2"
+            ],
+            "source": "src/content/products/bkd-pk-rf-2.md"
+          },
+          {
+            "id": "saturn:system:sldks-1",
+            "score": 1.0,
+            "signals": [
+              "title: designation",
+              "слдкс-1"
+            ],
+            "source": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "61a688ec44023461ee61a8f65b514703b14be8f59ed87a0344d0a4d5cdcda74c",
+        "418b88e5394a8644b115bc2a1780d4c3e7613875bf061edd1598872de069ede9"
+      ],
+      "mock_posts": 0,
+      "dossier_completeness": {
+        "saturn:device:bkd-pk-rf-2": "complete",
+        "saturn:system:sldks-1": "partial"
+      },
+      "document_diagnostics": [
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/re%20SLDKS-1M%20(8).zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/photos/2278872612744825.pdf",
+          "state": "EXCLUDED_BY_OWNER"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/sldks/1.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk-l%20m2/RE%20BDK-L%20M2.zip",
+          "state": "unsupported_format"
+        },
+        {
+          "url": "https://www.mnppsaturn.ru/ftp/public/doc/bdk%20m2/RE%20BDK%20M2.zip",
+          "state": "unsupported_format"
+        }
+      ],
+      "material_scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available",
+        "saturn:system:sldks-1": "full_available"
+      },
+      "status": "over_cap"
+    },
+    "verdict": "BLOCKED",
+    "composition": {
+      "saturn:device:bkd-pk-rf-2": "ready",
+      "saturn:system:sldks-1": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 9,
+      "question": "Как взаимодействуют СЛДКС-1, БДК-Л-4М2 и БДК-3М2?",
+      "expected": [
+        "saturn:device:bdk-3m2",
+        "saturn:device:bdk-l-4m2",
+        "saturn:system:sldks-1"
+      ],
+      "source": "systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md component links"
+    },
+    "result": {
+      "question_hash": "6d46a59a6fbf2b9281a71d90140a26c460faf810bb1e53ff2d7ba564baf408cc",
+      "unresolved": [
+        "Как взаимодействуют СЛДКС-1, БДК-Л-4М2 и БДК-3М2?"
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:device:bdk-3m2",
+          "saturn:device:bdk-l-4m2",
+          "saturn:system:sldks-1"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:device:bdk-3m2",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "бдк-3м2"
+            ],
+            "source": "src/content/products/bdk-3m2.md"
+          },
+          {
+            "id": "saturn:device:bdk-l-4m2",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "бдк-л-4м2"
+            ],
+            "source": "src/content/products/bdk-l-4m2.md"
+          },
+          {
+            "id": "saturn:system:sldks-1",
+            "score": 1.0,
+            "signals": [
+              "title: designation",
+              "слдкс-1"
+            ],
+            "source": "src/content/systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "418b88e5394a8644b115bc2a1780d4c3e7613875bf061edd1598872de069ede9"
+      ],
+      "mock_posts": 0,
+      "status": "not_ready"
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:device:bdk-3m2": "not_ready",
+      "saturn:device:bdk-l-4m2": "not_ready",
+      "saturn:system:sldks-1": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 10,
+      "question": "Сколько весит БКД-ПК-RF.99?",
+      "active": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "expected": [],
+      "source": "negative variant of products/bkd-pk-rf-2.md"
+    },
+    "result": {
+      "question_hash": "5558c3c7b2f60bdce3bb62ee49041c416d2dd13c33e364053cf38713b8da7623",
+      "unresolved": [
+        "Сколько весит БКД-ПК-RF.99?"
+      ],
+      "decision": {
+        "reason": "unknown_or_ambiguous_model",
+        "selected": [],
+        "unknown": [
+          "бкд-пк-rf.99"
+        ],
+        "candidates": []
+      },
+      "dossier_ids": [],
+      "mock_posts": 0,
+      "status": "clarification"
+    },
+    "verdict": "PASS",
+    "composition": {},
+    "seed_posts": 1,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 11,
+      "question": "Что такое АРМ LANMON?",
+      "expected": [
+        "saturn:software:arm-lanmon"
+      ],
+      "source": "products/arm-lanmon.md group"
+    },
+    "result": {
+      "question_hash": "fa083f4ab7a47c66350f9035ed4e376536969acb00cbb72beef11a26318ef1f5",
+      "unresolved": [
+        "Что такое АРМ LANMON?"
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:software:arm-lanmon"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:software:arm-lanmon",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "арм lanmon"
+            ],
+            "source": "src/content/products/arm-lanmon.md"
+          }
+        ]
+      },
+      "dossier_ids": [],
+      "mock_posts": 0,
+      "status": "not_ready"
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:software:arm-lanmon": "not_ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": 12,
+      "question": "Дайте назначение БКД-ПК-RF.2 и условия хранения.",
+      "expected": [
+        "saturn:device:bkd-pk-rf-2"
+      ],
+      "cap": 1,
+      "source": "products/bkd-pk-rf-2.md"
+    },
+    "result": {
+      "question_hash": "3d6d6b6a1860780cbbce9ab7f6b97b106c5f6d3469ffa13db5860478bdeeadd9",
+      "unresolved": [
+        "Дайте назначение БКД-ПК-RF.2 и условия хранения."
+      ],
+      "decision": {
+        "reason": "explicit_models",
+        "selected": [
+          "saturn:device:bkd-pk-rf-2"
+        ],
+        "unknown": [],
+        "candidates": [
+          {
+            "id": "saturn:device:bkd-pk-rf-2",
+            "score": 1.0,
+            "signals": [
+              "title",
+              "бкд-пк-rf.2"
+            ],
+            "source": "src/content/products/bkd-pk-rf-2.md"
+          }
+        ]
+      },
+      "dossier_ids": [
+        "61a688ec44023461ee61a8f65b514703b14be8f59ed87a0344d0a4d5cdcda74c"
+      ],
+      "mock_posts": 0,
+      "dossier_completeness": {
+        "saturn:device:bkd-pk-rf-2": "complete"
+      },
+      "document_diagnostics": [],
+      "material_scope": {
+        "saturn:device:bkd-pk-rf-2": "full_available"
+      },
+      "status": "over_cap"
+    },
+    "verdict": "PASS",
+    "composition": {
+      "saturn:device:bkd-pk-rf-2": "ready"
+    },
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": "holdout-rs485",
+      "question": "Какие изделия поддерживают RS-485?",
+      "expected": []
+    },
+    "result": {
+      "question_hash": "b1778159c604b2f1fffc6c5afd66e7f7f61151aee298e635af6e2345387ab1e2",
+      "unresolved": [
+        "Какие изделия поддерживают RS-485?"
+      ],
+      "decision": {
+        "reason": "clarification",
+        "selected": [],
+        "unknown": [],
+        "candidates": []
+      },
+      "dossier_ids": [],
+      "mock_posts": 0,
+      "status": "clarification"
+    },
+    "verdict": "PASS",
+    "composition": {},
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": "holdout-software",
+      "question": "Для чего нужен БУСЛоРа?",
+      "expected": [
+        "saturn:software:buslora"
+      ]
+    },
+    "result": {
+      "question_hash": "d6d8d8a512e1f1485e2d009debdb3e4eb0730ef4a797a7ab7d9f79dc76185fb1",
+      "unresolved": [
+        "Для чего нужен БУСЛоРа?"
+      ],
+      "decision": {
+        "reason": "clarification",
+        "selected": [],
+        "unknown": [],
+        "candidates": []
+      },
+      "dossier_ids": [],
+      "mock_posts": 0,
+      "status": "clarification"
+    },
+    "verdict": "FAIL",
+    "composition": {},
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  },
+  {
+    "case": {
+      "id": "holdout-variant",
+      "question": "Опишите СЛДКС-99",
+      "expected": []
+    },
+    "result": {
+      "question_hash": "d9e858260c8240d2635fe56344e0761f79d3e17bb5935744ea9bd438a0f90b8c",
+      "unresolved": [
+        "Опишите СЛДКС-99"
+      ],
+      "decision": {
+        "reason": "unknown_or_ambiguous_model",
+        "selected": [],
+        "unknown": [
+          "слдкс-99"
+        ],
+        "candidates": []
+      },
+      "dossier_ids": [],
+      "mock_posts": 0,
+      "status": "clarification"
+    },
+    "verdict": "PASS",
+    "composition": {},
+    "seed_posts": 0,
+    "mock_uploads": 14,
+    "real_api_calls": 0
+  }
+]

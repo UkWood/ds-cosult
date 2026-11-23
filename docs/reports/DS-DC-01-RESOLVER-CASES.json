@@ -1,0 +1,14 @@
+[
+ {"id":1,"question":"Сколько весит БКД-ПК-RF.2?","expected":["saturn:device:bkd-pk-rf-2"],"source":"products/bkd-pk-rf-2.md"},
+ {"id":2,"question":"Как работает БКД-ПК-RFF.2?","expected":["saturn:device:bkd-pk-rf-2"],"allow_clarification":true,"source":"products/bkd-pk-rf-2.md"},
+ {"id":3,"question":"Что умеет СЛДКС-1?","expected":["saturn:system:sldks-1"],"source":"systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md title"},
+ {"id":4,"question":"Опишите БKД–ПK–RF.2.","expected":["saturn:device:bkd-pk-rf-2"],"source":"products/bkd-pk-rf-2.md"},
+ {"id":5,"question":"Нужна голосовая связь и диспетчерский контроль за работой лифтов.","expected":["saturn:system:sldks-1"],"allow_clarification":true,"source":"systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md summary"},
+ {"id":6,"question":"А сколько он весит и как его хранить?","active":["saturn:device:bkd-pk-rf-2"],"expected":["saturn:device:bkd-pk-rf-2"],"source":"products/bkd-pk-rf-2.md"},
+ {"id":7,"question":"Какое назначение у СЛДКС-1?","active":["saturn:device:bkd-pk-rf-2"],"hint":"https://ukwood.github.io/Saturn-Main-Site/products/bkd-pk-rf-2/","expected":["saturn:system:sldks-1"],"source":"systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md"},
+ {"id":8,"question":"Сравните БКД-ПК-RF.2 и СЛДКС-1 по назначению.","expected":["saturn:device:bkd-pk-rf-2","saturn:system:sldks-1"],"source":"both root cards"},
+ {"id":9,"question":"Как взаимодействуют СЛДКС-1, БДК-Л-4М2 и БДК-3М2?","expected":["saturn:device:bdk-3m2","saturn:device:bdk-l-4m2","saturn:system:sldks-1"],"source":"systems/sistema-liftovogo-dispetcherskogo-kontrolya-sldks-1.md component links"},
+ {"id":10,"question":"Сколько весит БКД-ПК-RF.99?","active":["saturn:device:bkd-pk-rf-2"],"expected":[],"source":"negative variant of products/bkd-pk-rf-2.md"},
+ {"id":11,"question":"Что такое АРМ LANMON?","expected":["saturn:software:arm-lanmon"],"source":"products/arm-lanmon.md group"},
+ {"id":12,"question":"Дайте назначение БКД-ПК-RF.2 и условия хранения.","expected":["saturn:device:bkd-pk-rf-2"],"cap":1,"source":"products/bkd-pk-rf-2.md"}
+]

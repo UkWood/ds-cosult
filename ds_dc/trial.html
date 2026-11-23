@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DS-консультант · Стенд владельца</title>
+  <link rel="stylesheet" href="/owner.css">
+  <link rel="stylesheet" href="/trial.css">
+  <script src="/trial.js" defer></script>
+</head>
+<body>
+  <header class="trial-header">
+    <div class="brand">DS-консультант <span id="profile"></span></div>
+    <div class="header-actions">
+      <button id="expert" type="button" aria-pressed="false" disabled>Режим эксперта</button>
+      <button id="reset" type="button" disabled>Новый диалог</button>
+    </div>
+  </header>
+  <main>
+    <details id="coverage" class="coverage">
+      <summary>Покрытие документации</summary>
+      <div id="catalog"></div>
+    </details>
+    <section id="timeline" aria-label="Диалог" aria-live="polite"></section>
+    <p id="notice" role="status"></p>
+    <button id="refresh" type="button" class="secondary" hidden>Проверить состояние</button>
+    <form id="question-form">
+      <label for="question">Ваш технический вопрос</label>
+      <textarea id="question" rows="3" required placeholder="Для чего предназначена система СЛДКС-1?"></textarea>
+      <div class="actions">
+        <div class="selectors">
+          <div id="model-field" hidden>
+            <label for="model">Модель из уточнения</label>
+            <select id="model"><option value="">Без выбора</option></select>
+          </div>
+          <div>
+            <label for="scope">Область документации</label>
+            <select id="scope">
+              <option value="full">Доступное досье</option>
+              <option value="manual">Основное руководство</option>
+            </select>
+          </div>
+        </div>
+        <button id="send" type="submit" disabled>Отправить</button>
+      </div>
+    </form>
+    <section id="export-panel" class="export-panel" aria-label="Экспорт журнала" hidden>
+      <div class="actions">
+        <a href="https://platform.deepseek.com/usage" rel="noreferrer noopener" target="_blank">DeepSeek Usage</a>
+        <div class="header-actions">
+          <button id="export-selected" type="button" class="secondary" disabled>Экспорт выбранных</button>
+          <button id="export-all" type="button" class="secondary">Экспорт журнала</button>
+        </div>
+      </div>
+      <p id="export-notice" role="status"></p>
+    </section>
+  </main>
+</body>
+</html>
