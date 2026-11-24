@@ -1,0 +1,13 @@
+{
+  "site": {
+    "repository": "UkWood/Saturn-Main-Site",
+    "revision": "084d759487bfab6e111549c9b5469711ac5fc13e",
+    "origin": "https://www.mnppsaturn.ru"
+  },
+  "compile_mode": "complete",
+  "entity": {
+    "type": "system",
+    "id": "kontrol-zatopleniya"
+  },
+  "source_discovery": "automatic"
+}

@@ -3,15 +3,16 @@ import unittest
 from pathlib import Path
 from protocol import reply, Stop
 from bundle import checked_name
-from sources import plan
+from protocol import load
+
+
+CONFIG = load(Path(__file__).parent / "configs/pilot.json")
 
 
 class Contract(unittest.TestCase):
-    def test_D05_fixed_graph(self):
-        tasks = plan([3, 11, 60])
-        ids = [task["id"] for task in tasks]
-        self.assertEqual(len(ids), len(set(ids)))
-        self.assertTrue({"K00", "V011", "W04", "F01"} <= set(ids))
+    def test_D05_graph_contract(self):
+        from test_universal import PlanContract
+        PlanContract("test_coverage_and_invalid_locator").test_coverage_and_invalid_locator()
 
     def test_D09_reject_traversal(self):
         for name in ("../ESSENCE.md", "original.pdf", "visual/../README.md"):
@@ -45,42 +46,53 @@ class OfflineContracts(unittest.TestCase):
 
     def test_D01_real_pinned_pdf_reject_changed_and_missing_page(self):
         import os
-        from sources import read_pdf, pdf_pages, cmd
+        from sources import read_pdf, pdf_pages, cmd, verify
 
         if not os.environ.get("DX02_PREFLIGHT_SOURCES"):
             self.skipTest("real sources require preflight")
-        pdf = Path(os.environ["DX02_PREFLIGHT_SOURCES"]) / "pdf/manual.pdf"
+        root = Path(os.environ["DX02_PREFLIGHT_SOURCES"])
+        manifest = load(root / "source-manifest.json")
+        pin = next(row for row in CONFIG["materials"] if row.get("pages") == 65)
+        source = next(key for key, row in manifest["records"].items() if row.get("url") == pin["url"])
+        pdf = root / "pdf" / (source + ".pdf")
         self.assertEqual(len(read_pdf(pdf)), 65)
         text = cmd("pdftotext", "-layout", pdf, "-")
         with self.assertRaises(Stop):
-            pdf_pages(b"\f".join(text.split(b"\f")[1:]))
+            pdf_pages(b"\f".join(text.split(b"\f")[1:]), pin["pages"])
         changed = self.root / "changed.pdf"
         changed.write_bytes(pdf.read_bytes() + b"x")
+        import shutil
+        tampered = self.root / "archive"
+        shutil.copytree(root, tampered)
+        (tampered / pdf.relative_to(root)).write_bytes(changed.read_bytes())
         with self.assertRaises(Stop):
-            read_pdf(changed)
+            verify(tampered, reparse=False)
 
     def test_D02_D03_pinned_graph_and_scope(self):
         import os
-        from sources import astro, PRODUCT, PRODUCT_BLOB, SITE
+        from astro import discover
 
         if not os.environ.get("DX02_PREFLIGHT_SITE"):
             self.skipTest("real sources require preflight")
-        found = astro(Path(os.environ["DX02_PREFLIGHT_SITE"]))
-        self.assertEqual(found["commit"], SITE)
+        found, _ = discover(Path(os.environ["DX02_PREFLIGHT_SITE"]), CONFIG)
+        self.assertEqual(found["commit"], CONFIG["site"]["revision"])
         self.assertGreater(found["indexed"], 400)
-        record = next(row for row in found["records"].values() if row["path"] == PRODUCT)
-        self.assertEqual(record["blob"], PRODUCT_BLOB)
+        record = next(row for row in found["records"].values() if row["path"] == CONFIG["card"])
+        self.assertEqual(record["blob"], "86afcfe8be3be4e5022f0baf43143f64a2a9f7a0")
         self.assertTrue(record["canonical_url"].endswith("/products/bkd-pk-rf-2/"))
-        self.assertTrue(any(x["type"].startswith("incoming") for x in found["relations"]))
+        self.assertTrue(any(x["type"] == "mention" for x in found["relations"]))
         self.assertTrue(any(x["type"].startswith("explicit") for x in found["relations"]))
-        self.assertEqual({x["status"] for x in found["inventory"]}, {"PINNED", "DEFERRED"})
+        self.assertTrue({row["url"] for row in CONFIG["materials"]} <= {row["url"] for row in found["inventory"]})
 
     def test_D04_stable_prefix_one_file_no_tools(self):
         import json
         from compile_d import payload, multipart
-        topics = plan([11])
-        a, p1 = payload(self.root, {"records": {}, "context": {}, "relations": []}, topics[1], "file-api-mock", {})
-        b, p2 = payload(self.root, {"records": {}, "context": {}, "relations": []}, topics[2], "file-api-mock", {})
+        task = {"id": "one", "kind": "extract", "limit": 1024, "images": []}
+        website = {"entity": {"id": "sample", "type": "product"}, "records": {"P01": {}}, "relations": []}
+        group = ("P01", {1: "mock"}, [])
+        handles = {"P01": {"handle": "file-api-mock", "first": 1}}
+        a, p1 = payload(self.root, website, task, handles, {}, group)
+        b, p2 = payload(self.root, website, dict(task, id="two"), handles, {}, group)
         self.assertEqual(p1, p2)
         self.assertNotEqual(a, b)
         for raw in (a, b):
@@ -94,15 +106,16 @@ class OfflineContracts(unittest.TestCase):
     def test_D05_D07_D08_validation_merge_and_conflict(self):
         import json
         from compile_d import facts, merge
-        cfg = plan([11])
-        task = cfg[1]
+        task = {"id": "extract", "kind": "extract", "topic": "operation", "images": [],
+                "scope": {"P01": [3], "A001": [2]}}
         row = {"text": "Mock: обесточить перед обслуживанием", "applicability": "исполнение 1",
                "kind": "source_assertion", "locators": ["P01:3"]}
-        website = {"records": {"A001": {"ranges": [[1, 4]]}}}
         result = lambda r, f="stop": {"finish_reason": f, "text": json.dumps({"status": "FACTS", "facts": [r]})}
-        self.assertEqual(facts(result(row, "length"), task, website)[0], "TRUNCATED")
-        self.assertEqual(facts(result(row), task, website)[0], "COMPLETE")
-        self.assertEqual(facts(result(dict(row, locators=["P01:66"])), task, website)[0], "PARTIAL")
+        self.assertEqual(facts(result(row, "length"), task), ("TRUNCATED", [row]))
+        open_tail = '{"facts":[' + json.dumps(row) + ',{"text":'
+        self.assertEqual(facts({"finish_reason": "length", "text": open_tail}, task), ("TRUNCATED", [row]))
+        self.assertEqual(facts(result(row), task)[0], "COMPLETE_UNREVIEWED")
+        self.assertEqual(facts(result(dict(row, locators=["P01:66"])), task)[0], "PARTIAL")
         duplicate = dict(row, locators=["A001:2"])
         different = dict(row, applicability="исполнение 2")
         conflict = dict(row, text="Mock: разные редакции расходятся", kind="unresolved")
@@ -119,9 +132,11 @@ class OfflineContracts(unittest.TestCase):
             self.skipTest("real sources require preflight")
         root = Path(os.environ["DX02_PREFLIGHT_SOURCES"])
         images = load(root / "plan/images.json")
-        upper, lower = [images[f"pdf-011-{kind}.png"] for kind in ("upper", "lower")]
+        source = next(key for key, row in load(root / "source-manifest.json")["records"].items()
+                      if row.get("edition") == "203-01" and row.get("kind") == "pdf")
+        upper, lower = [images[f"{source}-011-{kind}.png"] for kind in ("upper", "lower")]
         self.assertGreater(upper["bbox_render_pixels_top_left"][3], lower["bbox_render_pixels_top_left"][1])
-        raw = (root / "raw-illustrations/pdf-011-upper.png").read_bytes()
+        raw = (root / "raw-illustrations" / f"{source}-011-upper.png").read_bytes()
         self.assertEqual(sha(raw), upper["sha256"])
         self.assertTrue(image_block(raw)["image_url"]["url"].startswith("data:image/png;base64,"))
         with self.assertRaises(Stop):
@@ -133,7 +148,7 @@ class OfflineContracts(unittest.TestCase):
                    "coverage.json": b"{}", "sources.json": b"{}", "index.json": b"[]",
                    "illustrations/image-manifest.json": b"{}"}
         root = self.root / "knowledge"
-        publish(root, entries, {"status": "PARTIAL"})
+        publish(root, entries, {"status": "PARTIAL", "entity": {"id": "sample", "type": "product"}})
         return root
 
     def test_D09_zip_deterministic_and_reject_extra(self):
@@ -146,6 +161,8 @@ class OfflineContracts(unittest.TestCase):
         self.assertEqual(one.read_bytes(), two.read_bytes())
         with zipfile.ZipFile(one, "a") as output:
             output.writestr("../oops", b"no")
+        from protocol import sha
+        one.with_suffix(".zip.sha256").write_text(sha(one.read_bytes()) + "  " + one.name + "\n")
         with self.assertRaises(Stop):
             verify_zip(one)
         (root / "visual").symlink_to(self.root)
@@ -245,19 +262,23 @@ class OfflineContracts(unittest.TestCase):
             self.skipTest("real sources require preflight")
         source = Path(os.environ["DX02_PREFLIGHT_SOURCES"])
         identity = verify(source, reparse=False)
-        tasks = load(source / "plan/tasks.json")
-        website = load(source / "astro-snapshot/context.json")
+        website = load(source / "source-manifest.json")
+        context = load(source / "plan/context.json")
+        id_ = next(iter(context))
+        tasks = [{"id": "extract", "kind": "extract", "topic": "operation",
+                  "scope": {id_: [1]}, "images": []}]
         ledger = Ledger(self.root / "state/ledger.json", "compile", 10**9, 10**9, identity)
-        ledger.execute("K05", "/chat/completions", b"{}", reserve(8192),
+        ledger.execute("extract", "/chat/completions", b"{}", reserve(8192),
                        lambda *args: fake_reply(b"{}", "{truncated", "length"),
                        lambda r: reply(r, 8192))
         knowledge = self.root / "knowledge"
         reports = self.root / "reports"
-        assemble(source, knowledge, reports, ledger, identity, tasks, website, "mock truncation")
+        assemble(source, knowledge, reports, ledger, identity, website, tasks,
+                 {"extract": "TRUNCATED"}, {"extract": []}, [], "mock truncation")
         entries, manifest = read_bundle(knowledge)
         self.assertEqual(manifest["status"], "PARTIAL")
         self.assertNotIn(b"{truncated", entries["ESSENCE.md"])
         coverage = load(knowledge / "coverage.json")
-        self.assertEqual(coverage["tasks"]["K05"], "TRUNCATED")
-        self.assertEqual(len(coverage["sources"]["P01"]), 65)
-        self.assertEqual(verify_zip(reports / "BKD-PK-RF2-knowledge.zip"), manifest)
+        self.assertEqual(coverage["tasks"]["extract"], "TRUNCATED")
+        self.assertEqual(len(coverage["sources"][id_]), len(context[id_]))
+        self.assertEqual(verify_zip(reports / "knowledge.zip"), manifest)

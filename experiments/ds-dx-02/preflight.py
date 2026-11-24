@@ -16,10 +16,14 @@ def run(args):
     os.umask(0o077)
     offline()
     identity = verify(args.sources, args.site)
-    log = subprocess.run([sys.executable, "-m", "unittest", "-v", "test_d"],
+    packages = [args.sources, *args.additional_source]
+    package_env = (os.pathsep.join(str(path.resolve()) for path in packages)
+                   if len(packages) > 1 else "")
+    log = subprocess.run([sys.executable, "-m", "unittest", "-v", "test_d", "test_universal"],
                          cwd=Path(__file__).resolve().parent, check=True,
                          env=dict(os.environ, DX02_PREFLIGHT_SOURCES=str(args.sources.resolve()),
-                                  DX02_PREFLIGHT_SITE=str(args.site.resolve())),
+                                  DX02_PREFLIGHT_SITE=str(args.site.resolve()),
+                                  UTKC_ACCEPTANCE_PACKAGES=package_env),
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     sys.stdout.flush()
     sys.stdout.buffer.write(log.stdout)
@@ -35,6 +39,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     for name in ("sources", "site", "reports"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--additional-source", action="append", type=Path, default=[])
     try:
         run(parser.parse_args())
     except (Stop, subprocess.CalledProcessError) as error:

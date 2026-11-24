@@ -1,167 +1,40 @@
-"""Read pinned Git objects and prepare an isolated compiler source archive."""
+"""Prepare and verify a local, immutable source archive."""
 import argparse
 import re
-import shutil
 import struct
 import subprocess
+import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urlsplit
+from urllib.request import urlopen
 
+from astro import discover
 from protocol import Stop, encode, load, save, sha, write
 
-PDF_SHA = "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a"
-PDF_URL = "https://www.mnppsaturn.ru/ftp/public/doc/bkd-pk-rf2/re%20BKD-PK-RF2.pdf"
-SITE = "084d759487bfab6e111549c9b5469711ac5fc13e"
-ORIGIN = "https://www.mnppsaturn.ru"
-PRODUCT = "src/content/products/bkd-pk-rf-2.md"
-SITE_MEDIA = {
-    "3112376640116232.jpg": (73206, "504f11f654a5b3b7466715e5a30ede6a38c149b7f5a3c909e8164b209481bf73"),
-    "3385755126930346.jpg": (179920, "b4912d21cea0b83974b5afe04d4067e66ee0392436117466c3daa994e95a017a"),
-}
-PRODUCT_BLOB = "86afcfe8be3be4e5022f0baf43143f64a2a9f7a0"
-ROUTE = "src/pages/products/[slug].astro"
-SCHEMA = "src/content.config.ts"
-ENTITY = "BKD-PK-RF2"
-MATCH = re.compile(r"бкд[-– ]пк[-– ]rf[. -]?2|bkd-pk-rf-?2", re.I)
+MAX_SOURCE = 48 * 1024**2
+
 
 def cmd(*args):
-    return subprocess.run(args, check=True, stdout=subprocess.PIPE).stdout
+    command = [arg.resolve() if isinstance(arg, Path) else arg for arg in args]
+    return subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          cwd=tempfile.gettempdir(), timeout=120).stdout
 
 
-def plan(pages, site_images=()):
-    def task(id_, topic, bounds, instruction, family="pdf-astro", *, limit=8192, images=(), deps=()):
-        return dict(id=id_, topic=topic, pages=list(bounds), instruction=instruction,
-                    family=family, limit=limit, images=list(images), deps=list(deps))
-    tasks = [
-        task("K00", 0, (1, 65), "Карта разделов, таблиц, рисунков и пробелов", limit=4096),
-        task("K01", 0, (1, 3), "Назначение, версии, идентификация"),
-        task("K02", 1, (7, 17), "Архитектура, функции, состав, устройство"),
-        task("K03", 2, (3, 7), "Таблица 1 и точные параметры с единицами и условиями"),
-        task("K04", 3, (9, 15), "Сигналы, разъёмы, индикация, подключения, протоколы"),
-        task("K05", 4, (20, 58), "Меню и конфигурация, заводские настройки, связь и диагностика"),
-        task("K06", 5, (17, 61), "Монтаж, питание, меры безопасности, эксплуатация, хранение, перевозка и утилизация"),
-        task("K07", 6, (59, 60), "Диагностика, обслуживание и таблица 12 в полном контексте безопасности"),
-        task("K08", 7, (59, 65), "Поверка, метрология, сертификация, комплектность и приложения"),
-    ]
-    tasks[5]["split"] = ["S05A", "S05B"]
-    for n in sorted(pages, key=lambda n: (n not in (3, 11, 60), n)):
-        images = [f"pdf-{n:03}-full.png"]
-        if n == 11:
-            images.extend(["pdf-011-upper.png", "pdf-011-lower.png"])
-        tasks.append(task(f"V{n:03}", 8, (n, n),
-                          "Извлеки видимые связи, подписи, обозначения, единицы и нечитаемые зоны",
-                          "pdf-astro-vision", limit=4096, images=images))
-    for i, image in enumerate(site_images, 1):
-        tasks.append(task(f"VA{i:02}", 8, (), "Опиши видимую маркировку и ограничения фото",
-                          "astro-vision", limit=4096, images=[image]))
-    for i, instruction in enumerate((
-        "Назначение и конкретные практические применения", "Подтверждённое участие в системах и интеграция",
-        "Связанные и заменяемые изделия, различие совместимости и соседства",
-        "Функциональные возможности и ограничения редакций",
-    ), 1):
-        tasks.append(task(f"W{i:02}", 9 + i, (1, 65), instruction, limit=4096))
-    tasks.append(task("F01", 9, (1, 65),
-                      "Запиши только нерешённые различия и неоднозначности как unresolved. "
-                      "Сохрани оба исходных значения, контексты и локаторы; не меняй предшествующие факты.",
-                      "fusion", limit=4096, deps=["K03", "W04", "V011"]))
-    priorities = {"V003", "V011", "V060"}
-    tasks.sort(key=lambda item: (0 if item["id"].startswith("K") else
-                                 1 if item["id"] in priorities else
-                                 2 if item["id"].startswith("W") else
-                                 3 if item["id"].startswith("F") else
-                                 4 if item["id"].startswith("VA") else 5))
-    tasks.extend([
-        task("S05A", 4, (20, 36), "Конфигурация, часть 1", deps=["K05"]),
-        task("S05B", 4, (37, 58), "Конфигурация, часть 2", deps=["K05"]),
-    ])
-    return tasks
-
-
-def pdf_pages(data):
+def pdf_pages(data, expected):
     pages = data.decode().split("\f")
     if pages[-1] == "":
         pages.pop()
-    if len(pages) != 65 or not re.search(r"Таблица\s+1\b", pages[2], re.I) or not re.search(
-            r"Таблица\s+12\b", pages[59], re.I):
-        raise Stop("Physical page map or control tables differ from pin")
+    if len(pages) != expected:
+        raise Stop("Physical page map differs from pdfinfo")
     return pages
 
 
 def read_pdf(path):
-    data = path.read_bytes()
-    if len(data) != 3024578 or sha(data) != PDF_SHA:
-        raise Stop("PDF pin mismatch")
-    if not re.search(rb"(?m)^Pages:\s+65\s*$", cmd("pdfinfo", path)):
-        raise Stop("PDF page count mismatch")
-    return pdf_pages(cmd("pdftotext", "-layout", path, "-"))
-
-
-def git(repo, *args):
-    return cmd("git", "-C", repo, *args)
-
-
-def astro(repo):
-    tree = git(repo, "rev-parse", SITE + "^{tree}").decode().strip()
-    entries = {}
-    for row in git(repo, "ls-tree", "-rz", SITE, "src", "astro.config.mjs").split(b"\0"):
-        if row:
-            header, path = row.decode().split("\t", 1)
-            mode, kind, blob = header.split()
-            if kind == "blob" and mode == "100644":
-                entries[path] = blob
-    schema = next((path for path in (SCHEMA, "src/content/config.ts") if path in entries), None)
-    if entries.get(PRODUCT) != PRODUCT_BLOB or ROUTE not in entries or not schema:
-        raise Stop("Pinned product, route or collection schema missing")
-    read = lambda name: git(repo, "cat-file", "blob", entries[name])
-    route = read(ROUTE).decode()
-    schema_text = read(schema).decode()
-    if "slug: entry.id" not in route or "getCollection('products'" not in route or "products" not in schema_text:
-        raise Stop("Unsupported Astro route or schema")
-    root = read(PRODUCT).decode()
-    records, contexts, relations, inventory = {}, {}, [], []
-    paths = [path for path in entries if path.startswith(("src/content/", "src/data/"))
-             and Path(path).suffix in {".md", ".mdx", ".yaml", ".yml", ".json"}]
-    if "systems: [newel]" not in root or "group: newel" not in root:
-        raise Stop("Pinned system relation missing")
-    for path in sorted(paths):
-        raw = read(path)
-        body = raw.decode()
-        hits = [i for i, line in enumerate(body.splitlines(), 1) if MATCH.search(line)]
-        if path == PRODUCT:
-            reason = "canonical_product"
-        elif path in ("src/content/systems/newel.md", "src/content/groups/newel.md"):
-            reason = "explicit_product_system_or_group_reference"
-        elif hits:
-            reason = "incoming_mention_unconfirmed_applicability"
-        else:
-            continue
-        id_ = "A%03d" % (len(records) + 1)
-        lines = body.splitlines()
-        ranges = ([(1, len(lines))] if reason != "incoming_mention_unconfirmed_applicability"
-                  or path.startswith("src/content/news/") else
-                  [(max(1, i - 2), min(len(lines), i + 2)) for i in hits])
-        selected = sorted({n for lo, hi in ranges for n in range(lo, hi + 1)})
-        slug = str(Path(path).relative_to("src/content").with_suffix("")) if path.startswith("src/content/") else ""
-        url = ORIGIN + "/" + slug + "/" if path == PRODUCT else None
-        records[id_] = {"commit": SITE, "tree": tree, "blob": entries[path], "sha256": sha(raw),
-                        "path": path, "canonical_url": url, "lines": len(lines),
-                        "ranges": ranges, "selected_because": reason}
-        contexts[id_] = "\n".join(f"{n}: {lines[n - 1]}" for n in selected)
-        if path != PRODUCT:
-            relations.append({"source": id_, "type": reason, "lines": hits or [1]})
-        for i in selected:
-            for link in re.findall(r'[/][^"\s)>]+\.(?:pdf|jpe?g|png|zip)', lines[i - 1], re.I):
-                url = urljoin(ORIGIN, link)
-                status = ("PINNED" if url == PDF_URL else "EXCLUDED" if
-                          url.endswith("/photos/2278872612744825.pdf") else "DEFERRED")
-                inventory.append({"url": url, "source": id_, "line": i, "status": status,
-                                  "reason": {"PINNED": "approved manual", "EXCLUDED": "owner excluded stale link",
-                                             "DEFERRED": "outside approved PDF and pinned site image scope"}[status]})
-    return dict(records=records, context=contexts, relations=relations, inventory=inventory,
-                route={"path": ROUTE, "blob": entries[ROUTE]}, schema={"path": schema, "blob": entries[schema]},
-                indexed=len(paths), commit=SITE, tree=tree)
-
-
+    match = re.search(rb"(?m)^Pages:\s+(\d+)\s*$", cmd("pdfinfo", path))
+    if not match or not 1 <= int(match[1]) <= 500:
+        raise Stop("Unsupported physical PDF page count")
+    return pdf_pages(cmd("pdftotext", "-layout", path, "-"), int(match[1]))
 def png_dimensions(data):
     if len(data) < 33 or data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
         raise Stop("Invalid PNG")
@@ -191,124 +64,256 @@ def image_dimensions(raw):
     raise Stop("Cannot read JPEG dimensions")
 
 
-def prepare(pdf, site, root, media=None):
-    if root.exists():
-        raise Stop("Prepare needs a fresh SourceArchive directory")
-    pages = read_pdf(pdf)
-    website = astro(site)
-    root.mkdir(mode=0o700, parents=True)
-    (root / "pdf").mkdir()
-    shutil.copyfile(pdf, root / "pdf/manual.pdf")
-    records = []
-    images = {}
-    candidates = {3, 8, 11, 12, 60}
-    for n, page in enumerate(pages, 1):
-        captions = [line.strip() for line in page.splitlines()
-                    if re.match(r"\s*Рисунок\s+\d+\s*[–—-]", line)]
-        visual = n in candidates or bool(captions) or len(page.strip()) < 180
-        records.append({"page": n, "chars": len(page.strip()), "captions": captions,
-                        "tables": re.findall(r"Таблица\s+\d+", page, re.I),
-                        "state": "RENDER_PLANNED" if visual else "TEXT_INSPECTED"})
-        if visual:
-            candidates.add(n)
+def retrieve(item, base, online, origin):
+    if item.get("file"):
+        path = (base / item["file"]).resolve()
+        return path.read_bytes() if path.stat().st_size <= MAX_SOURCE else b""
+    if online and urlsplit(item["url"]).netloc == urlsplit(origin).netloc:
+        with urlopen(item["url"], timeout=30) as response:
+            if urlsplit(response.url).netloc != urlsplit(origin).netloc:
+                raise Stop("Material redirected away from approved origin")
+            return response.read(MAX_SOURCE + 1)
+    raise Stop("Material bytes not supplied")
 
-    image_dir = root / "raw-illustrations"
-    image_dir.mkdir()
-    for n in sorted(candidates):
-        stem = image_dir / f"pdf-{n:03}-full"
-        base = ["pdftoppm", "-png", "-r", "220", "-f", str(n), "-l", str(n), "-singlefile"]
-        cmd(*base, root / "pdf/manual.pdf", stem)
-        def register(path, x, y):
-            raw = path.read_bytes()
-            width, height = png_dimensions(raw)
-            images[path.name] = {"source": "P01", "page": n, "dpi": 220,
-                                 "bbox_render_pixels_top_left": [x, y, x + width, y + height],
-                                 "size": [width, height], "sha256": sha(raw),
-                                 "orientation": "upright as rendered by Poppler"}
-            return width, height
-        width, height = register(stem.with_suffix(".png"), 0, 0)
-        if n == 11:
-            for kind, y, length in (("upper", 0, height * 3 // 5),
-                                    ("lower", height * 2 // 5, height - height * 2 // 5)):
-                crop = image_dir / f"pdf-{n:03}-{kind}"
-                cmd(*base, "-x", "0", "-y", str(y), "-W", str(width), "-H", str(length),
-                    root / "pdf/manual.pdf", crop)
-                register(crop.with_suffix(".png"), 0, y)
-    site_images = []
-    for i, (filename, (size, digest)) in enumerate(SITE_MEDIA.items(), 1):
-        url = ORIGIN + "/photos/" + filename
-        path = media / filename if media else None
-        targets = [item for item in website["inventory"] if item["url"] == url]
-        if not path or not path.is_file():
-            for item in targets:
-                item.update(status="MISSING", reason="pinned site photo not provided to PREP")
+
+def register(root, name, source, raw, **meta):
+    width, height = image_dimensions(raw)
+    write(root / "raw-illustrations" / name, raw)
+    x, y = meta.pop("origin", (0, 0))
+    return dict(meta, source=source, size=[width, height], sha256=sha(raw),
+                orientation="upright render" if "dpi" in meta else "original file orientation",
+                bbox_render_pixels_top_left=[x, y, x + width, y + height])
+
+
+def survey_vectors(path, page):
+    """Inspect painted paths outside SVG glyph definitions, using Poppler's vector renderer."""
+    raw = cmd("pdftocairo", "-svg", "-f", str(page), "-l", str(page), path, "-")
+    if len(raw) > 12 * 1024**2:
+        return True
+    root = ET.fromstring(raw)
+    pending = list(root)
+    strokes = 0
+    while pending:
+        node = pending.pop()
+        tag = node.tag.rsplit("}", 1)[-1]
+        if tag in {"defs", "clipPath", "symbol"}:
             continue
-        raw = path.read_bytes()
-        if len(raw) != size or sha(raw) != digest:
-            raise Stop("Astro photo pin mismatch: " + filename)
-        name = f"astro-{i:03}-full.jpg"
-        width, height = image_dimensions(raw)
-        write(image_dir / name, raw)
-        images[name] = {"source": targets[-1]["source"], "line": targets[-1]["line"],
-                        "url": url, "size": [width, height], "sha256": digest,
-                        "bbox_render_pixels_top_left": [0, 0, width, height],
-                        "orientation": "original JPEG"}
-        site_images.append(name)
-        for item in targets:
-            item.update(status="PINNED", reason="approved inline site photograph")
-    for id_, row in website["records"].items():
-        write(root / "astro-snapshot/blobs" / row["path"], git(site, "cat-file", "blob", row["blob"]))
-    for row in (website["route"], website["schema"]):
-        write(root / "astro-snapshot/blobs" / row["path"], git(site, "cat-file", "blob", row["blob"]))
-    write(root / "plan/pages.txt", "\f".join(pages).encode())
-    save(root / "astro-snapshot/context.json", website)
-    save(root / "plan/inspection.json", records)
+        if tag == "image":
+            return True
+        if tag == "path":
+            strokes += 1 + node.get("d", "").count(" L ") // 8
+        pending.extend(node)
+    return strokes >= 8
+
+
+def inspect_pdf(root, id_, path, pages, images):
+    graphics = set()
+    for line in cmd("pdfimages", "-list", path).decode().splitlines()[2:]:
+        if line.split() and line.split()[0].isdigit():
+            graphics.add(int(line.split()[0]))
+    inspection = []
+    for n, page in enumerate(pages, 1):
+        captions = re.findall(r"(?im)^\s*(?:рисунок|figure|fig\.)\s+[^\n]+", page)
+        tables = re.findall(r"(?im)^\s*(?:таблица|table)\s+[^\n]+", page)
+        weak = len(page.strip()) < 180
+        reasons = [name for name, present in (("embedded_raster", n in graphics), ("caption", captions),
+                                              ("table", tables), ("weak_text", weak)) if present]
+        if not reasons:
+            try:
+                if survey_vectors(path, n):
+                    reasons.append("painted_vector_paths")
+            except (OSError, ET.ParseError, subprocess.SubprocessError):
+                reasons.append("vector_survey_unavailable")
+        visual = bool(reasons)
+        inspection.append(dict(page=n, chars=len(page.strip()), captions=captions, tables=tables,
+                               visual_reasons=reasons,
+                               state="VISUAL_CANDIDATE" if visual else "TEXT_INSPECTED"))
+        if not visual:
+            continue
+        base = ["pdftoppm", "-png", "-r", "160", "-f", str(n), "-l", str(n), "-singlefile"]
+        stem = root / "raw-illustrations" / f"{id_}-{n:03}-full"
+        cmd(*base, path, stem)
+        full = stem.with_suffix(".png")
+        images[full.name] = register(root, full.name, id_, full.read_bytes(), page=n, dpi=160)
+        if set(reasons) != {"table"}:
+            width, height = images[full.name]["size"]
+            for part, y, end in (("upper", 0, height * 3 // 5), ("lower", height * 2 // 5, height)):
+                crop = stem.with_name(stem.name.removesuffix("full") + part)
+                cmd(*base, "-x", "0", "-y", str(y), "-W", str(width), "-H", str(end - y), path, crop)
+                target = crop.with_suffix(".png")
+                images[target.name] = register(root, target.name, id_, target.read_bytes(), page=n,
+                                               dpi=160, origin=(0, y))
+    save(root / "plan" / (id_ + ".json"), inspection)
+
+
+def provider_fragments(root, id_, original, pages, limit):
+    """Derive checked page spans only when a whole file would exceed a local input bound."""
+    text_limit = 512 * 1024
+    byte_limit = 46 * 1024**2
+    if len(pages) <= limit and original.stat().st_size <= byte_limit and (
+            sum(len(page.encode()) for page in pages) <= text_limit):
+        return []
+    spans = []
+    first = 1
+    size = 0
+    for number, page in enumerate(pages, 1):
+        cost = len(page.encode())
+        if cost > text_limit:
+            raise Stop(f"Physical page {number} exceeds the provider text input limit")
+        if number - first >= limit or size + cost > text_limit:
+            spans.append((first, number - 1))
+            first, size = number, 0
+        size += cost
+    spans.append((first, len(pages)))
+    output = []
+    with tempfile.TemporaryDirectory() as directory:
+        scratch = Path(directory)
+        cmd("pdfseparate", original, scratch / "page-%d.pdf")
+
+        def add(start, finish):
+            name = f"pdf-derivatives/{id_}-{start:03}-{finish:03}.pdf"
+            pdf = scratch / "fragment.pdf"
+            if pdf.exists():
+                pdf.unlink()
+            cmd("pdfunite", *(scratch / f"page-{n}.pdf" for n in range(start, finish + 1)), pdf)
+            if pdf.stat().st_size > byte_limit:
+                if start == finish:
+                    raise Stop(f"Physical page {start} exceeds the provider byte limit")
+                mid = (start + finish) // 2
+                add(start, mid)
+                add(mid + 1, finish)
+                return
+            if len(read_pdf(pdf)) != finish - start + 1:
+                raise Stop("Derived PDF span page count mismatch")
+            raw = pdf.read_bytes()
+            write(root / name, raw)
+            output.append(dict(path=name, first=start, last=finish, size=len(raw), sha256=sha(raw)))
+        for start, finish in spans:
+            add(start, finish)
+    return output
+
+
+def prepare(config_path, site, root, online=False):
+    config = load(config_path)
+    mode = config.get("source_discovery", "automatic")
+    if mode not in {"automatic", "explicit"}:
+        raise Stop("Unsupported discovery mode")
+    limits = config.get("limits", {})
+    pages_per_file = limits.get("pages_per_provider_file", 100)
+    max_tasks = limits.get("max_tasks", 2048)
+    split_depth = limits.get("split_depth", 2)
+    if any(type(value) is not int or not lo <= value <= hi for value, lo, hi in (
+            (pages_per_file, 1, 500), (max_tasks, 1, 8192), (split_depth, 0, 4))):
+        raise Stop("Invalid compile limits")
+    if config.get("compile_mode", "complete") != "complete":
+        raise Stop("Unsupported compile mode")
+    website, originals = discover(site, config)
+    root.mkdir(mode=0o700, parents=True)
+    (root / "raw-illustrations").mkdir()
+    for path, raw in originals.items():
+        write(root / "astro-snapshot/blobs" / path, raw)
+    records = dict(website["records"])
+    items = {}
+    for item in website.pop("inventory"):
+        entry = items.setdefault(item["url"], {"url": item["url"], "refs": []})
+        entry["refs"].append({"source": item["source"], "line": item["line"]})
+        for key in ("title", "edition"):
+            if item[key] is not None:
+                entry.setdefault(key, item[key])
+    for url in config.get("exclude", {}):
+        items.setdefault(url, {"url": url, "refs": []})
+    for item in config.get("materials", []):
+        origin = item.get("url") or item["file"]
+        items.setdefault(origin, {"refs": []}).update(item)
+        items[origin]["manual"] = True
+    context = website.pop("context")
+    images = {}
+    for origin, item in items.items():
+        suffix = Path(urlsplit(origin).path).suffix.lower()
+        kind = "pdf" if suffix == ".pdf" else "image" if suffix in {".jpg", ".jpeg", ".png"} else "other"
+        id_ = kind[0].upper() + "-" + sha(origin.encode())[:16]
+        row = records[id_] = {k: v for k, v in item.items() if k not in {"file", "sha256", "size", "pages"}}
+        row.update(kind=kind, origin=origin, pin={k: item[k] for k in ("sha256", "size", "pages") if k in item})
+        if origin in config.get("exclude", {}):
+            row.update(status="EXCLUDED", reason=config["exclude"][origin])
+            continue
+        if kind == "other" or (mode == "explicit" and not item.get("manual")):
+            row.update(status="DEFERRED", reason="Unsupported format or outside explicit material list")
+            continue
+        try:
+            raw = retrieve(item, config_path.parent, online, config["site"]["origin"])
+            if not raw or len(raw) > MAX_SOURCE:
+                raise Stop("Source byte limit")
+            digest = sha(raw)
+            if item.get("sha256", digest) != digest or item.get("size", len(raw)) != len(raw):
+                raise Stop("Source pin mismatch")
+            row.update(sha256=digest, size=len(raw))
+            if kind == "pdf":
+                if not raw.startswith(b"%PDF-"):
+                    raise Stop("Invalid PDF signature")
+                path = root / "pdf" / (id_ + ".pdf")
+                write(path, raw)
+                pages = read_pdf(path)
+                if len(pages) != item.get("pages", len(pages)):
+                    raise Stop("Physical page pin mismatch")
+                row.update(pages=len(pages), mime="application/pdf")
+                fragments = provider_fragments(root, id_, path, pages, pages_per_file)
+                if fragments:
+                    row["provider_fragments"] = fragments
+                inspect_pdf(root, id_, path, pages, images)
+                context[id_] = pages
+            else:
+                ext = "png" if raw.startswith(b"\x89PNG") else "jpg"
+                row.update(mime="image/png" if ext == "png" else "image/jpeg", lines=1)
+                name = id_ + "-001-full." + ext
+                images[name] = register(root, name, id_, raw, line=1, url=item.get("url"))
+                context[id_] = ["Исходное изображение"]
+            row["status"] = "PINNED"
+        except (OSError, ValueError, Stop, subprocess.SubprocessError) as error:
+            for name in list(images):
+                if images[name]["source"] == id_:
+                    del images[name]
+            reason = str(error) if isinstance(error, Stop) or hasattr(error, "code") else type(error).__name__
+            row.update(status="UNAVAILABLE", reason=reason)
+    website.update(records=records, entity=config["entity"], settings=config.get("limits", {}))
+    save(root / "source-manifest.json", website)
+    save(root / "plan/context.json", context)
     save(root / "plan/images.json", images)
-    save(root / "plan/tasks.json", plan(sorted(candidates), site_images))
-    paths = {str(p.relative_to(root)): sha(p.read_bytes()) for p in sorted(root.rglob("*")) if p.is_file()}
-    save(root / "snapshot.json", {"entity": ENTITY, "site": SITE, "pdf_sha": PDF_SHA, "files": paths})
+    save(root / "configuration.json", config)
+    files = {p.relative_to(root).as_posix(): sha(p.read_bytes()) for p in root.rglob("*") if p.is_file()}
+    save(root / "snapshot.json", {"entity": config["entity"], "site": website["commit"], "files": files})
 
 
 def verify(root, site=None, *, reparse=True):
     manifest = load(root / "snapshot.json")
-    if manifest["site"] != SITE or manifest["pdf_sha"] != PDF_SHA:
-        raise Stop("Snapshot pin mismatch")
-    for name, digest in manifest["files"].items():
-        path = root / name
-        if not path.resolve().is_relative_to(root.resolve()) or path.is_symlink() or sha(path.read_bytes()) != digest:
-            raise Stop("Snapshot digest mismatch: " + name)
-    pages = load(root / "plan/inspection.json")
-    images = load(root / "plan/images.json")
-    if [page["page"] for page in pages] != list(range(1, 66)) or not {"pdf-011-full.png",
-            "pdf-011-upper.png", "pdf-011-lower.png"} <= images.keys():
-        raise Stop("Incomplete physical page or image map")
-    if reparse:
-        read_pdf(root / "pdf/manual.pdf")
-    for name, metadata in images.items():
-        raw = (root / "raw-illustrations" / name).read_bytes()
-        if sha(raw) != metadata["sha256"] or list(image_dimensions(raw)) != metadata["size"]:
-            raise Stop("Image hash or dimension mismatch")
+    entries = list(root.rglob("*"))
+    if root.is_symlink() or any(p.is_symlink() for p in entries):
+        raise Stop("Source archive contains a symlink")
+    actual = {p.relative_to(root).as_posix(): sha(p.read_bytes()) for p in entries
+              if p.is_file() and p != root / "snapshot.json"}
+    if actual != manifest["files"]:
+        raise Stop("Snapshot digest mismatch")
+    website = load(root / "source-manifest.json")
     if site:
-        original = astro(site)
-        prepared = load(root / "astro-snapshot/context.json")
-        for key in original.keys() - {"inventory"}:
-            if encode(original[key]) != encode(prepared[key]):
-                raise Stop("Pinned Git material differs from prepared snapshot")
-        for row in [*original["records"].values(), original["route"], original["schema"]]:
-            if (root / "astro-snapshot/blobs" / row["path"]).read_bytes() != git(site, "cat-file", "blob", row["blob"]):
-                raise Stop("Pinned archive blob mismatch")
-    tasks = load(root / "plan/tasks.json")
-    pdf_pages = sorted({item["page"] for item in images.values() if "page" in item})
-    if tasks != plan(pdf_pages, sorted(name for name in images if name.endswith(".jpg"))):
-        raise Stop("Task plan does not match the fixed compiler graph")
+        found, originals = discover(site, load(root / "configuration.json"))
+        if found["tree"] != website["tree"] or any(
+                (root / "astro-snapshot/blobs" / path).read_bytes() != raw for path, raw in originals.items()):
+            raise Stop("Pinned Astro archive differs from git")
+    if reparse:
+        for id_, row in website["records"].items():
+            if row["kind"] == "pdf" and row["status"] == "PINNED":
+                if len(read_pdf(root / "pdf" / (id_ + ".pdf"))) != row["pages"]:
+                    raise Stop("Physical PDF map changed")
+                for fragment in row.get("provider_fragments", []):
+                    if len(read_pdf(root / fragment["path"])) != fragment["last"] - fragment["first"] + 1:
+                        raise Stop("Derived PDF map changed")
     return sha(encode(manifest))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pdf", required=True, type=Path)
-    parser.add_argument("--site", required=True, type=Path)
-    parser.add_argument("--sources", required=True, type=Path)
-    parser.add_argument("--media", type=Path)
+    for arg in ("config", "site", "sources"):
+        parser.add_argument("--" + arg, type=Path, required=True)
+    parser.add_argument("--online", action="store_true")
     args = parser.parse_args()
-    prepare(args.pdf, args.site, args.sources, args.media)
+    prepare(args.config, args.site, args.sources, args.online)

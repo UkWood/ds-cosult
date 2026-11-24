@@ -5,12 +5,6 @@ from pathlib import Path
 
 from protocol import Stop, encode, sha, write
 
-TOPICS = (
-    "00-overview", "01-architecture", "02-specifications", "03-interfaces",
-    "04-configuration", "05-operation-and-safety", "06-troubleshooting",
-    "07-metrology", "08-visual-knowledge", "09-uncertainties",
-    "10-applications", "11-system-integration", "12-related-products", "13-capabilities",
-)
 FIXED = {"README.md", "ESSENCE.md", "manifest.json", "sources.json", "index.json",
          "coverage.json", "SHA256SUMS", "illustrations/image-manifest.json"}
 LIMIT = 96 * 1024**2
@@ -18,9 +12,8 @@ FORBIDDEN = re.compile(rb"file-api-|\bfile_id\b|%PDF-\d|JVBERi0|data:[^;,\s]+;ba
 
 
 def checked_name(name):
-    return (name in FIXED or name in {topic + ".md" for topic in TOPICS}
-            or bool(re.fullmatch(r"visual/fig-(?:pdf|astro)-\d{3}-01\.md", name))
-            or bool(re.fullmatch(r"illustrations/(?:pdf|astro)-\d{3}-(?:full|upper|lower)\.(?:png|jpg)", name)))
+    return (name in FIXED or bool(re.fullmatch(r"(?:topics|visual|relations)/[a-z][a-z0-9-]{0,63}\.md", name))
+            or bool(re.fullmatch(r"illustrations/[PI]-[a-f0-9]{16}-\d{3}-(?:full|upper|lower)\.(?:png|jpg)", name)))
 
 
 def checked_bytes(name, raw):
@@ -56,7 +49,9 @@ def validate(entries):
         raise Stop("Knowledge checksum mismatch")
     manifest = json.loads(actual.pop("manifest.json"))
     expected = descriptors(actual)
-    if (manifest["schema"] != 1 or manifest["entity"] != "BKD-PK-RF2"
+    if (manifest["schema"] != 2 or not isinstance(manifest["entity"], dict)
+            or manifest["entity"].get("type") not in {"product", "system"}
+            or not manifest["entity"].get("id")
             or manifest["status"] not in {"PARTIAL", "COMPLETE_UNREVIEWED"}
             or manifest["files"] != expected or manifest["identity"] != sha(encode(expected))):
         raise Stop("Knowledge manifest mismatch")
@@ -66,6 +61,30 @@ def validate(entries):
     for name, metadata in images.items():
         if sha(entries[name]) != metadata["sha256"]:
             raise Stop("Image hash mismatch")
+    ids = set()
+    sources = json.loads(entries["sources.json"])
+    paths = set()
+    for row in json.loads(entries["index.json"]):
+        name = row["path"]
+        lo, hi = row["lines"]
+        if (not name.startswith(("topics/", "visual/", "relations/")) or name not in entries
+                or row["fact_id"] in ids or row["entity"] != manifest["entity"]
+                or not set(row["images"]) <= images.keys()):
+            raise Stop("Knowledge index mismatch")
+        lines = entries[name].decode().splitlines()
+        if not 1 <= lo <= hi <= len(lines) or lines[lo - 1] != "### " + row["fact_id"]:
+            raise Stop("Knowledge index line mismatch")
+        for locator in row["locators"]:
+            source, pointer = locator.split(":", 1)
+            if source == "I" and "illustrations/" + pointer in images:
+                continue
+            if source not in sources or not pointer.isdecimal() or not 1 <= int(pointer) <= (
+                    sources[source].get("pages") or sources[source].get("lines") or 0):
+                raise Stop("Knowledge index locator mismatch")
+        ids.add(row["fact_id"])
+        paths.add(name)
+    if paths != {name for name in entries if name.startswith(("topics/", "visual/", "relations/"))}:
+        raise Stop("Unindexed thematic file")
     return manifest
 
 
@@ -75,7 +94,7 @@ def read_bundle(root):
     entries = {}
     for path in root.rglob("*"):
         name = path.relative_to(root).as_posix()
-        if path.is_symlink() or (not path.is_file() and name not in {"visual", "illustrations"}):
+        if path.is_symlink() or (not path.is_file() and name not in {"topics", "visual", "relations", "illustrations"}):
             raise Stop("Unsafe knowledge path")
         if path.is_file():
             if not checked_name(name) or path.stat().st_size > 8 * 1024**2:
@@ -85,6 +104,8 @@ def read_bundle(root):
 
 
 def archive(path, entries):
+    if path.exists() or path.with_suffix(".zip.sha256").exists():
+        raise Stop("Archive destination must be fresh")
     path.parent.mkdir(parents=True, exist_ok=True)
     from io import BytesIO
     buffer = BytesIO()
@@ -106,6 +127,10 @@ def export(root, path):
 def verify_zip(path):
     import stat
 
+    checksum = path.with_suffix(".zip.sha256")
+    if (path.is_symlink() or checksum.is_symlink() or path.stat().st_size > LIMIT
+            or checksum.read_bytes() != (sha(path.read_bytes()) + "  " + path.name + "\n").encode()):
+        raise Stop("External ZIP digest mismatch")
     with zipfile.ZipFile(path) as source:
         entries = {}
         total = 0
@@ -121,7 +146,7 @@ def verify_zip(path):
 
 def publish(root, entries, metadata):
     files = descriptors(entries)
-    entries["manifest.json"] = encode(dict(metadata, schema=1, entity="BKD-PK-RF2", files=files,
+    entries["manifest.json"] = encode(dict(metadata, schema=2, files=files,
                                            identity=sha(encode(files))))
     entries["SHA256SUMS"] = sums(entries)
     validate(entries)

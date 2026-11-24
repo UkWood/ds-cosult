@@ -1,0 +1,54 @@
+{
+  "site": {
+    "repository": "UkWood/Saturn-Main-Site",
+    "revision": "084d759487bfab6e111549c9b5469711ac5fc13e",
+    "origin": "https://www.mnppsaturn.ru"
+  },
+  "compile_mode": "complete",
+  "entity": {
+    "type": "product",
+    "id": "bkd-pk-rf-2"
+  },
+  "card": "src/content/products/bkd-pk-rf-2.md",
+  "source_discovery": "explicit",
+  "materials": [
+    {
+      "url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20%d0%91%d1%8b%d1%81%d1%82%d1%80%d1%8b%d0%b9%20%d1%81%d1%82%d0%b0%d1%80%d1%82.pdf",
+      "pages": 2,
+      "size": 167325,
+      "sha256": "bf07da30d1221f61a3ecdde5b40f542b90ca2a646c5dc6019997326a2c570148"
+    },
+    {
+      "url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20%d0%9e%d0%b1%d0%b7%d0%be%d1%80.pdf",
+      "pages": 8,
+      "size": 392090,
+      "sha256": "496ddc2786b8fb2cdfd8970947fadde6b7a045e7d86e20737f2ef694425d5890"
+    },
+    {
+      "url": "https://www.mnppsaturn.ru/ftp/public/doc/bkd-pk-rf2/re%20BKD-PK-RF2.pdf",
+      "pages": 65,
+      "size": 3024578,
+      "sha256": "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a",
+      "edition": "203-01"
+    },
+    {
+      "url": "https://www.mnppsaturn.ru/public/doc/bkd-pk-rf2/%d0%91%d0%9a%d0%94-%d0%9f%d0%9a2%20OPCUA.pdf",
+      "pages": 5,
+      "size": 230917,
+      "sha256": "959f515c588ea8758cae0ccfdd17efaf396b31c84c4315e1b195c745d59db5db"
+    },
+    {
+      "url": "https://www.mnppsaturn.ru/photos/3112376640116232.jpg",
+      "size": 73206,
+      "sha256": "504f11f654a5b3b7466715e5a30ede6a38c149b7f5a3c909e8164b209481bf73"
+    },
+    {
+      "url": "https://www.mnppsaturn.ru/photos/3385755126930346.jpg",
+      "size": 179920,
+      "sha256": "b4912d21cea0b83974b5afe04d4067e66ee0392436117466c3daa994e95a017a"
+    }
+  ],
+  "exclude": {
+    "https://www.mnppsaturn.ru/photos/2278872612744825.pdf": "Устаревший URL исключён владельцем"
+  }
+}
