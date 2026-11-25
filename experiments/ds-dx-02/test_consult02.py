@@ -180,3 +180,71 @@ class AcceptanceAndFinance(unittest.TestCase):
         response["usage"]["completion_tokens"] = 5001
         with self.assertRaises(Stop):
             reply(response, OUTPUT_LIMIT)
+
+
+class ConnectorCoverageR2(unittest.TestCase):
+    def test_conservative_equal_prefix_ranges(self):
+        from selector_v2 import code_tokens
+
+        for notation in ("CN01-CN04", "CN01 — CN04", "cn01 − cn04", "СN01–CN04"):
+            self.assertTrue({"cn02", "cn03"} <= code_tokens(notation), notation)
+        self.assertIn("zl12", tokens("ZL11—ZL14"))
+        for text, middle in (("J1–P4", "j2"), ("J1–J90", "j2"), ("-40–55 °C", "c1"),
+                             ("110–240 V", "v111"), ("V1–V4", "v2")):
+            self.assertNotIn(middle, code_tokens(text), text)
+
+    def test_interior_connector_conflict_and_unrelated_questions(self):
+        entries = prepare_rows(
+            ("power", "Сетевое питание 230 В на J12.", {"locators": ["P:4"]}),
+            ("serial", "J12 — последовательный порт RS-485.", {"locators": ["P:5"]}),
+            ("actuator", "J18 подключает шаговый привод.", {"locators": ["P:6"]}),
+        )
+        selector = Selector(entries)
+        _, trace = selector.select("Как подключить J10–J14?")
+        self.assertEqual(trace["gate"], "safety_conflict")
+        self.assertEqual(trace["conflicts"], ["j12"])
+        self.assertEqual(trace["conflict_evidence"]["j12"]["power"]["locators"], ["P:4"])
+        self.assertEqual(trace["conflict_evidence"]["j12"]["signal"]["locators"], ["P:5"])
+        _, benign = selector.select("Как подключить J18?")
+        self.assertIsNone(benign["gate"])
+
+    def test_overview_adds_direct_card_declaration_without_lexical_overlap(self):
+        entries = prepare_rows(
+            ("direct", "Предусмотрено шифрованное туннелирование WireGuard.", {"locators": ["A:9"]}),
+            ("manual", "Изменение параметров WireGuard выполняется после перезапуска.", {"locators": ["P:8"]}),
+            ("lexical", "Прибор передает данные по радиоканалу и Ethernet.", {}),
+            ("irrelevant", "Поддерживается калибровка по эталонному генератору.", {"locators": ["A:10"]}),
+        )
+        sources = json.loads(entries["sources.json"])
+        sources["A"] = {"kind": "astro", "relation": "entity_card", "title": "Remote station", "lines": 10}
+        entries["sources.json"] = json.dumps(sources).encode()
+        selector = Selector(entries)
+        _, trace = selector.select("Перечисли коммуникационные возможности этой станции.")
+        self.assertIn("direct", trace["fact_ids"])
+        self.assertIn("direct", trace["capability_overview_additions"])
+        self.assertNotIn("irrelevant", trace["fact_ids"])
+        for question in ("Как выставить параметры WireGuard после перезапуска?",
+                         "Какие параметры интерфейса нужно настроить после перезапуска?"):
+            _, narrow = selector.select(question)
+            self.assertEqual(narrow["capability_overview_additions"], [])
+
+
+    def test_r1_comparison_reports_group_changes_and_actual_history(self):
+        from consult02 import CARD_SHA
+        from consult02_check import compare_r1
+        from protocol import encode
+
+        def detail(missing, gate, actual):
+            return dict(missing_groups=missing, dryrun_v2={"gate": gate},
+                        groups_actual_history=[{"matched": actual}])
+        old = {"Q08": detail(["conflict"], None, []), "Q11": detail([], None, ["old"])}
+        new = {"Q08": detail([], "safety_conflict", []), "Q11": detail(["context"], None, [])}
+        r1 = {"profiles": {p: dict(status="FAIL", matched=53, json_byte_limit=limit, card_sha256=CARD_SHA)
+                           for p, limit in CONTEXT_PROFILES.items()}}
+        r2 = {"profiles": {p: dict(status="FAIL", matched=53) for p in CONTEXT_PROFILES}}
+        result = compare_r1(r2, {p: new for p in CONTEXT_PROFILES}, {
+            "summary.json": encode(r1), "cases.json": encode({p: old for p in CONTEXT_PROFILES})})
+        self.assertEqual(result["E"]["cases"]["Q08"]["recovered"], ["conflict"])
+        self.assertEqual(result["E"]["cases"]["Q08"]["current_gate"], "safety_conflict")
+        self.assertEqual(result["E"]["cases"]["Q11"]["newly_missing"], ["context"])
+        self.assertEqual((result["E"]["r1_q11_actual_history"], result["E"]["r2_q11_actual_history"]), (1, 0))

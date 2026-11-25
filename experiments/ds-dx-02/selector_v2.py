@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 
 from protocol import Stop, chat, sha, text
 
-REVISION = "selector-v2.1-context-r1"
+REVISION = "selector-v2.2-context-r2"
 WIRE_LIMIT = 9000
 CONTEXT_PROFILES = {"A": 9000, "B": 32000, "C": 64000, "D": 96000, "E": 128000}
 PROMPT_LIMIT = 50_000
@@ -24,6 +24,14 @@ SUFFIXES = ("иями", "ями", "ами", "ого", "ему", "ыми", "им�
             "ость", "ий", "ый", "ая", "ое", "ые", "ой", "ей", "ов", "ам", "ах", "ом", "ию", "ия",
             "ы", "и", "а", "я", "у", "е", "о")
 CONNECTOR = re.compile(r"(?<!\w)(?:[xх][a-zа-я]{1,3})\s*[- ]?\s*\d{1,3}(?!\w)", re.I)
+DASHES = str.maketrans("‐‑‒–—−", "------")
+DESIGNATOR = r"([a-zа-я]{1,4})[ 	]*-?[ 	]*(\d{1,3})"
+DESIGNATORS = re.compile(r"(?<!\w)" + DESIGNATOR + r"(?!\w)", re.I)
+DESIGNATOR_RANGE = re.compile(r"(?<!\w)" + DESIGNATOR + r"[ 	]*-[ 	]*" + DESIGNATOR + r"(?!\w)", re.I)
+CONNECTOR_PREFIXES = {"cn", "con", "j", "p", "tb", "rj"}
+NON_DESIGNATOR_PREFIXES = {"v", "в", "a", "ma", "mv", "kv", "кв", "мв", "мa", "c", "f", "k",
+                          "hz", "mhz", "khz", "u", "i", "rs", "iec", "iso", "ip", "ac", "dc"}
+MAX_RANGE_ITEMS = 16
 ACTION = re.compile(r"подключ|соедин|монтаж|устан[оа]|обслуж|ремонт|калибр|распинов|connect|install|service|wiring|pinout", re.I)
 POWER = re.compile(r"питан|сетев\w* напряж|силов|mains|power supply", re.I)
 MAINS = re.compile(r"(?<!\d)(?:110|120|127|220|230|240|380|400)\s*[вv]\b|сетев\w* напряж|mains", re.I)
@@ -48,6 +56,25 @@ ALIASES = (
     (re.compile(r"сопротивлен|resistan", re.I), "concept:resistance"),
     (re.compile(r"обновл|прошив|firmware|updat", re.I), "concept:update"),
 )
+OVERVIEW = re.compile(r"\b(?:какие|какими|каковы|перечисл\w*|какие-либо|what|which|list)\b", re.I)
+DECLARATION = re.compile(r"\b(?:поддержива\w*|предусмотр\w*|оснащ[её]н\w*|реализован\w*|"
+                         r"supports?|provides?|equipped|implements?)\b", re.I)
+SETUP = re.compile(r"настро|конфигур|параметр|команд|configur|settings", re.I)
+CAPABILITY_INTENT = {
+    "communication": re.compile(r"связ\w*|коммуникац\w*|сетев\w*|протокол\w*|интерфейс\w*|connectivity|communication|protocol|interface", re.I),
+    "data": re.compile(r"регистрац\w*|хранени\w*|архив\w*|logging|storage", re.I),
+    "functions": re.compile(r"возможност\w*|функци\w*|capabilit|function|feature", re.I),
+}
+CAPABILITIES = (
+    ("communication", re.compile(r"\bvpn\b|wireguard|ipsec|туннелир\w*|виртуальн\w* частн\w* сет\w*", re.I)),
+    ("communication", re.compile(r"ethernet|rs[- ]?\d+|can bus|проводн\w* связ\w*", re.I)),
+    ("communication", re.compile(r"\b(?:lte|gsm|wi[- ]?fi|bluetooth)\b|радиоканал|беспроводн", re.I)),
+    ("communication", re.compile(r"протокол\w*|modbus|mqtt|\b(?:tcp|udp|opc)\b", re.I)),
+    ("communication", re.compile(r"удал[её]нн\w* доступ|дистанционн\w* управлени|remote access", re.I)),
+    ("data", re.compile(r"архивир\w*|регистрац\w* данн|хранени\w* данн|data logging", re.I)),
+)
+MAX_OVERVIEW_ADDITIONS = 6
+
 ANSWER_LENGTH = """Отвечай непосредственно на поставленный вопрос, без
 лишних вступлений, повторений и сведений, не относящихся
 к запросу. Выбирай объём ответа исходя из сложности
@@ -66,7 +93,9 @@ SYSTEM = (
 
 
 def tokens(value):
-    value = unicodedata.normalize("NFKC", value).lower().replace("ё", "е")
+    value = unicodedata.normalize("NFKC", value)
+    ranged = expanded_codes(value)
+    value = value.lower().replace("ё", "е")
     value = re.sub(r"[‐‑‒–—−]", "-", value)
     result = set()
     for word in ATOM.findall(value):
@@ -86,13 +115,41 @@ def tokens(value):
             result.add(normalized.replace("-", ""))
     result.update(match.group().lower().translate(LOOKALIKES).replace("-", "").replace(" ", "")
                   for match in CONNECTOR.finditer(value))
+    result.update(ranged)
     result.update(tag for pattern, tag in ALIASES if pattern.search(value))
     return result
 
 
+def designator_prefix(value):
+    normalized = value.lower().translate(LOOKALIKES)
+    if normalized in NON_DESIGNATOR_PREFIXES:
+        return None
+    if (normalized in CONNECTOR_PREFIXES or re.fullmatch(r"x[a-zа-я]{1,3}", normalized)
+            or value.isupper()):
+        return normalized
+    return None
+
+
+def expanded_codes(value):
+    expanded = set()
+    for left, low, right, high in DESIGNATOR_RANGE.findall(value.translate(DASHES)):
+        prefix = designator_prefix(left)
+        length = int(high) - int(low) + 1
+        padded = low.startswith("0") or high.startswith("0")
+        if (prefix and prefix == designator_prefix(right) and 1 <= length <= MAX_RANGE_ITEMS
+                and (not padded or len(low) == len(high))):
+            expanded.update(prefix + (str(n).zfill(len(low)) if padded else str(n))
+                            for n in range(int(low), int(high) + 1))
+    return expanded
+
+
 def code_tokens(value):
-    return {match.group().lower().translate(LOOKALIKES).replace("-", "").replace(" ", "")
-            for match in CONNECTOR.finditer(value)}
+    codes = expanded_codes(value)
+    for raw, digits in DESIGNATORS.findall(value.translate(DASHES)):
+        prefix = designator_prefix(raw)
+        if prefix:
+            codes.add(prefix + digits)
+    return codes
 
 
 def compact(value):
@@ -125,8 +182,32 @@ class Selector:
         self.values = [row["text"] + "\n" + row["applicability"] for row in self.rows]
         self.terms = [tokens(value) for value in self.values]
         self.codes = [code_tokens(row["text"]) for row in self.rows]
+        self.card_declarations = [
+            any(self.sources.get(loc.split(":", 1)[0], {}).get("relation") == "entity_card"
+                for loc in row["locators"]) for row in self.rows
+        ]
         df = Counter(term for terms in self.terms for term in terms)
         self.idf = {term: math.log1p((len(self.rows) - count + .5) / (count + .5)) for term, count in df.items()}
+
+    def overview_candidates(self, question, scores):
+        if not OVERVIEW.search(question):
+            return []
+        if (ACTION.search(question) or SETUP.search(question)) and not DECLARATION.search(question):
+            return []
+        requested = {domain for domain, pattern in CAPABILITY_INTENT.items() if pattern.search(question)}
+        if not requested:
+            return []
+        broad = requested == {"functions"}
+        result = []
+        for domain, pattern in CAPABILITIES:
+            if not broad and domain not in requested:
+                continue
+            candidates = [i for i, row in enumerate(self.rows) if row["kind"] == "source_assertion"
+                          and DECLARATION.search(row["text"]) and pattern.search(row["text"])]
+            if candidates:
+                result.append(min(candidates, key=lambda i: (not self.card_declarations[i],
+                                  -scores[i], len(self.values[i]), self.rows[i]["fact_id"])))
+        return list(dict.fromkeys(result))[:MAX_OVERVIEW_ADDITIONS]
 
     def select(self, question, history=(), *, wire_limit=WIRE_LIMIT):
         if type(wire_limit) is not int or wire_limit not in CONTEXT_PROFILES.values():
@@ -154,6 +235,7 @@ class Selector:
             if row.get("critical") or WARNING.search(value):
                 critical.append(i)
         direct.sort(key=lambda i: (-scores[i], self.rows[i]["fact_id"]))
+        overview = self.overview_candidates(question, scores)
         anchors = direct[:6]
         footprint = set().union(*(self.terms[i] & query for i in anchors))
         locators = {loc for i in anchors for loc in self.rows[i]["locators"]}
@@ -178,10 +260,16 @@ class Selector:
                          if max(scores[i] for i in rows) >= max(1, .45 * scores[direct[0]]))
         conflicts = sorted(set(power) & set(signal) & (explicit or codes))
         safety_conflict = bool(conflicts and (actionable or power_topic))
-        mandatory = []
+        mandatory, conflict_evidence = [], {}
         if safety_conflict:
             for code in conflicts:
-                mandatory.extend((max(power[code], key=scores.get), max(signal[code], key=scores.get)))
+                chosen = {role: max(pool[code], key=scores.get) for role, pool in
+                          (("power", power), ("signal", signal))}
+                mandatory.extend(chosen.values())
+                conflict_evidence[code] = {
+                    role: {"fact_id": self.rows[i]["fact_id"], "locators": self.rows[i]["locators"]}
+                    for role, i in chosen.items()
+                }
         for i in critical:
             value = self.values[i]
             linked = bool(self.codes[i] & codes or locators.intersection(self.rows[i]["locators"]))
@@ -272,10 +360,10 @@ class Selector:
         gate = "safety_conflict" if safety_conflict else None
         if len(body) > wire_limit:
             gate = "mandatory_evidence_exceeds_bound"
-        elif not selected and not direct:
+        elif not selected and not direct and not overview:
             gate = "insufficient_selected_evidence"
         seen = {(self.rows[i]["kind"], self.values[i], frozenset(self.rows[i]["locators"])) for i in selected}
-        for i in direct:
+        for i in dict.fromkeys([*overview, *direct]):
             if len(body) > wire_limit:
                 break
             key = (self.rows[i]["kind"], self.values[i], frozenset(self.rows[i]["locators"]))
@@ -294,7 +382,10 @@ class Selector:
                      fact_ids=[self.rows[i]["fact_id"] for i in selected], counts=counts,
                      locators=sorted({loc for i in selected for loc in self.rows[i]["locators"]}),
                      sources={label: f"{doc} · {where}" for (doc, where), label in labels.items()}, gate=gate,
-                     conflicts=conflicts if safety_conflict else [], abstention_guard=abstention,
+                     conflicts=conflicts if safety_conflict else [], conflict_evidence=conflict_evidence,
+                     expanded_designators=sorted(expanded_codes(active)),
+                     capability_overview_additions=[self.rows[i]["fact_id"] for i in overview if i in selected and i not in direct],
+                     abstention_guard=abstention,
                      unrepresented_facets=unrepresented, local_wire_limit=wire_limit,
                      applicable_safety_ids=sorted(self.rows[i]["fact_id"] for i in applicable_safety),
                      safety_preserved=applicable_safety <= set(selected) and len(body) <= wire_limit,

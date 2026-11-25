@@ -16,14 +16,19 @@ from reconcile import summarize
 from selector_v2 import BOUND, CONTEXT_PROFILES, OUTPUT_LIMIT, PROMPT_LIMIT, REVISION, WIRE_LIMIT, Selector
 
 BASELINE_SHA = "2fe080665f154133a4a278729b6cdc5262ef6093cabd9f949ef59f7bf8124f1a"
-OFFLINE_DIR = "consult02-r1-offline"
-PRIVATE_DIR = "private-consult-02-r1"
-REPORT_DIR = "reports-consult-02-r1"
+OFFLINE_DIR = "consult02-r2-offline"
+PRIVATE_DIR = "private-consult-02-r2"
+REPORT_DIR = "reports-consult-02-r2"
+R1_SWEEP_SHA = "672aa6112c73c933867f482b6de871aad3f385dbf397b1f5e652b5adc239ec20"
 CARD_SHA = "7f75793404709bb2bb1c6ca5fb6904eba1bd90cdc039acff8f3850036ce33814"
 
 
 def baseline_path(workspace):
     return workspace / "reports-consult-01/DS-DX-02B-results.zip"
+
+
+def r1_sweep_path(workspace):
+    return workspace / "consult02-r1-offline/consult02-context-sweep.zip"
 
 
 def finance(workspace):
@@ -46,23 +51,26 @@ def finance(workspace):
 
 
 def pins(workspace, preflight):
-    prior02 = workspace / "private-consult-02"
-    if (prior02 / "ledger.json").exists() or (prior02 / ".inflight").exists():
-        raise Stop("Existing CONSULT-02 exposure requires separate financial reconciliation")
+    for directory in ("private-consult-02", "private-consult-02-r1"):
+        prior02 = workspace / directory
+        if (prior02 / "ledger.json").exists() or (prior02 / ".inflight").exists():
+            raise Stop("Earlier CONSULT-02 exposure requires separate financial reconciliation")
     entries, manifest, rows = inputs(workspace)
     check = preflight.read_bytes()
     evidence = json.loads(check)
     if any(evidence.get(key) != value for key, value in dict(
             snapshot=PINS["snapshot"], runtime=runtime_digest(), kernel=kernel_release(),
-            offline="seccomp: socket EPERM", paid_calls=0, package_count=3, consult02_r1=True).items()):
+            offline="seccomp: socket EPERM", paid_calls=0, package_count=3, consult02_r2=True).items()):
         raise Stop("Run full CONSULT-02 preflight on this WSL host")
     if sha(baseline_path(workspace).read_bytes()) != BASELINE_SHA:
         raise Stop("Historical CONSULT-01 archive changed")
+    if sha(r1_sweep_path(workspace).read_bytes()) != R1_SWEEP_SHA:
+        raise Stop("Historical R1 Context Sweep archive changed")
     budget = finance(workspace)
     next_cost = reserve(OUTPUT_LIMIT)
     plan = dict(schema=1, knowledge_identity=manifest["identity"], knowledge_sha256=PINS["knowledge"],
                 snapshot=manifest["snapshot"], questions_sha256=QUESTION_SHA256, test_card_sha256=CARD_SHA,
-                baseline_sha256=BASELINE_SHA, runtime=runtime_digest(), kernel=kernel_release(),
+                baseline_sha256=BASELINE_SHA, r1_sweep_sha256=R1_SWEEP_SHA, runtime=runtime_digest(), kernel=kernel_release(),
                 preflight_sha256=sha(check), revision=REVISION, bound=BOUND, context_profiles=CONTEXT_PROFILES,
                 accepted_status="PARTIAL", thinking="disabled", transport="SSE with usage", max_output=OUTPUT_LIMIT,
                 maximum_prompt_tokens=PROMPT_LIMIT, finance=budget, next_reserve_nd=next_cost,

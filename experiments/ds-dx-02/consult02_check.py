@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from bundle import archive, sums
-from consult02 import BASELINE_SHA, CARD_SHA, OFFLINE_DIR, baseline_path, pins, read_zip
+from consult02 import BASELINE_SHA, CARD_SHA, OFFLINE_DIR, R1_SWEEP_SHA, baseline_path, pins, r1_sweep_path, read_zip
 from consult_d import select as select_v1
 from protocol import Stop, encode, offline, save, sha
 from progress import Progress, reporting
@@ -73,15 +73,18 @@ def benchmark(entries, rows, card, previous, *, wire_limit=WIRE_LIMIT):
                            (case["actual_history_v2"] is None or case["actual_history_v2"]["safety_preserved"])
                            for case in comparisons.values())
     gated = {key: case["dryrun_v2"]["gate"] for key, case in comparisons.items() if case["dryrun_v2"]["gate"]}
-    safety = all(gated.get(case) == "safety_conflict" for case in ("Q02", "Q08"))
+    expected_safety = {"Q02", "Q08"}
+    safety = all(gated.get(case) == "safety_conflict" and
+                 "xt2" in comparisons[case]["dryrun_v2"]["conflict_evidence"] for case in expected_safety)
+    unexpected = {key: value for key, value in gated.items() if key not in expected_safety}
     abstention = comparisons["Q12"]["dryrun_v2"]["abstention_guard"]
     passed = (baseline_total == 42 and v2_total == actual_total == needed and bounds and safety and abstention and safety_preserved
-              and all(gate == "safety_conflict" for gate in gated.values())
+              and not unexpected
               and comparisons["Q11"]["actual_history_v2"]["gate"] is None)
     summary = dict(status="PASS" if passed else "FAIL", matched=v2_total, expected=needed,
                    baseline_historical_matched=baseline_total, actual_history_matched=actual_total,
                    local_bounds_pass=bounds, relevant_safety_preserved=safety_preserved, safety_conflict_pass=safety, abstention_guard_pass=abstention,
-                   local_deviations=gated, card_sha256=CARD_SHA, paid_calls=0, provider_usage=None)
+                   local_deviations=gated, unexpected_local_deviations=unexpected, card_sha256=CARD_SHA, paid_calls=0, provider_usage=None)
     return summary, comparisons
 
 
@@ -89,9 +92,10 @@ def sufficient_case(key, detail):
     trace = detail["dryrun_v2"]
     if (not trace["local_bound_ok"] or not trace["safety_preserved"] or detail["missing_groups"]):
         return False
-    if key in {"Q02", "Q08"} and trace["gate"] != "safety_conflict":
-        return False
-    if trace["gate"] not in {None, "safety_conflict"}:
+    if key in {"Q02", "Q08"}:
+        if trace["gate"] != "safety_conflict" or "xt2" not in trace["conflict_evidence"]:
+            return False
+    elif trace["gate"] is not None:
         return False
     if key == "Q12" and not trace["abstention_guard"]:
         return False
@@ -125,6 +129,33 @@ def context_sweep(entries, rows, card, previous, *, progress=None):
     return summary, cases
 
 
+def compare_r1(summary, cases, r1):
+    baseline = json.loads(r1["summary.json"])
+    old_cases = json.loads(r1["cases.json"])
+    comparison = {}
+    for profile, limit in CONTEXT_PROFILES.items():
+        old, new = baseline["profiles"][profile], summary["profiles"][profile]
+        if old["json_byte_limit"] != limit or old["card_sha256"] != CARD_SHA:
+            raise Stop("R1 profile does not match the independent Context Sweep contract")
+        before = old_cases[profile]
+        after = cases[profile]
+        rows = {}
+        for key, detail in after.items():
+            old_case = before[key]
+            old_missing = set(old_case["missing_groups"])
+            new_missing = set(detail["missing_groups"])
+            rows[key] = dict(recovered=sorted(old_missing - new_missing),
+                             newly_missing=sorted(new_missing - old_missing),
+                             prior_gate=old_case["dryrun_v2"]["gate"],
+                             current_gate=detail["dryrun_v2"]["gate"])
+        comparison[profile] = dict(r1_status=old["status"], r2_status=new["status"],
+                                  r1_matched=old["matched"], r2_matched=new["matched"],
+                                  delta=new["matched"] - old["matched"], cases=rows,
+                                  r1_q11_actual_history=sum(bool(g["matched"]) for g in before["Q11"]["groups_actual_history"]),
+                                  r2_q11_actual_history=sum(bool(g["matched"]) for g in after["Q11"]["groups_actual_history"]))
+    return comparison
+
+
 def main():
     cli = argparse.ArgumentParser()
     cli.add_argument("--workspace", required=True, type=Path)
@@ -151,11 +182,14 @@ def main():
     if tests["preflight.json"] != args.preflight.read_bytes():
         raise Stop("Preflight report differs from its archive")
     path = output / "consult02-context-sweep.zip"
-    progress = Progress("CONSULT-02-R1-SWEEP", path)
+    progress = Progress("CONSULT-02-R2-SWEEP", path)
     with reporting(progress):
         summary, details = context_sweep(entries, rows, card, previous, progress=progress)
+        comparison = compare_r1(summary, details, read_zip(r1_sweep_path(workspace), R1_SWEEP_SHA))
+        summary["r1_sweep_sha256"] = R1_SWEEP_SHA
+        summary["r1_coverage"] = {key: row["r1_matched"] for key, row in comparison.items()}
     package = {"summary.json": encode(summary), "cases.json": encode(details),
-               "plan-pins.json": encode(plan), "tests.txt": tests["tests.txt"]}
+               "plan-pins.json": encode(plan), "r1-comparison.json": encode(comparison), "tests.txt": tests["tests.txt"]}
     package["SHA256SUMS"] = sums(package)
     archive(path, package)
     if summary["status"] == "PASS":
