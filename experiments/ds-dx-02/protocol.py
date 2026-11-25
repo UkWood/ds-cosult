@@ -510,7 +510,7 @@ class Ledger:
         return json.loads(raw)
 
 
-def offline():
+def offline(*, stream=None):
     lib = ctypes.CDLL("libseccomp.so.2")
     lib.seccomp_init.argtypes = [ctypes.c_uint32]
     lib.seccomp_init.restype = ctypes.c_void_p
@@ -536,7 +536,7 @@ def offline():
     except PermissionError as error:
         if error.errno != errno.EPERM:
             raise
-    print("seccomp: socket denied (EPERM)")
+    print("seccomp: socket denied (EPERM)", file=stream)
 
 
 def runtime_digest():

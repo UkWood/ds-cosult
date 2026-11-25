@@ -262,7 +262,7 @@ def fact_issue(row, task):
     return None
 
 
-def facts(result, task, *, issue=None, obj=None):
+def facts(result, task, *, issue=None, obj=None, on_reject=None):
     issues = {} if issue is None else issue
     finish = result["finish_reason"]
     if finish not in {"stop", "length"}:
@@ -286,11 +286,15 @@ def facts(result, task, *, issue=None, obj=None):
     if obj.get("status") != ("FACTS" if rows else "NO_SUPPORTED_CONTENT"):
         issues.update(reason="inconsistent_extraction_status",
                       rejected_rows={"inconsistent_extraction_status": len(rows)})
+        if on_reject:
+            for ordinal, row in enumerate(rows, 1):
+                on_reject(ordinal, row, "inconsistent_extraction_status")
         return ("TRUNCATED" if finish == "length" else "PARTIAL"), []
     accepted = []
     rejected = {}
     extra = {"locator_outside_evidence": set(), "image_outside_evidence": set()}
-    for row in rows:
+    for ordinal, row in enumerate(rows, 1):
+        original = row
         if isinstance(row, dict) and "topic" in row:
             topic = row["topic"]
             if not isinstance(topic, str) or not NAME.fullmatch(topic):
@@ -298,6 +302,8 @@ def facts(result, task, *, issue=None, obj=None):
                 issues["topic_normalized"] = issues.get("topic_normalized", 0) + 1
         code = fact_issue(row, task)
         if code:
+            if on_reject:
+                on_reject(ordinal, original, code)
             rejected[code] = rejected.get(code, 0) + 1
             locators = row.get("locators") if isinstance(row, dict) else None
             for locator in locators if isinstance(locators, list) else ():
@@ -439,7 +445,8 @@ def fusion_evidence(previous, images):
                 supporting_images=supporting, supporting_locators=locators)
 
 
-def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execution="mock", policy=None):
+def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execution="mock", policy=None,
+                     progress=None, replay=None):
     policy = validate_policy(policy if policy is not None else dict.fromkeys(POLICY_FAMILIES, "disabled"))
     import time
 
@@ -466,6 +473,10 @@ def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execu
         family = task["kind"]
         if family == "vision":
             family = "vision_photo" if website["records"][group[0]]["kind"] == "image" else "vision_document"
+        if progress:
+            progress.task = id_
+            progress.known = len(tasks)
+            progress.emit("TASK")
         body, prefix = payload(root, website, task, handles, previous, group, mode=policy[family], streaming=True)
         if journal.settled(id_):
             journal.checkpoint_request(id_, body, prefix)
@@ -492,7 +503,11 @@ def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execu
         obj = response_object(result)
         advisory[id_], themes[id_] = advisory_status(obj, result["finish_reason"])
         issue = {}
-        states[id_], rows[id_] = facts(result, task, issue=issue, obj=obj)
+        on_reject = (lambda ordinal, row, code: replay.reject(task, ordinal, row, code)) if replay else None
+        states[id_], rows[id_] = facts(result, task, issue=issue, obj=obj, on_reject=on_reject)
+        if progress:
+            progress.completed += 1
+            progress.spent += result["cost_nd"]
         if issue:
             issue.setdefault("expected_scope", task["scope"])
             issue.setdefault("expected_images", task["images"])
@@ -569,6 +584,8 @@ def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execu
     try:
         _, base = base_graph(root, website, context, images)
         tasks.extend(base)
+        if progress:
+            progress.known = len(base)
         states.update((task["id"], "DEFERRED") for task in base)
         rows.update((task["id"], []) for task in base)
         base_remaining = len(base)
@@ -584,6 +601,9 @@ def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execu
                 digest = file["sha256"]
                 op = "upload-" + digest
                 if digest not in upload_by_digest:
+                    if progress:
+                        progress.task = op
+                        progress.emit("UPLOAD")
                     raw = (root / file["path"]).read_bytes()
                     if sha(raw) != digest:
                         raise Stop("Pinned upload hash differs")
@@ -595,7 +615,9 @@ def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execu
                         journal.execute(op, "/files", body, PAGE * pages, post,
                                         lambda result: uploaded(result, file["size"], pages), content_type=ctype)
                     upload_by_digest[digest] = journal.result(op)
-                if upload_by_digest[digest]["expires_at"] <= time.time():
+                    if progress:
+                        progress.spent += upload_by_digest[digest]["cost_nd"]
+                if replay is None and upload_by_digest[digest]["expires_at"] <= time.time():
                     raise Stop("Approved provider file handle expired")
                 handles[source] = dict(upload_by_digest[digest], first=file["first"], last=file["last"])
             extract(task, group, registered=True)
@@ -679,7 +701,12 @@ def run(args):
             key = getpass.getpass("Ключ DeepSeek: ")
             if not key:
                 raise Stop("Empty key")
-            compile_snapshot(args.sources, args.knowledge, args.reports, journal, identity, transport(key), execution="live", policy=policy)
+            from progress import Progress, reporting
+            progress = Progress("COMPILE", args.reports)
+            with reporting(progress):
+                status = compile_snapshot(args.sources, args.knowledge, args.reports, journal, identity,
+                                          transport(key), execution="live", policy=policy, progress=progress)
+            progress.terminal(status)
 
 
 def main():

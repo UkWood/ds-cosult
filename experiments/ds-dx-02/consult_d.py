@@ -1,15 +1,11 @@
 """Consultation over an acquired portable knowledge bundle."""
-import argparse
 import base64
-import getpass
 import json
-import os
 import re
 import statistics
-from pathlib import Path
 
-from bundle import archive, read_bundle, sums
-from protocol import Ledger, Stop, chat, encode, live_gate, load, locked, money, reply, reserve, sha, text, transport, runtime_digest, kernel_release
+from bundle import archive, sums
+from protocol import Stop, chat, encode, reply, reserve, sha, text
 
 LIMIT = 4096
 CONTEXT_BYTES = 240_000
@@ -45,7 +41,7 @@ def select(entries, question, history=(), requested_images=()):
     budget = CONTEXT_BYTES - len(metadata.encode()) - len(history_text.encode()) - question_bytes
     if budget <= 0:
         raise Stop("Question and approved knowledge metadata exceed the context limit")
-    paths, ids = [], []
+    paths = []
     if len(entries["ESSENCE.md"]) <= budget:
         context = entries["ESSENCE.md"].decode()
         paths = ["ESSENCE.md"]
@@ -75,7 +71,6 @@ def select(entries, question, history=(), requested_images=()):
                 raise Stop("Critical prepared facts exceed the consultation context")
         context = "\n\n".join(excerpts) or "По запросу не найдено подготовленных записей."
         paths = sorted({entry["path"] for entry in evidence})
-        ids = [entry["fact_id"] for entry in evidence]
     allowed = {name for entry in evidence for name in entry["images"]}
     requested_images = list(dict.fromkeys(requested_images))
     if len(requested_images) > 3 or not set(requested_images) <= allowed & images.keys():
@@ -90,8 +85,11 @@ def select(entries, question, history=(), requested_images=()):
         mime = "image/jpeg" if name.endswith(".jpg") else "image/png"
         blocks.append({"type": "image_url", "image_url": {
             "url": f"data:{mime};base64," + data, "detail": "original"}})
-    body = encode(chat(SYSTEM, blocks, LIMIT))
-    selection = {"files": paths, "fact_ids": ids, "images": requested_images, "context_sha256": sha(encode(fixed)),
+    system = SYSTEM
+    if json.loads(entries.get("manifest.json", b"{}")).get("status") == "PARTIAL":
+        system += " База PARTIAL и не проверена инженером. Явно указывай существенные пробелы и конфликты."
+    body = encode(chat(system, blocks, LIMIT, streaming=True))
+    selection = {"files": paths, "fact_ids": [item["fact_id"] for item in evidence], "images": requested_images, "context_sha256": sha(encode(fixed)),
                  "mode": "ESSENCE" if paths == ["ESSENCE.md"] else "records"}
     return body, selection
 
@@ -111,12 +109,15 @@ def questions(path):
     return rows
 
 
-def conduct(entries, manifest, rows, journal, post, answers):
+def conduct(entries, manifest, rows, journal, post, answers, progress=None):
     histories = {}
     for i, row in enumerate(rows, 1):
         id_ = f"Q{i:02}"
         question = row["question"]
         history = histories.setdefault(row["dialog"], []) if "dialog" in row else []
+        if progress:
+            progress.task, progress.known = id_, len(rows)
+            progress.emit("TASK")
         body, selection = select(entries, question, history, row.get("images", ()))
         if journal.has(id_):
             journal.checkpoint_request(id_, body, selection["context_sha256"])
@@ -126,6 +127,9 @@ def conduct(entries, manifest, rows, journal, post, answers):
                                    lambda response: reply(response, LIMIT), prefix=selection["context_sha256"])
         answers.append(dict(call, question=question, selection=selection, knowledge=manifest["identity"],
                             review="UNREVIEWED"))
+        if progress:
+            progress.completed += 1
+            progress.spent += call["cost_nd"]
         if call["finish_reason"] != "stop" or not call["text"].strip():
             raise Stop(f"{id_}: unusable answer, finish_reason={call['finish_reason']}")
         history.append({"question": question, "answer": call["text"]})
@@ -147,53 +151,9 @@ def report(path, answers, diagnostic, journal):
     archive(path / "DS-DX-02B-results.zip", entries)
 
 
-def run(args):
-    live_gate()
-    if not args.confirm_provider_contract:
-        raise Stop("Verify current model, Vision contract and rates, then explicitly confirm")
-    os.umask(0o077)
-    entries, manifest = read_bundle(args.knowledge)
-    if manifest.get("execution") != "live":
-        raise Stop("LIVE-CONSULT requires a package from LIVE-COMPILE")
-    if manifest["status"] == "PARTIAL" and not args.allow_partial:
-        raise Stop("Partial knowledge needs explicit operator acceptance")
-    rows = questions(args.questions)
-    identity = sha(encode([manifest["identity"], rows, runtime_digest(), kernel_release(), str(args.state.resolve())]))
-    print(f"Consult plan identity: {identity}; graph upper reserve USD={len(rows) * reserve(LIMIT) / 10**9:.9f}")
-    with locked(args.state):
-        if args.reports.exists():
-            raise Stop("Choose a fresh evidence path")
-        journal = Ledger(args.state / "ledger.json", "consult", money(args.owner_go_usd),
-                         money(args.total_go_usd), identity, args.resume,
-                         load(args.budget_approval) if args.budget_approval else None)
-        journal.check(reserve(LIMIT))
-        key = getpass.getpass("Ключ DeepSeek: ")
-        if not key:
-            raise Stop("Empty key")
-        answers = []
-        try:
-            conduct(entries, manifest, rows, journal, transport(key), answers)
-        except Stop as error:
-            report(args.reports, answers, str(error), journal)
-            raise
-        report(args.reports, answers, None, journal)
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    for name in ("knowledge", "state", "reports", "questions"):
-        parser.add_argument("--" + name, type=Path, required=True)
-    parser.add_argument("--owner-go-usd", required=True)
-    parser.add_argument("--total-go-usd", required=True)
-    parser.add_argument("--allow-partial", action="store_true")
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--confirm-provider-contract", action="store_true")
-    parser.add_argument("--budget-approval", type=Path)
-    run(parser.parse_args())
-
-
 if __name__ == "__main__":
+    from consult_qa import main
     try:
         main()
-    except Stop as error:
-        raise SystemExit(str(error)) from None
+    except (Stop, OSError, ValueError, KeyError, TypeError) as error:
+        raise SystemExit(str(error) if isinstance(error, Stop) else type(error).__name__) from None

@@ -27,7 +27,7 @@ def run(args):
     if args.reports.exists():
         raise Stop("Choose a fresh preflight reports path")
     print("Pilot base graph " + encode(graph).decode(), flush=True)
-    log = subprocess.run([sys.executable, "-m", "unittest", "-v", "test_d", "test_universal", "test_r4", "test_r4_c", "test_compile_release"],
+    log = subprocess.run([sys.executable, "-m", "unittest", "-v", "test_d", "test_universal", "test_r4", "test_r4_c", "test_compile_release", "test_qa"],
                          cwd=Path(__file__).resolve().parent, check=True,
                          env=dict(os.environ, DX02_PREFLIGHT_SOURCES=str(args.sources.resolve()),
                                   DX02_PREFLIGHT_SITE=str(args.site.resolve()),
@@ -37,7 +37,7 @@ def run(args):
     sys.stdout.flush()
     sys.stdout.buffer.write(log.stdout)
     evidence = {"snapshot": identity, "offline": "seccomp: socket EPERM", "paid_calls": 0,
-                "transport": "mock only", "r4_c_sse": True, "r4_b_int": True, "package_count": len(packages), "graph": graph, "experiment_sha256": sha(encode(experiment)), "kernel": kernel_release(), "runtime": runtime_digest(), "status": "ENGINEERING_PREFLIGHT_ONLY"}
+                "transport": "mock only", "r4_c_sse": True, "r4_b_int": True, "r4_b_qa": True, "package_count": len(packages), "graph": graph, "experiment_sha256": sha(encode(experiment)), "kernel": kernel_release(), "runtime": runtime_digest(), "status": "ENGINEERING_PREFLIGHT_ONLY"}
     entries = {"preflight.json": encode(evidence), "tests.txt": log.stdout,
                "r4-a-plan.json": encode(experiment)}
     entries["SHA256SUMS"] = sums(entries)
