@@ -89,10 +89,10 @@ class OfflineContracts(unittest.TestCase):
         from compile_d import payload, multipart
         task = {"id": "one", "kind": "extract", "limit": 1024, "images": []}
         website = {"entity": {"id": "sample", "type": "product"}, "records": {"P01": {}}, "relations": []}
-        group = ("P01", {1: "mock"}, [])
+        group = ("P01", {1: "mock"})
         handles = {"P01": {"handle": "file-api-mock", "first": 1}}
         a, p1 = payload(self.root, website, task, handles, {}, group)
-        b, p2 = payload(self.root, website, dict(task, id="two"), handles, {}, group)
+        b, p2 = payload(self.root, website, dict(task, id="two"), handles, {}, ("P01", {2: "other page"}))
         self.assertEqual(p1, p2)
         self.assertNotEqual(a, b)
         for raw in (a, b):
@@ -122,6 +122,22 @@ class OfflineContracts(unittest.TestCase):
         merged = merge([task], {task["id"]: [row, duplicate, different, conflict]})
         self.assertEqual(len(merged), 3)
         self.assertIn(["A001:2", "P01:3"], [item["locators"] for item in merged])
+
+    def test_R3_visual_reports_missing_candidate_and_rejects_unregistered_image(self):
+        import json
+        from compile_d import facts
+
+        task = {"id": "visual", "kind": "vision", "scope": {"P01": [3, 4]},
+                "images": ["page-3.png", "page-4.png"]}
+        row = {"text": "Mock illustration", "applicability": "mock", "kind": "visual_observation",
+               "locators": ["I:page-3.png"], "topic": "service"}
+        wrong = dict(row, locators=["I:/photos/unregistered.jpg"])
+        result = {"finish_reason": "stop", "text": json.dumps({"status": "FACTS", "facts": [row, wrong]})}
+        diagnostic = {}
+        self.assertEqual(facts(result, task, issue=diagnostic), ("PARTIAL", [row]))
+        self.assertEqual(diagnostic["missing_images"], ["page-4.png"])
+        self.assertEqual(diagnostic["rejected_rows"], {"image_outside_evidence": 1})
+        self.assertNotIn("unregistered.jpg", json.dumps(diagnostic))
 
     def test_D06_real_inline_crops_and_limit(self):
         import os

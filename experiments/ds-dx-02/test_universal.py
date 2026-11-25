@@ -18,6 +18,14 @@ class PlanContract(unittest.TestCase):
             validate({"tasks": [dict(task, deps=["read"])], "gaps": []}, scope, {}, 8)
         with self.assertRaises(Stop):
             validate({"tasks": [task], "gaps": []}, scope, {}, 0)
+        gap = {"source": "A", "locations": [2], "reason": "not passed to any task"}
+        with self.assertRaises(Stop):
+            validate({"tasks": [dict(task, scope={"A": [1], "B": [1]})], "gaps": [gap]}, scope, {}, 8)
+        images = {"page.jpg": ("A", 2)}
+        visual = dict(task, kind="vision", images=["page.jpg"])
+        self.assertEqual(validate({"tasks": [visual], "gaps": []}, scope, images, 8), [visual])
+        with self.assertRaises(Stop):
+            validate({"tasks": [dict(visual, images=["unregistered.jpg"])], "gaps": []}, scope, images, 8)
 
 
 class EndToEnd(unittest.TestCase):
@@ -37,7 +45,7 @@ class EndToEnd(unittest.TestCase):
         import tempfile
         from pathlib import Path
         from bundle import read_bundle, verify_zip
-        from compile_d import PLANNER, compile_snapshot, provider_files
+        from compile_d import compile_snapshot, graph_estimate, provider_files
         from consult_d import conduct, report
         from protocol import Ledger, encode, load, runtime_digest
         from sources import verify
@@ -69,38 +77,34 @@ class EndToEnd(unittest.TestCase):
                 wire = json.loads(body)
                 blocks = wire["messages"][1]["content"]
                 text_blocks = [block["text"] for block in blocks if block["type"] == "text"]
-                registry, request = map(json.loads, text_blocks)
+                fixed, request = map(json.loads, text_blocks)
+                evidence = request["available_evidence"]
+                self.assertIn("related_source_metadata", fixed)
                 current = request["task"]
-                scope = {source: [int(n) for n in locations]
-                         for source, locations in registry["source_text"].items()}
                 kind = current["kind"]
+                self.assertEqual(set(evidence["source_text"]), {fixed["source"]})
+                self.assertEqual(evidence["original_locators"], current["scope"])
+                self.assertEqual(set(evidence["images"]), set(current["images"]))
+                self.assertNotIn("source_text", fixed)
+                self.assertIn(kind, ("extract", "vision", "fusion"))
+                calls.append(kind)
                 if ".s" in current["id"]:
                     children.add(kind)
                 if pack == 0 and kind not in truncated and ".s" not in current["id"] and (
-                        (kind == "plan" and sum(map(len, scope.values())) > 1)
-                        or (kind == "extract" and sum(map(len, current["scope"].values())) > 1)
-                        or (kind == "vision" and len(current["images"]) > 1)
-                        or (kind == "fusion" and len(current["scope"]) > 1)):
+                        (kind in {"extract", "fusion"} and any(len(v) > 1 for v in current["scope"].values()))
+                        or (kind == "vision" and len(current["images"]) > 1)):
                     truncated.add(kind)
                     return fake_reply(body, '{"facts":[{', "length")
-                locators = [f"{source}:{n}" for source, nums in current.get("scope", scope).items() for n in nums]
-                if wire["messages"][0]["content"] == PLANNER:
-                    source, = scope
-                    visuals = registry["image_candidates"]
-                    batch = [dict(id="read", topic="evidence", kind="extract", scope=scope,
-                                  images=[], deps=[], instruction="Capture the first grounded observation", limit=512)]
-                    if visuals:
-                        batch.append(dict(batch[0], id="visual", topic="scene", kind="vision", images=visuals))
-                    result = dict(tasks=batch, gaps=[])
-                elif current["kind"] == "fusion":
-                    calls.append("fusion")
+                if kind == "fusion":
+                    self.assertGreaterEqual(len(current["scope"]), 2)
                     result = dict(status="NO_SUPPORTED_CONTENT", facts=[])
                 else:
-                    calls.append(current["kind"])
-                    locs = ["I:" + current["images"][0]] if current["images"] else locators[:1]
-                    result = dict(status="FACTS", facts=[dict(text="Mock observation " + locs[0],
-                                  applicability="Mock result", locators=locs,
-                                  kind="visual_observation" if current["images"] else "source_assertion")])
+                    locs = (["I:" + name for name in current["images"]] or
+                            [f"{source}:{n}" for source, nums in current["scope"].items() for n in nums[:2]])
+                    result = dict(status="FACTS", facts=[dict(text="Mock observation " + loc,
+                                  applicability="Mock result", locators=[loc],
+                                  kind="visual_observation" if current["images"] else "source_assertion")
+                                  for loc in locs])
                 return fake_reply(body, encode(result).decode())
 
             with tempfile.TemporaryDirectory() as directory:
@@ -114,7 +118,7 @@ class EndToEnd(unittest.TestCase):
                 compile_snapshot(raw_dir, knowledge, reports, ledger, identity, post)
                 self.assertIn("fusion", calls)
                 if pack == 0:
-                    self.assertEqual(truncated, {"plan", "extract", "vision", "fusion"})
+                    self.assertEqual(truncated, {"extract", "vision", "fusion"})
                     self.assertTrue(truncated <= children)
                 resumed = Ledger(ledger_path, "compile", 10**12, 10**12, identity, True)
                 def no_retry(*args):
@@ -141,15 +145,42 @@ class EndToEnd(unittest.TestCase):
                     self.assertNotIn(b"ABSENT_MATERIAL_MARKER", body)
                     self.assertNotIn(b"file_id", body)
                     self.assertNotIn(b'"source_text"', body)
+                    self.assertNotIn(b"available_evidence", body)
                     return fake_reply(body, "Mock response uses the prepared knowledge only")
 
                 ledger = Ledger(ledger_path, "consult", 10**12, 10**12, meta["identity"])
                 conduct(entries, meta, [{"question": "What does the package contain?"}], ledger, consult, consulted)
                 self.assertEqual(len(consulted), 1)
                 report(stage / "consult", consulted, None, ledger)
-                print(f"mock {meta['entity']} {meta['status']} sources={len(source_manifest['records'])} "
-                      f"facts={len(load(knowledge / 'index.json'))} uploads={len(uploads)} "
-                      f"runtime={before}")
+                from collections import Counter
+                from bundle import archive, sums
+                graph = graph_estimate(root)
+                coverage = load(knowledge / "coverage.json")
+                context = load(root / "plan/context.json")
+                base = [task for id_, task in coverage["task_scope"].items()
+                        if id_.startswith("g") and ".s" not in id_]
+                self.assertEqual({(key, n) for task in base for key, scope in task["scope"].items() for n in scope},
+                                 {(key, n) for key, values in context.items() for n in range(1, len(values) + 1)})
+                self.assertEqual({name for task in base for name in task["images"]},
+                                 set(load(root / "plan/images.json")))
+                compile_ops = [op for op in ledger.data["ops"] if op["stage"] == "compile"]
+                self.assertEqual(len(compile_ops), len(uploads) + len(calls))
+                self.assertTrue(all(op["status"] == "SETTLED" and 0 < op["cost_nd"] <= op["reserve_nd"]
+                                    for op in compile_ops))
+                call_counts = dict(Counter(calls), planner=0, upload=len(uploads), consult=1)
+                summary = dict(entity=meta["entity"], snapshot=identity, status=meta["status"],
+                               facts=len(load(knowledge / "index.json")), calls=call_counts, graph=graph,
+                               reasons=dict(Counter(v["reason"] for v in coverage["extraction_issues"].values())),
+                               runtime=before, paid_calls=0)
+                print("mock " + encode(summary).decode())
+                output = os.environ.get("DX02_MOCK_EVIDENCE")
+                if output:
+                    entries = {"summary.json": encode(summary), "coverage.json": encode(coverage),
+                               "knowledge.zip": (reports / "knowledge.zip").read_bytes(),
+                               "compile.zip": (reports / "DS-DX-02A-results.zip").read_bytes(),
+                               "consult.zip": (stage / "consult/DS-DX-02B-results.zip").read_bytes()}
+                    entries["SHA256SUMS"] = sums(entries)
+                    archive(Path(output) / f"mock-package-{pack + 1}.zip", entries)
         self.assertEqual(sorted(kind for kind, _ in observed), ["product", "product", "system"])
         self.assertEqual(len({size for _, size in observed}), 3)
 
@@ -277,3 +308,92 @@ class EndToEnd(unittest.TestCase):
         self.assertEqual(report["fact_ids"], ["critical"])
         user = json.loads(wire)["messages"][1]["content"]
         self.assertIn("Relay must be isolated", user[0]["text"])
+
+
+class RealPlannerRegression(unittest.TestCase):
+    def test_live_plan_shape_and_invalid_extraction_do_not_control_execution(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from compile_d import compile_snapshot
+        from protocol import Ledger, encode, load, save
+        from test_d import fake_reply
+
+        source = "A-c5c7146d49ed3f59"
+        other = "A-second"
+        legacy = {
+            "tasks": [
+                {"id": "card", "scope": {source: "1-12"}},
+                {"id": "vision", "images": ["/photos/3112376640116232.jpg",
+                                            "/photos/3385755126930346.jpg"], "deps": ["external"]},
+                {"id": "fusion", "scope": {"A-external": [1]}, "deps": ["external"]},
+            ],
+            "gaps": [{"source": "A-external", "locations": [1], "reason": "not supplied"}],
+        }
+        for advisory, finish, reason, bare in (
+            (legacy, "stop", "unsupported_shape", True),
+            (legacy, "stop", "unsupported_shape", False),
+            (None, "stop", "absent", False),
+            ({"themes": []}, "stop", "unsupported_shape", False),
+            (legacy, "length", "truncated", False),
+        ):
+            with self.subTest(reason=reason, bare=bare), TemporaryDirectory() as tmp:
+                stage = Path(tmp)
+                root = stage / "source"
+                save(root / "source-manifest.json", {
+                    "entity": {"id": "sample", "type": "product"}, "relations": [], "boundary": [],
+                    "settings": {}, "records": {source: {"kind": "astro", "lines": 71, "relation": "entity_card"},
+                                                other: {"kind": "astro", "lines": 1}},
+                })
+                save(root / "plan/context.json", {source: ["line"] * 71, other: ["more evidence"]})
+                save(root / "plan/images.json", {})
+                calls = []
+
+                def post(endpoint, body, content_type):
+                    import json
+                    self.assertEqual(endpoint, "/chat/completions")
+                    fixed, suffix = [json.loads(block["text"]) for block in
+                                     json.loads(body)["messages"][1]["content"]]
+                    task = suffix["task"]
+                    calls.append(task["id"])
+                    self.assertEqual(task["kind"], "extract")
+                    self.assertEqual(task["images"], [])
+                    self.assertNotIn("/photos/", body.decode())
+                    key, = task["scope"]
+                    number = task["scope"][key][0]
+                    row = dict(text=key, applicability="mock", kind="source_assertion",
+                               locators=[f"{key}:{number}"])
+                    result = dict(status="FACTS", facts=[row], advisory={"topics": ["service"]})
+                    if task["id"] == "g0001-read":
+                        self.assertEqual(task["scope"], {source: list(range(1, 72))})
+                        self.assertEqual(len(suffix["available_evidence"]["source_text"][source]), 71)
+                        self.assertEqual(fixed["source"], source)
+                        result["advisory"] = advisory
+                        result["facts"].append(dict(row, locators=["A-external:90"]))
+                        if bare:
+                            result = legacy
+                    if ".s" in task["id"]:
+                        result = {"status": "NO_SUPPORTED_CONTENT", "facts": []}
+                    return fake_reply(body, encode(result).decode(), finish if task["id"] == "g0001-read" else "stop")
+
+                ledger = Ledger(stage / "private/ledger.json", "compile", 10**10, 10**10, "snapshot")
+                self.assertEqual(compile_snapshot(root, stage / "kb", stage / "reports", ledger,
+                                                  "snapshot", post), "PARTIAL")
+                coverage = load(stage / "kb/coverage.json")
+                expected = ["g0001-read", "g0002-read"]
+                if finish == "length":
+                    expected[1:1] = ["g0001-read.s1", "g0001-read.s2"]
+                self.assertEqual(calls, expected)
+                self.assertEqual(coverage["advisory"]["g0001-read"], reason)
+                self.assertEqual(set(coverage["sources"][source]), {str(n) for n in range(1, 72)})
+                self.assertEqual(len(load(stage / "kb/index.json")), 1 if bare else 2)
+                self.assertEqual(coverage["tasks"]["g0002-read"], "COMPLETE_UNREVIEWED")
+                issue = coverage["extraction_issues"]["g0001-read"]
+                if bare:
+                    self.assertEqual(issue["reason"], "response_shape")
+                else:
+                    self.assertEqual(issue["rejected_rows"], {"locator_outside_evidence": 1})
+                self.assertNotIn("/photos/", (stage / "kb/coverage.json").read_text())
+                original = ledger.result("g0001-read")["text"]
+                if advisory == legacy:
+                    self.assertIn("/photos/3112376640116232.jpg", original)
