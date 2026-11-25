@@ -1,106 +1,127 @@
-# HANDOFF Architecture Session A — DS-DX-02-D-R3
+# HANDOFF Architecture Session A — DS-DX-02-D-R4
 
 25 ноября 2026 года · `UkWood/ds-cosult` · `experiment/ds-dx-02-d-unified-knowledge-compiler`
 
-- Родительский HEAD R2: `d62b7fcefeacc945e0ef2fbd47190bdfa4ccdefe`
-- Коммит реализации R3: `445ea6aba2dfc3ef1b2d6d1334f3b450aeaceb0f`
-- Runtime digest: `9662d09cb62242798b1923e39504e8273a8d357e5b145ed3209dc08f1306dc98`
-- Astro commit: `084d759487bfab6e111549c9b5469711ac5fc13e` · tree: `a5297822bf3a5e071b10cc1dca553481c1b84d47`
+| Пин | Значение |
+|---|---|
+| R3, база реализации | `445ea6aba2dfc3ef1b2d6d1334f3b450aeaceb0f` |
+| R3, родитель ветки R4 | `27e27559197fa17a6630e2585f13f986d08cfeae` |
+| R4, коммит реализации | `a1dd50de04bad2ab412d3e9acf253e4b5371b912` |
+| R4, runtime SHA-256 | `f9fc4759cd4ee37c9b8b8059e278452153bc73474c5d4cc752477427f735af93` |
+| Astro commit / tree | `084d759487bfab6e111549c9b5469711ac5fc13e` / `a5297822bf3a5e071b10cc1dca553481c1b84d47` |
 
-## Причина и исправление
+## Что проверяет R4
 
-R2 потребовал, чтобы смысловой ответ DeepSeek сразу служил исполняемым графом. В оплаченной операции `g0001.plan` модель указала строку `"1-12"`, внешние ID источников, незарегистрированные пути фотографий, внешние зависимости и gaps. Локальная проверка остановила весь процесс до загрузки PDF. Регрессия воспроизводит эти признаки из отчёта владельца, включая отдельно форму `tasks/gaps` без фактов. Первичный LIVE-checkpoint владельца остаётся местным.
+На реальном R3 15 из 17 генераций закончились `length`. Reasoning занял 103 176 из 115 604 completion tokens (89,25%). В первых текстовых запросах он занял все 8192 токена, в первом визуальном — все 4096. При этом часть других ответов с `length` дала пригодные записи. Отдельный UNKNOWN `g0002-visual-002` остался без checkpoint, HTTP-статуса и исключения. Причина этого UNKNOWN остаётся неизвестной. Агрегированный CSV подтверждает учтённые объёмы, но не устанавливает исход отдельного запроса.
 
-Ядро R3 строит и проверяет граф по инвентаризации до обработки ответов. Небольшая карточка Astro проходит одним заданием. Текст PDF сгруппирован внутри одного провайдерского фрагмента, локаторы указывают на физические страницы оригинала. Соседние изображения идут пачками до трёх с ограничением размера сообщения. ID, область, зависимости и резервы назначает ядро. Порядок чередует Astro, PDF и самостоятельные изображения. Независимые базовые задачи сохраняют места под аварийным потолком при разбиении усечённого ответа.
+R4 сохраняет детерминированный граф D и ноль planner. JSON output включается независимо от Thinking. Disabled, Low и явно выбранный High пинятся в запросе и журнале. В R4-A используются только Disabled и Low. Если подтверждённый usage показывает полный exhaustion на reasoning с пустым content, результат остаётся PARTIAL, без дочерних запросов. Для смешанного усечения сохраняются валидные факты и допустимо ограниченное разбиение полного графа. Неизвестные reasoning tokens представлены как `null`. Некорректный необязательный topic заменяется рубрикой задания с диагностикой. Область локальной неопределённости сохраняется, точные дубли объединяются с основаниями, разные условия остаются отдельными. Независимо подтверждённую связь можно зарегистрировать в отчёте сверки.
 
-Запрос разделяет `available_evidence` и `related_source_metadata`. Для PDF совместимые текстовые запросы используют тот же `file_id` и стабильный префикс, а локаторы и задачу передают в суффиксе. Фактический cache hit определяется по usage провайдера. DeepSeek может предложить темы, связи, условия, неопределённости и следующие шаги в извлечении. Рубрики фактов допускают проверенный slug. Некорректная рекомендация изолируется с кодом причины. Отдельных вызовов планировщика и платных исправляющих запросов для структурного отказа — 0.
-
-Извлечение сохраняет принятые строки и отмечает структурный сбой как `PARTIAL`. Сырой текст ответа хранится в приватном checkpoint. В `coverage.json` есть карта задач, ожидаемая и подтверждённая область, пропуски, коды отклонения и хеши лишних ссылок. Независимые задачи продолжаются при доступном бюджете. `length` допускает ограниченное продолжение. Fusion сравнивает проверенные по структуре и локаторам записи нескольких источников даже при несовпадении тем. Возможные конфликты сохраняются как `unresolved`. Метки `UNREVIEWED` требуют инженерной оценки. CONSULT получает только переносимую KnowledgeBase и разрешённые иллюстрации.
-
-Схема SourceArchive совместима с R2. Формат переносимого пакета остаётся schema 2 с дополнительными полями coverage. Старые LIVE-checkpoints R2 относятся к несовместимому runtime и остаются в отдельном каталоге. Для R3 нужен новый бесплатный preflight и новый финансовый state.
+Транспорт записывает PENDING до POST, сохраняет приватные UTC, размеры, хеши, идентификаторы при наличии, стадию, тип ошибки, HTTP-статус и ограниченную классификацию provider error. Отдельный durable marker удерживает блокировку, если запись итогового ledger не удалась. Сырой response и проверенный result сохраняются приватно, когда это возможно. Безопасный ZIP содержит сводные метаданные. UNKNOWN/PENDING сохраняют резерв и блокируют новые операции. CONSULT по-прежнему работает с переносимой KnowledgeBase schema 2. SourceArchive R2/R3 совместим, нового снимка для R4 не требуется.
 
 ## Бесплатная приёмка
 
-Linux · Python 3.12.14 · Poppler 26.05.0 · seccomp проверил `socket → EPERM` в preflight и дочернем процессе. **23 PASS, 0 FAIL, 0 SKIP**. Платные операции и расходы этой сессии — **0**. Mock проверяет протокол и границы данных. WSL-прогон владельца и инженерная проверка LIVE ещё впереди.
+**32 PASS, 0 FAIL, 0 SKIP.** Старые 23 теста сохранены под прежними именами. Mock усечения уточнён до валидного префикса фактов, чтобы проверять обоснованное разбиение. Дополнительные 9 проверок закрывают R4-01–12.
 
-| Пакет | Группы / локаторы / изображения | Planner / extract / vision / fusion / upload / CONSULT | Факты | Статус и причина |
-|---|---:|---:|---:|---|
-| БКД-ПК-RF.2 | 18 / 220 / 196 | 0 / 18 / 70 / 9 / 4 / 1 | 230 | PARTIAL, три тестовых усечения |
-| ARCHTOOL | 43 / 570 / 380 | 0 / 30 / 137 / 28 / 12 / 1 | 440 | PARTIAL, ZIP программы отложен как неподдерживаемый материал |
-| Контроль затопления | 31 / 842 / 50 | 0 / 12 / 30 / 5 / 1 / 1 | 74 | COMPLETE_UNREVIEWED |
+| Критерии | Доказательство |
+|---|---|
+| R4-01–04 | Режимы и JSON, 8192/8192 и 4096/4096 без дочерних POST, mixed length, optional usage, нормализация topic, отклонение чужих локаторов и изображений, регрессия R2/R3 |
+| R4-05–06 | HTTP 429, тайм-аут при чтении, ошибка JSON оболочки, usage mismatch, сбой result и ledger, read-only сверка и удержание резерва |
+| R4-07–09 | 6 chats + 1 upload, равенство payload внутри пар кроме режима, остановка при UNKNOWN на каждом из семи шагов и отказ до POST по бюджету |
+| R4-10–12 | Scoped unresolved, независимая аттестация связи, три прежних пакета, seccomp EPERM, replay с нулём новых вызовов, контрольные суммы ZIP |
 
-Архивы подготовлены из пинов R2. Для системы использованы сверенные публичные копии файлов из повторных скачиваний после HTTP 503.
+В облачной проверке прошли БКД-ПК-RF.2 (PARTIAL, инъекции трёх смешанных усечений), ARCHTOOL (PARTIAL, неподдерживаемый ZIP) и «Контроль затопления» (COMPLETE_UNREVIEWED). Дополнительный CLI smoke проверил `prepare`, `freeze`, read-only `reconcile` на синтетических финансовых данных и отказ облачного LIVE до создания state.
 
 | ZIP | SHA-256 |
 |---|---|
-| `DS-DX-02-D-preflight.zip` | `c395bbc640fe4ade6b21d21792fb655e9000a3887e63562cf4a23739d8ea0079` |
-| `mock-package-1.zip` | `413ce23200559e2a217b716bce6ef9fefe7f521ac39df33ec7746b21fce4d94d` |
-| `mock-package-2.zip` | `e4c57fba158adf76257cafacaf9e8009423814e1a36c9ae9f63bb24079563756` |
-| `mock-package-3.zip` | `6ee8c77057665c9c0338c9ccfb4e378578a6d9d533a56daafd074fe963404b6c` |
+| `DS-DX-02-D-preflight.zip` | `5356f714b67ee6ca0a6006d5d04eafad76cec9f20f25d68a9a8a7b741b69b284` |
+| `mock-package-1.zip` | `4ebda7d43e04705896f01ec2a909fb6c6021b18e30faf7a8140c7a3ac8c57259` |
+| `mock-package-2.zip` | `0ca05228f4f74cb9bcec05ddefd8cc00ae999109438087a2d9e7d2d5aa04c62f` |
+| `mock-package-3.zip` | `06ba56240668190b509a87a7b797ea10b294d68bfee5814e5cb75245dc3bd6de` |
+| `r4-a-mock.zip` | `38646e1f59b32647bed863631cdca757ce194db84998a1c8539e4a8973ee3f5c` |
 
-`mock-package-{1,2,3}.zip` соответствуют строкам таблицы. Каждый содержит `summary.json`, `coverage.json`, `knowledge.zip`, `compile.zip`, `consult.zip` и контрольные суммы. Повтор mock COMPILE сверил ZIP KnowledgeBase и прошёл с нулём новых вызовов. В mock CONSULT исходный архив удалён перед вопросом. Проверены блокировка UNKNOWN, запрет дубликатов, резервы, отдельный Owner GO для увеличения лимита и сверка checkpoint.
+Mock проверяет структуру и поведение. В Codex платных операций и расходов **0**. Инженерная оценка Disabled и Low, подтверждение контракта DeepSeek и независимый WSL-прогон выполняются владельцем. Изменения ограничены `experiments/ds-dx-02/`. Сайт использован только для проверки закреплённого Git-дерева. [Точный diff реализации от R3](https://github.com/UkWood/ds-cosult/compare/27e27559197fa17a6630e2585f13f986d08cfeae...a1dd50de04bad2ab412d3e9acf253e4b5371b912)
 
-## Бесплатный расчёт пилотного графа
+## Матрица и потолки R4-A
 
-| Величина | Результат |
-|---|---:|
-| Группы / локаторы / визуальные кандидаты | 18 / 220 / 196 |
-| Базовые операции | 0 planner, 16 extract, 68 vision, 4 upload |
-| Разбор 80 физических страниц PDF | $0.018000000 |
-| Сумма резервов базовых операций | $25.709520000 |
-| Резерв первого вызова R3 | $0.309830400 |
-| Аварийный предел чатов / верхняя граница резервов | 2048 / $634.550659200 |
+| Порядок | Материал | Токены / пиковый резерв за операцию |
+|---|---|---|
+| A-D → A-L | 71 строка карточки Astro `A-c5c7146d49ed3f59` | 8192 / $0.3098304 каждый |
+| upload → P-D → P-L | 8 страниц обзора `P-42f2fcb6f7dfdfa3`, один новый `file_id` | $0.0018 upload, 8192 / $0.3098304 каждый чат |
+| V-D → V-L | Рисунок 3, физическая стр. 11 основного руководства `P-6f65a717b55eec7c`, inline PNG | 4096 / $0.3049152 каждый |
 
-Базовая сумма рассчитана на cache miss и максимальный разрешённый вывод, до условных разбиений и fusion. Значение 2048 ограничивает исполнение, а рабочий расход определяется фактическим usage. Ledger проверяет оба утверждённых лимита перед каждым POST и удерживает резерв при UNKNOWN. При предлагаемом лимите COMPILE $1.99 запуск может завершиться частичным пакетом.
+Визуальный выбор проверен локальным просмотром. Верхний и нижний кропы содержат читаемые разъёмы и цепи. Их SHA-256, размеры и координаты зафиксированы в `r4-a-plan.json`. Рендеры UK-PC могут отличаться побайтно от Linux-рендеров Codex. Перед GO проверяются локальные файлы и запечатываются их пины. V использует другой набор, поэтому сравнение с High R3 только историческое. A/P сопоставимы по исходному материалу и имеют отличия в промпте и runtime. Одинаковая вторая подача может получить больше cache hit. Сравнивайте usage и тарификацию отдельно от режима. Один ответ на режим даёт разведочный результат.
 
-## Независимый бесплатный WSL preflight
+Сумма резервов $1.850952, первый резерв $0.3098304. Продолжение проверяет доступный остаток перед каждой операцией. В финансовом основании удерживаются R2 $0.005267700, R3 SETTLED $0.156373932 и R3 reserve $0.304915200, всего минимум **$0.466556832**. Исходные потолки дают остатки не выше $1.533443168 COMPILE и $4.533443168 всего. Предложение для отдельного Owner GO — $0.50 на R4-A и общий остаточный потолок $4.53. При таком лимите возможен PARTIAL/DEFERRED_BUDGET до шестой генерации. Сверьте биллинг и все прошлые расходы, не списывая удержанный резерв по часовому CSV.
 
-В уже подготовленной среде R2 выполните этот блок. `UTKC_HOME` — прежний каталог с `backend`, `site`, `venv` и тремя `source-*`. Существующий checkout должен быть чистым. Команда проверяет отдельный SHA реализации и пишет отчёты в новый каталог.
+## UK-PC · бесплатная независимая проверка и подготовка
+
+Запустите в WSL. Команды используют прежние `site`, `venv` и `source-*` без скачивания материалов. `UTKC_HOME` можно заменить абсолютным путём к вашей среде. Существующие журналы и отчёты остаются на месте.
 
 ```bash
+export UTKC_HOME="$HOME/utkc-r2-acceptance"
 (
   set -euo pipefail
-  : "${UTKC_HOME:?Укажите абсолютный путь к подготовленной среде R2}"
-  branch=experiment/ds-dx-02-d-unified-knowledge-compiler
   test -z "$(git -C "$UTKC_HOME/backend" status --porcelain)"
-  git -C "$UTKC_HOME/backend" fetch origin "$branch"
-  git -C "$UTKC_HOME/backend" switch --detach 445ea6aba2dfc3ef1b2d6d1334f3b450aeaceb0f
-  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = 445ea6aba2dfc3ef1b2d6d1334f3b450aeaceb0f
+  git -C "$UTKC_HOME/backend" fetch origin experiment/ds-dx-02-d-unified-knowledge-compiler
+  git -C "$UTKC_HOME/backend" switch --detach a1dd50de04bad2ab412d3e9acf253e4b5371b912
+  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = a1dd50de04bad2ab412d3e9acf253e4b5371b912
+  test "$(git -C "$UTKC_HOME/site" rev-parse HEAD)" = 084d759487bfab6e111549c9b5469711ac5fc13e
   cd "$UTKC_HOME/backend/experiments/ds-dx-02"
   export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
   bash preflight.sh --sources "$UTKC_HOME/source-pilot" \
-    --additional-source "$UTKC_HOME/source-product" \
-    --additional-source "$UTKC_HOME/source-system" \
-    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-r3"
-  cd "$UTKC_HOME/preflight-r3"
-  sha256sum -c DS-DX-02-D-preflight.zip.sha256 mock-package-{1,2,3}.zip.sha256
+    --additional-source "$UTKC_HOME/source-product" --additional-source "$UTKC_HOME/source-system" \
+    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-r4"
+  (cd "$UTKC_HOME/preflight-r4" && sha256sum -c DS-DX-02-D-preflight.zip.sha256 \
+    mock-package-{1,2,3}.zip.sha256 r4-a-mock.zip.sha256)
+  "$DX02_PYTHON" r4_a.py prepare --workspace "$UTKC_HOME"
 )
 ```
 
-## Протокол Owner GO и LIVE
-
-Сверьте приватный ledger R2 с биллингом. Отчёт владельца содержит один `SETTLED` на $0.0052677 (3111 miss, 3612 output, из них 1267 reasoning). Запишите в общей приватной сводке расход R2, утверждённые лимиты R3, фактические расходы R3 и сумму. При подтверждённом единственном списании остаются $1.9947323 COMPILE и $4.9947323 общего потолка. Для отдельного Owner GO предлагаются округлённые вниз пределы $1.99 и $4.99, дающие суммарные потолки $1.9952677 и $4.9952677 вместе с R2. При расхождении пересчитайте остатки по биллингу и согласуйте их с владельцем. Проверьте модель, Files/Vision и тарифы перед подтверждением контракта.
-
-**LIVE-COMPILE после отдельного решения владельца.** Введите утверждённые лимиты через окружение, ключ через интерактивный запрос в WSL2.
+В `r4-a-plan/manifest-draft.json` проверьте snapshot и шесть задач. Скопируйте `draft-card.json` в `reviewed-card.json` рядом. Сверьте текстовые выдержки с точными строками и страницами, уточните ожидаемые утверждения, категории и критерии. Просмотрите два PNG в `source-pilot/raw-illustrations`. Для V заполните `expected`, сужайте `region` до читаемого участка и разделяйте независимые утверждения по уникальным `id`. Задайте новую `revision` без префикса `draft`. Оценочная карта остаётся локальной и не подставляется в запросы.
 
 ```bash
 cd "$UTKC_HOME/backend/experiments/ds-dx-02"
 export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
-bash compile-live.sh --sources "$UTKC_HOME/source-pilot" \
-  --preflight "$UTKC_HOME/preflight-r3/preflight.json" --state "$UTKC_HOME/private-r3" \
-  --knowledge "$UTKC_HOME/knowledge-r3-v1" --reports "$UTKC_HOME/compile-r3-v1" \
-  --owner-go-usd "${COMPILE_GO_USD:?}" --total-go-usd "${TOTAL_GO_USD:?}" \
-  --confirm-provider-contract
+"$DX02_PYTHON" r4_a.py freeze --workspace "$UTKC_HOME" \
+  --card "$UTKC_HOME/r4-a-plan/reviewed-card.json" --reviewer "${R4_REVIEWER:?}"
 ```
 
-При возобновлении R3 используйте `--resume`, прежний `private-r3`, тот же pinned runtime и свежие выходные каталоги. Для утверждённого повышения передайте также `--budget-approval` с полями `stage`, `identity` из вывода CLI, `old_cap`, `new_cap`, `old_total`, `new_total` в целых нанодолларах и `owner_go` со ссылкой на решение владельца. Сверьте `knowledge.zip.sha256` и `DS-DX-02A-results.zip.sha256` в каталоге результата, разберите coverage и конфликты до CONSULT.
+Заморозка сверяет preflight, исходный снимок, runtime, матрицу, карту и старые ledger по путям `private-state/ledger.json` и `private-r3/ledger.json`. Если на машине журналы расположены иначе, укажите утверждённое рабочее дерево с этими путями к оригиналам до запуска и проверьте напечатанные хеши. Сохраните напечатанный SHA frozen manifest в решении владельца. Новый state эксперимента — `private-r4-a`.
 
-**LIVE-CONSULT после просмотра KnowledgeBase и отдельного решения владельца.** Выберите проверенный выпуск. Для PARTIAL требуется явный `--allow-partial` по решению владельца.
+## Отдельный LIVE R4-A после Owner GO
+
+Проверьте текущий DeepSeek Files/Vision, модель и тарифы перед подтверждением контракта. Установите утверждённые значения `R4_OWNER_GO`, `R4_COMPILE_USD` и `R4_TOTAL_USD`. Ключ вводится только через скрытое приглашение в интерактивной WSL2.
 
 ```bash
-bash consult-live.sh --knowledge "$UTKC_HOME/knowledge-r3-v1" --state "$UTKC_HOME/private-r3" \
-  --reports "$UTKC_HOME/consult-r3-v1" --questions "$PWD/configs/pilot-questions.json" \
-  --owner-go-usd "${CONSULT_GO_USD:?}" --total-go-usd "${TOTAL_GO_USD:?}" \
+"$DX02_PYTHON" r4_a.py live --workspace "$UTKC_HOME" \
+  --card "$UTKC_HOME/r4-a-plan/reviewed-card.json" --owner-go "${R4_OWNER_GO:?}" \
+  --owner-go-usd "${R4_COMPILE_USD:?}" --total-go-usd "${R4_TOTAL_USD:?}" \
   --confirm-provider-contract
-(cd "$UTKC_HOME/consult-r3-v1" && sha256sum -c DS-DX-02B-results.zip.sha256)
 ```
+
+При PARTIAL CLI возвращает ненулевой код и оставляет `reports-r4-a/r4-a-summary.zip`. Повторная отправка, разбиения, fusion и CONSULT в R4-A отсутствуют. Проверьте контрольную сумму ZIP. В `private-r4-a/engineering/r4-a-engineering.zip` находятся Markdown, принятые факты и шаблон оценки. Скопируйте `review-template.json` в `reviewed-results.json`. Для каждой полученной генерации заполните совпавшие обязательные ID, неподтверждённые утверждения, критические пропуски, сохранение условий и единиц. Для V укажите ложные визуальные срабатывания. Индивидуальные billing amounts указывайте только при независимом подтверждении, иначе оставьте `null`. Сопоставьте итог с usage, reasoning, latency, cache hit и пиковым ledger.
+
+```bash
+(cd "$UTKC_HOME/reports-r4-a" && sha256sum -c r4-a-summary.zip.sha256)
+"$DX02_PYTHON" r4_a.py score --workspace "$UTKC_HOME" \
+  --card "$UTKC_HOME/r4-a-plan/reviewed-card.json" \
+  --review "$UTKC_HOME/private-r4-a/engineering/reviewed-results.json"
+```
+
+Инженерная команда выбирает политику R4-B отдельным решением. Полный COMPILE требует `private-r4-b`, штатный свежий preflight, утверждение с `owner_go`, SHA файла `private-r4-a/engineering/score.json` и allowlist `modes` для `extract`, `vision_photo`, `vision_document`, `fusion`. Выбор блокируется без отчёта R4-A. Остатки для полного прохода рассчитываются с учётом R4-A. Критические ошибки и пропуски оцениваются до сравнения цен. Если обе альтернативы неудовлетворительны, передайте результаты Architecture Session A для решения.
+
+## Read-only сверка и границы восстановления
+
+```bash
+"$DX02_PYTHON" reconcile.py --ledger "$UTKC_HOME/private-r3/ledger.json" \
+  --knowledge-zip "$UTKC_HOME/compile-r3-v1/knowledge.zip" \
+  --output "$UTKC_HOME/reconcile-r3.json"
+"$DX02_PYTHON" reconcile.py --ledger "$UTKC_HOME/private-r4-a/ledger.json" \
+  --output "$UTKC_HOME/reconcile-r4-a.json"
+```
+
+Для сравнения часовых агрегатов добавьте `--csv` с локально нормализованными колонками `time,model,usage_type,quantity,cost_usd`. Используйте ISO 8601 с часовым поясом, типы `prompt_hit,prompt_miss,completion,reasoning,ocr,request` и исходные суммы без двойного учёта reasoning. Сверка проверяет доступные checkpoints и контрольные суммы. Агрегаты CSV оставляют UNKNOWN и резерв в силе.
+
+Аудируемая приватная реконструкция поддерживает `--approval` и `--independent-evidence`. В approval задаются `operation`, `stage`, `owner_go`, `disposition` и `evidence_sha256`. Независимое доказательство должно связывать точный `request_sha256` с хешем сохранённого ответа для `verified_response` или с подтверждённым провайдером исходом `provider_confirmed_no_charge`. Для upload также нужны исходные размер и страницы. Выход содержит отдельную запись решения или восстановленный result и стоимость. Исходный ledger и его блокировка сохраняются. Для R3 достоверная индивидуальная сверка пока недоступна.
+
+Подтверждённое инженером разрешение локальной неопределённости можно связать с утверждением через `--verified-links` при проверке KnowledgeBase. JSON содержит `knowledge_identity`, `reviewer`, `links` с `unresolved`, `assertion`, `applicability_verified: true` и `evidence`. Отчёт фиксирует связь и SHA аттестации. Исходная запись остаётся в KnowledgeBase.
