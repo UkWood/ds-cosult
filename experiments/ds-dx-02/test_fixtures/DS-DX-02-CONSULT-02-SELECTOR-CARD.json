@@ -1,0 +1,585 @@
+{
+  "schema": 1,
+  "purpose": "Offline selector regression only; not runtime evidence or an exhaustive engineering answer key. Groups are AND; within any_of one or more suffices. Safety/conflict checks are additional.",
+  "knowledge_zip_sha256": "26e82e5a967c2cc1208abaca34e5442a08a543f156dcfebca54480c7f97cd11e",
+  "knowledge_identity": "4abe318f82e94ac9b174e8ea44a448e91f752d7b39cdb336665abe71ef99dbb9",
+  "baseline_results_zip_sha256": "2fe080665f154133a4a278729b6cdc5262ef6093cabd9f949ef59f7bf8124f1a",
+  "questions_sha256": "aa083f7d102e583a3f49d347001dde2d4b3d0322696b01a9758876d3d8ec2c08",
+  "cases": {
+    "Q01": {
+      "question": "Какие интерфейсы связи и протоколы поддерживает БКД-ПК-RF.2?",
+      "required_groups": [
+        {
+          "need": "Ethernet и мобильная связь",
+          "any_of": [
+            "d-1d0886497bad7a90f50f2c31",
+            "d-2adf9eed87f6b4e91a2b9637"
+          ],
+          "baseline_matched_ids": [
+            "d-1d0886497bad7a90f50f2c31",
+            "d-2adf9eed87f6b4e91a2b9637"
+          ]
+        },
+        {
+          "need": "RS-232/RS-485",
+          "any_of": [
+            "d-7f8cddce6f5276fc878f1b7a"
+          ],
+          "baseline_matched_ids": [
+            "d-7f8cddce6f5276fc878f1b7a"
+          ]
+        },
+        {
+          "need": "МЭК 60870 и Modbus",
+          "any_of": [
+            "d-d9a9fc6d460b5f8236406816"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "VPN-клиент",
+          "any_of": [
+            "d-11d99bca4881856404026882"
+          ],
+          "baseline_matched_ids": [
+            "d-11d99bca4881856404026882"
+          ]
+        },
+        {
+          "need": "OPC UA сервер",
+          "any_of": [
+            "d-897cdf669c05e68744ab75e7",
+            "d-3e701f2c34be8809b1513b2c"
+          ],
+          "baseline_matched_ids": []
+        }
+      ]
+    },
+    "Q02": {
+      "question": "Какие параметры питания, рабочей температуры и влажности допустимы для БКД-ПК-RF.2? Укажи условия и отличия рабочего диапазона от номинала.",
+      "required_groups": [
+        {
+          "need": "AC рабочий диапазон",
+          "any_of": [
+            "d-c55598fffffc0c1209a0bef0",
+            "d-491ed366be5afe1ffc4ac5ea"
+          ],
+          "baseline_matched_ids": [
+            "d-491ed366be5afe1ffc4ac5ea",
+            "d-c55598fffffc0c1209a0bef0"
+          ]
+        },
+        {
+          "need": "DC рабочий диапазон",
+          "any_of": [
+            "d-9717cfb5f789d80b7946f656",
+            "d-9fde0cd167d1aa674b14e726"
+          ],
+          "baseline_matched_ids": [
+            "d-9717cfb5f789d80b7946f656"
+          ]
+        },
+        {
+          "need": "номиналы AC/DC",
+          "any_of": [
+            "d-e24930f7ddcd2d77b2bc5b84"
+          ],
+          "baseline_matched_ids": [
+            "d-e24930f7ddcd2d77b2bc5b84"
+          ]
+        },
+        {
+          "need": "температура",
+          "any_of": [
+            "d-2ea7f7d1561b4c43a45f22c1",
+            "d-5aada66ca93cde9addeef695"
+          ],
+          "baseline_matched_ids": [
+            "d-2ea7f7d1561b4c43a45f22c1",
+            "d-5aada66ca93cde9addeef695"
+          ]
+        },
+        {
+          "need": "влажность",
+          "any_of": [
+            "d-0be4e45b83e0821840e809cc",
+            "d-5aada66ca93cde9addeef695"
+          ],
+          "baseline_matched_ids": [
+            "d-0be4e45b83e0821840e809cc",
+            "d-5aada66ca93cde9addeef695"
+          ]
+        },
+        {
+          "need": "резервное питание",
+          "any_of": [
+            "d-df5cadea11a2915da0a0cde8",
+            "d-a052dd56b26940a725f2a6e5"
+          ],
+          "baseline_matched_ids": [
+            "d-a052dd56b26940a725f2a6e5"
+          ]
+        },
+        {
+          "need": "конфликт XT2",
+          "any_of": [
+            "d-d8f49bc7c8dbf93dceae6286"
+          ],
+          "baseline_matched_ids": [
+            "d-d8f49bc7c8dbf93dceae6286"
+          ]
+        },
+        {
+          "need": "безопасность монтажа",
+          "any_of": [
+            "d-64aa2cd177f4256555d970a3"
+          ],
+          "baseline_matched_ids": [
+            "d-64aa2cd177f4256555d970a3"
+          ]
+        }
+      ]
+    },
+    "Q03": {
+      "question": "Как подключить БКД-ПК-RF.2 по Ethernet к компьютеру для первоначальной настройки? Какие заводские сетевые настройки и способ доступа к WEB-интерфейсу?",
+      "required_groups": [
+        {
+          "need": "подключение X4",
+          "any_of": [
+            "d-523ccad012b7ed65f4ed2767"
+          ],
+          "baseline_matched_ids": [
+            "d-523ccad012b7ed65f4ed2767"
+          ]
+        },
+        {
+          "need": "заводская сеть",
+          "any_of": [
+            "d-61a61c215af36e26f9b20210",
+            "d-0404573fa50c6405baae5cbf"
+          ],
+          "baseline_matched_ids": [
+            "d-0404573fa50c6405baae5cbf",
+            "d-61a61c215af36e26f9b20210"
+          ]
+        },
+        {
+          "need": "HTTP/HTTPS",
+          "any_of": [
+            "d-e72e8539965a91c90a99d605"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "пароль и смена",
+          "any_of": [
+            "d-6f43713adaa51edcda7a7f05"
+          ],
+          "baseline_matched_ids": [
+            "d-6f43713adaa51edcda7a7f05"
+          ]
+        }
+      ]
+    },
+    "Q04": {
+      "question": "Какими способами можно обновить ПО БКД-ПК-RF.2, если объект находится в изолированной сети без Интернета? Как защищено обновление?",
+      "required_groups": [
+        {
+          "need": "файл в изолированной сети",
+          "any_of": [
+            "d-7a6ec955eafb71ba9d8aeee7",
+            "d-b9d69d35da6e19af2cffb0f2"
+          ],
+          "baseline_matched_ids": [
+            "d-7a6ec955eafb71ba9d8aeee7",
+            "d-b9d69d35da6e19af2cffb0f2"
+          ]
+        },
+        {
+          "need": "локальный сервер HTTP/HTTPS",
+          "any_of": [
+            "d-ba0ab79d114b208e6911adce"
+          ],
+          "baseline_matched_ids": [
+            "d-ba0ab79d114b208e6911adce"
+          ]
+        },
+        {
+          "need": "подпись",
+          "any_of": [
+            "d-37a7f2b3cd7b95cddd5f780a",
+            "d-dd76a8626b75bef7dee58167"
+          ],
+          "baseline_matched_ids": [
+            "d-37a7f2b3cd7b95cddd5f780a",
+            "d-dd76a8626b75bef7dee58167"
+          ]
+        },
+        {
+          "need": "не отключать питание и сеть",
+          "any_of": [
+            "d-1ccdcc5927931daa7063a656",
+            "d-c556f9c925cc13f7db1b9ac4",
+            "d-fbbf7ae35b91458e2bd4e2f2"
+          ],
+          "baseline_matched_ids": [
+            "d-1ccdcc5927931daa7063a656",
+            "d-c556f9c925cc13f7db1b9ac4",
+            "d-fbbf7ae35b91458e2bd4e2f2"
+          ]
+        }
+      ]
+    },
+    "Q05": {
+      "question": "Как БКД-ПК-RF.2 переключается с Ethernet на мобильную связь и обратно? Как выбираются SIM-карты и могут ли они быть активны одновременно?",
+      "required_groups": [
+        {
+          "need": "алгоритм Ethernet/сотовая связь",
+          "any_of": [
+            "d-192cdc4e3767a65eeabec61a"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "возврат Ethernet",
+          "any_of": [
+            "d-c2cdd4c428608f559069a0f3",
+            "d-f5352abfff5b266b248b91f0"
+          ],
+          "baseline_matched_ids": [
+            "d-f5352abfff5b266b248b91f0"
+          ]
+        },
+        {
+          "need": "выбор SIM",
+          "any_of": [
+            "d-b82c0f9dcbd726e7c1759fed",
+            "d-e2711710bc1516b4f760f2f5"
+          ],
+          "baseline_matched_ids": [
+            "d-b82c0f9dcbd726e7c1759fed",
+            "d-e2711710bc1516b4f760f2f5"
+          ]
+        },
+        {
+          "need": "нет одновременной работы",
+          "any_of": [
+            "d-3cc21e38d6bc2cbe73789ac6"
+          ],
+          "baseline_matched_ids": [
+            "d-3cc21e38d6bc2cbe73789ac6"
+          ]
+        }
+      ]
+    },
+    "Q06": {
+      "question": "Как устроена синхронизация времени БКД-ПК-RF.2 по NTP и спутниковой навигации?",
+      "required_groups": [
+        {
+          "need": "ручная/NTP/ГНСС",
+          "any_of": [
+            "d-44ee95fa810451fced4a6c42"
+          ],
+          "baseline_matched_ids": [
+            "d-44ee95fa810451fced4a6c42"
+          ]
+        },
+        {
+          "need": "приоритет NTP",
+          "any_of": [
+            "d-a2aefa54eaabfabbc0e3bffb",
+            "d-27f9a1b9d367d331cf2d9da4",
+            "d-e15e57d9bd06138ad957feef"
+          ],
+          "baseline_matched_ids": [
+            "d-27f9a1b9d367d331cf2d9da4",
+            "d-a2aefa54eaabfabbc0e3bffb",
+            "d-e15e57d9bd06138ad957feef"
+          ]
+        },
+        {
+          "need": "условие ГНСС",
+          "any_of": [
+            "d-84aa8237e8ded1dce3e23a71",
+            "d-169d5bf7d7b75d38b710a836"
+          ],
+          "baseline_matched_ids": [
+            "d-169d5bf7d7b75d38b710a836",
+            "d-84aa8237e8ded1dce3e23a71"
+          ]
+        },
+        {
+          "need": "условие LanMon",
+          "any_of": [
+            "d-1ef9544973665b522e376bea"
+          ],
+          "baseline_matched_ids": [
+            "d-1ef9544973665b522e376bea"
+          ]
+        }
+      ]
+    },
+    "Q07": {
+      "question": "Назови диапазон измерения, входное сопротивление, погрешность и порядок калибровки аналоговых входов БКД-ПК-RF.2.",
+      "required_groups": [
+        {
+          "need": "диапазон напряжения",
+          "any_of": [
+            "d-d371fcecf2e741c515050639",
+            "d-2713575cbf7f9510bc4099d7"
+          ],
+          "baseline_matched_ids": [
+            "d-2713575cbf7f9510bc4099d7"
+          ]
+        },
+        {
+          "need": "входное сопротивление",
+          "any_of": [
+            "d-186e2050396cec86e5452399",
+            "d-c4ae7f4c11662e04b38ffa03"
+          ],
+          "baseline_matched_ids": [
+            "d-186e2050396cec86e5452399",
+            "d-c4ae7f4c11662e04b38ffa03"
+          ]
+        },
+        {
+          "need": "основная погрешность",
+          "any_of": [
+            "d-416b37b0be7500aebcccadc4",
+            "d-7696342168981e104beb6682"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "калибровка только изготовитель/лаборатория",
+          "any_of": [
+            "d-fc2876e580f3cbc3ccd8c4e1",
+            "d-a28d5782ccec4ba1b7a351ca"
+          ],
+          "baseline_matched_ids": [
+            "d-a28d5782ccec4ba1b7a351ca",
+            "d-fc2876e580f3cbc3ccd8c4e1"
+          ]
+        },
+        {
+          "need": "погрешность калибратора",
+          "any_of": [
+            "d-83536245d6438e0b33631b28"
+          ],
+          "baseline_matched_ids": [
+            "d-83536245d6438e0b33631b28"
+          ]
+        },
+        {
+          "need": "этап 1",
+          "any_of": [
+            "d-2a48aaccb0594be561b2cca6"
+          ],
+          "baseline_matched_ids": [
+            "d-2a48aaccb0594be561b2cca6"
+          ]
+        },
+        {
+          "need": "этап 2",
+          "any_of": [
+            "d-106535bb32e60736a966d89c"
+          ],
+          "baseline_matched_ids": [
+            "d-106535bb32e60736a966d89c"
+          ]
+        }
+      ]
+    },
+    "Q08": {
+      "question": "Какая распиновка последовательных портов XT1–XT4 по рисунку 3 РЭ БКД-ПК-RF.2? Есть ли расхождения с таблицей?",
+      "required_groups": [
+        {
+          "need": "рисунок 3",
+          "any_of": [
+            "d-f4ad2e131fcdab73f1290851",
+            "d-ad897fafb43971d648e6119a"
+          ],
+          "baseline_matched_ids": [
+            "d-ad897fafb43971d648e6119a",
+            "d-f4ad2e131fcdab73f1290851"
+          ]
+        },
+        {
+          "need": "конфликт таблицы XT1",
+          "any_of": [
+            "d-35c8609fe0e361d5eddf06c8",
+            "d-8c1f0d84bc4f397b3b220a53"
+          ],
+          "baseline_matched_ids": [
+            "d-35c8609fe0e361d5eddf06c8",
+            "d-8c1f0d84bc4f397b3b220a53"
+          ]
+        },
+        {
+          "need": "таблица XT1",
+          "any_of": [
+            "d-f574254a3bd0799d2f659a71"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "конфликт XT2 с питанием",
+          "any_of": [
+            "d-d8f49bc7c8dbf93dceae6286"
+          ],
+          "baseline_matched_ids": [
+            "d-d8f49bc7c8dbf93dceae6286"
+          ]
+        },
+        {
+          "need": "безопасность монтажа",
+          "any_of": [
+            "d-64aa2cd177f4256555d970a3"
+          ],
+          "baseline_matched_ids": [
+            "d-64aa2cd177f4256555d970a3"
+          ]
+        }
+      ]
+    },
+    "Q09": {
+      "question": "Как подключается датчик открытия шкафа и аналоговые сигналы к XT5–XT7 БКД-ПК-RF.2? Укажи номера контактов, если они подтверждены документацией.",
+      "required_groups": [
+        {
+          "need": "XT5 сухой контакт",
+          "any_of": [
+            "d-25965ca5b58314206feaf215",
+            "d-dfb1d35ab23ee04481bd1751"
+          ],
+          "baseline_matched_ids": [
+            "d-25965ca5b58314206feaf215"
+          ]
+        },
+        {
+          "need": "XT5 таблица",
+          "any_of": [
+            "d-f9ba48b7ad07ab2a71333439"
+          ],
+          "baseline_matched_ids": [
+            "d-f9ba48b7ad07ab2a71333439"
+          ]
+        },
+        {
+          "need": "XT5 рисунок",
+          "any_of": [
+            "d-0ffcb525e9821c5d37d731f1",
+            "d-1a9f70ab68d18cf0941bdce5"
+          ],
+          "baseline_matched_ids": [
+            "d-0ffcb525e9821c5d37d731f1",
+            "d-1a9f70ab68d18cf0941bdce5"
+          ]
+        },
+        {
+          "need": "XT6",
+          "any_of": [
+            "d-3d07e4b171aa0c26481bfaf1",
+            "d-8d243b25c6fa5bc7de2a1e22"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "XT7",
+          "any_of": [
+            "d-061340bb11cadb554fd9fba8",
+            "d-686f503fad99c720489296f0"
+          ],
+          "baseline_matched_ids": [
+            "d-686f503fad99c720489296f0"
+          ]
+        },
+        {
+          "need": "безопасность монтажа",
+          "any_of": [
+            "d-64aa2cd177f4256555d970a3"
+          ],
+          "baseline_matched_ids": [
+            "d-64aa2cd177f4256555d970a3"
+          ]
+        }
+      ]
+    },
+    "Q10": {
+      "question": "Как сопоставляются системные имена последовательных портов БКД-ПК-RF.2 с разъёмами?",
+      "required_groups": [
+        {
+          "need": "сопоставление имён и портов",
+          "any_of": [
+            "d-39e4a4d7cc34d7a27b36503a",
+            "d-684f5b87cf07d34e0b9ab909",
+            "d-965f6b2f48acf261eb86505b"
+          ],
+          "baseline_matched_ids": [
+            "d-39e4a4d7cc34d7a27b36503a",
+            "d-965f6b2f48acf261eb86505b"
+          ]
+        }
+      ]
+    },
+    "Q11": {
+      "question": "А как на втором порту выбрать RS-485 в opdd?",
+      "required_groups": [
+        {
+          "need": "второй порт",
+          "any_of": [
+            "d-39e4a4d7cc34d7a27b36503a",
+            "d-684f5b87cf07d34e0b9ab909",
+            "d-44108c406aacac612525b901"
+          ],
+          "baseline_matched_ids": [
+            "d-39e4a4d7cc34d7a27b36503a"
+          ]
+        },
+        {
+          "need": "LOCALPORTMODE",
+          "any_of": [
+            "d-5a4e8aa8922e10bd433aee7c",
+            "d-40a40b3a54938f820a1e582c"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "пример ECL10",
+          "any_of": [
+            "d-c298fee43ea6d778e6f0f59d"
+          ],
+          "baseline_matched_ids": []
+        }
+      ]
+    },
+    "Q12": {
+      "question": "Какой максимальный ток можно измерять аналоговым входом БКД-ПК-RF.2 непосредственно, без внешних преобразователей? Если точного значения нет, так и скажи.",
+      "required_groups": [
+        {
+          "need": "напряжение 0–10 В",
+          "any_of": [
+            "d-d371fcecf2e741c515050639",
+            "d-2713575cbf7f9510bc4099d7"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "входное сопротивление",
+          "any_of": [
+            "d-186e2050396cec86e5452399",
+            "d-c4ae7f4c11662e04b38ffa03"
+          ],
+          "baseline_matched_ids": []
+        },
+        {
+          "need": "карточка: напряжение или ток",
+          "any_of": [
+            "d-be95735058ab1b5e7d459958"
+          ],
+          "baseline_matched_ids": []
+        }
+      ]
+    }
+  }
+}
