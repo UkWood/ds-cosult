@@ -1,25 +1,29 @@
-# HANDOFF Architecture Session A — DS-DX-02-R4-B-QA / CONSULT-01
+# HANDOFF Architecture Session A — DS-DX-02 CONSULT-02
 
-Ветка `experiment/ds-dx-02-d-unified-knowledge-compiler` · реализация QA `e2c6ff9379dd76cebd382e042f70151581bc0d03` · runtime SHA-256 `1a9f9a2b2b6072dc15ed47c9967e5abab52128e5a7beeb477b6a35e1d93227df`.
+Ветка `experiment/ds-dx-02-d-unified-knowledge-compiler` · реализация `88e61096296729fe217c92889210f0ddb8f7df3d` · runtime SHA-256 `fba558071a8980cd9421f9341e2c8066f57305503daa7734b6373fe7be7ca2ed`.
 
-База R4-B — `86acd589f99276f192eb06a80e5bf2f308697bc3`. Исходный снимок и результаты владельца читаются из прежних каталогов. [HANDOFF R4-B-INT](https://github.com/UkWood/ds-cosult/blob/b2d04355b946d5f13b4eb885112e098b7ec40857/experiments/ds-dx-02/HANDOFF.md)
+База CONSULT-01 — `e2c6ff9379dd76cebd382e042f70151581bc0d03`. CONSULT-02 читает исходную KnowledgeBase R4-B. Исторические ответы, планы, checkpoints и ledger остаются на месте. [HANDOFF CONSULT-01](https://github.com/UkWood/ds-cosult/blob/f52e7bfa8721452c87195eabf08a900bbaeaefb5/experiments/ds-dx-02/HANDOFF.md)
 
-## Что поставлено
+## Selector, безопасность и ссылки
 
-- **QA-01.** Бесплатный replay под seccomp проверяет пины двух ZIP, плана, ledger, SourceArchive и 98 завершённых checkpoints. Восстанавливает порядок, request/prefix hashes и фактические области задач, включая основания Fusion. Для исторического file handle используется окно от времени завершения upload до сохранённого expiry, сверенное с исходным UTC начала каждого запроса. Сегодняшний TTL не влияет на replay. Реконструкция во временном каталоге сравнивает содержимое обоих ZIP с исходными и удаляется при выходе. Публикуется только отдельный review ZIP. Любое расхождение останавливает проверку.
-- **Диагностика.** Review ZIP содержит безопасные исходные поля, порядковый номер, исходный первый код, дополнительные выявленные причины, допустимые локаторы, изображения и отдельное предложение только для однозначных преобразований. Сводка включает примеры, распределения и сравнение с переданными 327 первыми причинами, а также списки `unconfirmed_images`, `truncated` и `invalid_json`. Только фактический replay заполнит эти результаты. Предложения не меняют факты или исходную KnowledgeBase.
-- **CONSULT-01.** Приложенные 12 вопросов сохранены побайтно, SHA-256 `aa083f7d102e583a3f49d347001dde2d4b3d0322696b01a9758876d3d8ec2c08`. Q10–Q11 образуют один диалог `serial`. Первый эксперимент отправляет текст из подготовленной базы и метаданные источников без inline-изображений, эталонных ответов, tools и raw fallback. Прежний selector остаётся с `CONTEXT_BYTES=240000`, `LIMIT=4096`. В системный текст для PARTIAL добавлено одно указание о статусе, инженерной непроверенности и существенных пробелах. SSE отправляет естественный текст с Thinking Disabled и итоговым usage. Q12 оценивается по источникам после ответа.
-- **Прогресс.** COMPILE, CONSULT и QA replay пишут в stderr время UTC, текущую задачу, завершённые и известные задачи, учтённые нанодоллары и heartbeat примерно каждые 15 секунд. Heartbeat показывает работу процесса, а не получение данных. Терминальный статус содержит путь отчёта. Причина прежнего Ctrl+C не установлена.
+- Selector `selector-v2.1` использует подготовленные записи, IDF, нормализацию длины, бонусы точных обозначений и покрытие частей вопроса. Технические смешанные кириллические и латинские обозначения, дефисы и русские окончания нормализуются только при поиске. Исходные тексты, числовые значения, условия и редакции передаются без переписывания. Точные дубли объединяют ссылки. Предыдущий вопрос диалога участвует в поиске с меньшим весом. Ответ модели используется только как ограниченная история диалога.
+- Safety policy сохраняет применимые предупреждения, включает связанные неопределённости и локально блокирует практический ответ при несовместимых указаниях о силовом и сигнальном назначении одного разъёма. Подтверждение запрашивается у изготовителя. Локальное ограничение помечается отдельно от ответа модели и не расходует резерв. Для предела измеряемого тока требуется подтверждённое значение. Напряжение, сопротивление или потребляемый ток сами по себе его не устанавливают.
+- В запрос передаются метки и метаданные только выбранных источников. Отчёт раскрывает метки в названия, доступные исходные URL, физические страницы PDF или строки Astro. Неизвестная метка отмечается как неподтверждённая. Контрольная карта находится в `test_fixtures/`, читается независимым проверяющим CLI и не входит в selector, промпт, историю или запрос. 12 прежних вопросов сохранены побайтно. Thinking Disabled, SSE с usage, максимум ответа 4096, stderr heartbeat и явный итоговый статус сохраняются.
+- Локальный предохранитель — **9000 байт полного компактного JSON** с запасом до лимита провайдера. Это приближение без совместимого подтверждённого токенизатора. Если обязательные сведения не помещаются, отправка блокируется. LIVE проверяет фактический usage. При входе свыше 10 000 токенов стоимость учитывается, следующие запросы прекращаются. Производственный потолок ответа 450 в этом эксперименте не проверяется.
 
-**Бесплатная приёмка в Codex — 43 PASS, 0 FAIL, 0 SKIP.** Три прежних SourceArchive, socket EPERM, 0 платных операций. Тест replay с истёкшей арендой выполнен на синтетических checkpoints. Приватные артефакты владельца и фактические причины отклонений проверяются на UK-PC.
+## Бесплатная приёмка
+
+**50 PASS, 0 FAIL, 0 SKIP** на трёх прежних SourceArchive с seccomp socket EPERM. Сохранены 43 теста CONSULT-01. Добавлены синтетические регрессии для обозначений, нескольких частей запроса, scoped safety, ссылок, длинной истории, недостатка свидетельств, подмены плана, финансового основания и остановки после превышения usage. Платные вызовы в Codex — **0**.
+
+Исходная KnowledgeBase владельца и фактический ZIP CONSULT-01 доступны на UK-PC. Поэтому исторические 42/54, целевые **54/54**, проверка Q02/Q08 и Q12 на оригинале и локальный размер всех 12 запросов требуют независимого прогона. Успех синтетических тестов этих измерений не заменяет. При FAIL ZIP содержит пропущенные группы и причины; файл допуска LIVE создаётся только при PASS.
 
 | ZIP preflight | SHA-256 |
 |---|---|
-| `DS-DX-02-D-preflight.zip` | `171709d27cfb97be6d8626921dedd937195566d5203a0060448fcded53f7f750` |
+| `DS-DX-02-D-preflight.zip` | `0c45358a89fd7843b732c26e963b97deb3da8b56a85f2ee1d1ba76d392336df4` |
 
-## Один бесплатный WSL-блок
+## Один бесплатный блок WSL для UK-PC
 
-Запустите на UK-PC в прежней WSL-среде. Укажите фактическую папку `UTKC_HOME`, если она отличается от приведённой. QA ZIP содержит тексты для внутренней инженерной проверки. Храните экспорт в согласованном локальном каталоге. Новый пакет KnowledgeBase здесь не экспортируется.
+Используются прежний venv, три SourceArchive и неизменные `knowledge-r4-b-v1`, `compile-r4-b-v1/knowledge.zip`, `reports-consult-01/DS-DX-02B-results.zip` и приватные ledger. Блок выгружает отчёт даже при измеренном FAIL, когда сформирован ZIP.
 
 ```bash
 export UTKC_HOME="$HOME/utkc-r2-acceptance"
@@ -27,45 +31,59 @@ export UTKC_HOME="$HOME/utkc-r2-acceptance"
   set -euo pipefail
   test -z "$(git -C "$UTKC_HOME/backend" status --porcelain)"
   git -C "$UTKC_HOME/backend" fetch origin experiment/ds-dx-02-d-unified-knowledge-compiler
-  git -C "$UTKC_HOME/backend" switch --detach e2c6ff9379dd76cebd382e042f70151581bc0d03
-  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = e2c6ff9379dd76cebd382e042f70151581bc0d03
+  git -C "$UTKC_HOME/backend" switch --detach 88e61096296729fe217c92889210f0ddb8f7df3d
+  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = 88e61096296729fe217c92889210f0ddb8f7df3d
   test "$(git -C "$UTKC_HOME/site" rev-parse HEAD)" = 084d759487bfab6e111549c9b5469711ac5fc13e
   cd "$UTKC_HOME/backend/experiments/ds-dx-02"
   export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
   bash preflight.sh --sources "$UTKC_HOME/source-pilot" \
     --additional-source "$UTKC_HOME/source-product" --additional-source "$UTKC_HOME/source-system" \
-    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-r4-b-qa"
-  (cd "$UTKC_HOME/preflight-r4-b-qa" && sha256sum -c ./*.zip.sha256)
-  "$DX02_PYTHON" qa_replay.py --workspace "$UTKC_HOME" \
-    --output "$UTKC_HOME/qa-r4-b/qa-review.zip"
-  "$DX02_PYTHON" consult_qa.py prepare --workspace "$UTKC_HOME" \
-    --preflight "$UTKC_HOME/preflight-r4-b-qa/preflight.json"
-  (cd "$UTKC_HOME/qa-r4-b" && sha256sum -c qa-review.zip.sha256 consult-dryrun.zip.sha256)
-  output=/mnt/c/DS-Validation/Reports/DS-DX-02-R4-B-QA
-  mkdir -p "$output"
-  cp -n "$UTKC_HOME/preflight-r4-b-qa"/DS-DX-02-D-preflight.zip{,.sha256} \
-    "$UTKC_HOME/qa-r4-b"/qa-review.zip{,.sha256} \
-    "$UTKC_HOME/qa-r4-b"/consult-dryrun.zip{,.sha256} "$output/"
-  (cd "$output" && sha256sum -c "$UTKC_HOME/preflight-r4-b-qa/DS-DX-02-D-preflight.zip.sha256" \
-    "$UTKC_HOME/qa-r4-b/qa-review.zip.sha256" "$UTKC_HOME/qa-r4-b/consult-dryrun.zip.sha256")
+    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-consult02"
+  (cd "$UTKC_HOME/preflight-consult02" && sha256sum -c ./*.zip.sha256)
+  result=0
+  "$DX02_PYTHON" consult02_check.py --workspace "$UTKC_HOME" \
+    --preflight "$UTKC_HOME/preflight-consult02/preflight.json" || result=$?
+  src="$UTKC_HOME/consult02-offline"
+  test -f "$src/consult02-dryrun.zip" || exit "$result"
+  (cd "$src" && sha256sum -c consult02-dryrun.zip.sha256)
+  target=/mnt/c/DS-Validation/Reports/DS-DX-02-CONSULT-02
+  mkdir -p "$target"
+  cp -n "$src"/consult02-dryrun.zip{,.sha256} "$target/"
+  (cd "$target" && sha256sum -c "$src/consult02-dryrun.zip.sha256")
+  exit "$result"
 )
 ```
 
-В dry-run Q11 использует явно синтетический ответ Q10. ZIP содержит байты контекстного блока и запроса, виды и число выбранных записей, наличие критических записей и локаторов. Это проверка selector. Фактические usage и качество ответа измеряются в LIVE. Если критические записи не помещаются или не передаются, подготовка останавливается. Исходные счета R2, R3, R4-A, R4-C и R4-B проверяются и фиксируются в SHA плана. Удержанные резервы остаются в расчёте. Пиковый резерв первого вопроса **$0.3049152**, сумма резервов 12 вопросов **$3.6589824**. Это верхние оценки, а не утверждённый бюджет.
+В `consult02-dryrun.zip` находятся сводка, сравнение фактических выборок CONSULT-01 и локальных v1/v2, группы карты, отдельный Q11 с исторической репликой Q10, метаданные выборок, финансовый пин и лог preflight. Историческая реплика применяется только в этой проверке. Нет новых model-generated ответов, измеренных latency или usage для v2. При PASS SHA локального `consult02-offline/plan.json` выводится отдельно для согласования.
 
-## Будущий LIVE-CONSULT после отдельного Owner GO
+## LIVE после отдельного Owner GO
 
-После просмотра QA ZIP и dry-run установите `CONSULT_PLAN_SHA`, `CONSULT_OWNER_GO`, `CONSULT_GO_USD` и `CONSULT_TOTAL_USD` из отдельного решения владельца. Launcher повторно сверяет план, исторические счета, архив, вопросы и runtime перед запросом ключа. При UNKNOWN матрица останавливается. Автоматических повторов нет.
+Ожидаемая экспозиция по прежним журналам — $1.492266972, остаток первоначального потолка — $3.507733028. Более строгий контрольный остаток по решению CONSULT-01 — $3.496914560. Launcher вычисляет их заново и сохраняет UNKNOWN R3/R4-A в учёте. Резерв одного запроса — **$0.3049152**. Сумма резервов 12 запросов — **$3.6589824**. При установленных лимитах завершение серии зависит от последовательных списаний и локальных ограничений. Журналы CONSULT-02 и ответы записываются только в новые каталоги.
+
+Заполните переменные из отдельного решения владельца. Ключ вводится в интерактивном WSL2 через скрытый запрос. Повтор запуска на занятом состоянии запрещён.
 
 ```bash
 cd "$UTKC_HOME/backend/experiments/ds-dx-02"
 export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
-bash consult-live.sh live --workspace "$UTKC_HOME" \
-  --preflight "$UTKC_HOME/preflight-r4-b-qa/preflight.json" \
-  --plan-sha256 "${CONSULT_PLAN_SHA:?}" --owner-go "${CONSULT_OWNER_GO:?}" \
-  --owner-go-usd "${CONSULT_GO_USD:?}" --total-go-usd "${CONSULT_TOTAL_USD:?}" \
+"$DX02_PYTHON" consult02.py --workspace "$UTKC_HOME" \
+  --preflight "$UTKC_HOME/preflight-consult02/preflight.json" \
+  --plan-sha256 "${CONSULT02_PLAN_SHA:?}" --owner-go "${CONSULT02_OWNER_GO:?}" \
+  --owner-go-usd "${CONSULT02_GO_USD:?}" --total-go-usd "${CONSULT02_TOTAL_USD:?}" \
   --allow-partial --confirm-provider-contract
-(cd "$UTKC_HOME/reports-consult-01" && sha256sum -c DS-DX-02B-results.zip.sha256)
 ```
 
-Ответы UNREVIEWED. Сопоставьте их с `R4-A-ENGINEERING-01` и исходными материалами отдельно от измерений selector. Особое внимание уделите критическим условиям, исходным противоречиям, распиновке и реакции Q12 на неподтверждённый диапазон.
+Проверка и локальный экспорт ZIP после LIVE, включая частичный отчёт при наличии:
+
+```bash
+(
+  set -euo pipefail
+  src="$UTKC_HOME/reports-consult-02"
+  target=/mnt/c/DS-Validation/Reports/DS-DX-02-CONSULT-02
+  (cd "$src" && sha256sum -c consult02-results.zip.sha256)
+  mkdir -p "$target"
+  cp -n "$src"/consult02-results.zip{,.sha256} "$target/"
+  (cd "$target" && sha256sum -c "$src/consult02-results.zip.sha256")
+)
+```
+
+Инженерная оценка отвечает отдельно за точность модели, безопасность, релевантность, критические условия и корректность ссылок. 54/54 измеряет нахождение записей по карте. Показатели локальных остановок остаются отдельными от модельных ответов.
