@@ -8,8 +8,8 @@ from pathlib import Path
 
 from bundle import archive, checked_bytes, export, publish, sums
 from protocol import (MODEL, MODES, Ledger, Stop, chat, encode, live_gate, load, locked, money,
-                      reply, reserve, sha, text, transport, PAGE, runtime_digest, kernel_release)
-from sources import image_dimensions, verify
+                      reply, reserve, sha, text, transport, PAGE)
+from sources import image_dimensions
 from planning import NAME, advisory_status, validate
 from reconcile import safe_diagnostic
 
@@ -466,7 +466,7 @@ def compile_snapshot(root, knowledge, reports, journal, identity, post, *, execu
         family = task["kind"]
         if family == "vision":
             family = "vision_photo" if website["records"][group[0]]["kind"] == "image" else "vision_document"
-        body, prefix = payload(root, website, task, handles, previous, group, mode=policy[family])
+        body, prefix = payload(root, website, task, handles, previous, group, mode=policy[family], streaming=True)
         if journal.settled(id_):
             journal.checkpoint_request(id_, body, prefix)
             return journal.result(id_)
@@ -652,40 +652,24 @@ def validate_policy(policy):
 def run(args):
     live_gate()
     os.umask(0o077)
-    identity = verify(args.sources, reparse=False)
-    preflight = load(args.preflight)
-    if any(preflight.get(key) != value for key, value in {
-        "snapshot": identity, "kernel": kernel_release(), "runtime": runtime_digest(),
-        "offline": "seccomp: socket EPERM", "paid_calls": 0,
-    }.items()):
-        raise Stop("Run offline preflight again in this WSL session")
-    if not args.confirm_provider_contract:
-        raise Stop("Verify current model, Files/Vision contract and rates, then explicitly confirm")
-    print(encode(graph_estimate(args.sources)).decode())
-    from r4_a import finances
-
-    state = args.state.resolve()
-    workspace = state.parent
-    score_path = workspace / "private-r4-a/engineering/score.json"
-    if (state.name != "private-r4-b" or args.state.is_symlink()
-            or args.engineering_report.resolve() != score_path or not load(score_path)["cases"]):
-        raise Stop("Full COMPILE requires engineering assessment from R4-A and a separate canonical R4-B state")
+    from compile_release import approved_plan
     from r4_c import BUDGET_LOCK
 
+    if not args.confirm_provider_contract or not args.owner_go.strip():
+        raise Stop("Confirm the provider contract and provide the distinct COMPILE Owner GO")
+    state = args.state.resolve()
+    workspace = state.parent
+    if state.name != "private-r4-b" or args.state.is_symlink():
+        raise Stop("Choose the canonical R4-B private state")
     with locked(workspace / BUDGET_LOCK):
-        c_state = workspace / "private-r4-c"
-        finance = finances(workspace, include_r4_a=True,
-                           include_r4_c=(c_state / "ledger.json").exists() or (c_state / ".inflight").exists())
+        approved = approved_plan(args.policy, args.plan_sha256,
+                                 workspace, args.sources, args.card, args.preflight)
+        identity, policy, finance = approved["snapshot"], approved["modes"], approved["finance"]
         cap, total = money(args.owner_go_usd), money(args.total_go_usd)
         if not cap <= min(total, finance["max_compile_nd"]) or total > finance["max_total_nd"]:
             raise Stop("R4-B caps exceed original ceilings after earlier expenses and retained reserves")
-        approval = load(args.policy)
-        if (not isinstance(approval, dict) or set(approval) != {"modes", "engineering_report_sha256", "owner_go"}
-                or not isinstance(approval["owner_go"], str) or not approval["owner_go"].strip()
-                or approval["engineering_report_sha256"] != sha(args.engineering_report.read_bytes())):
-            raise Stop("Full COMPILE requires a frozen R4-B policy and matching engineering report")
-        policy = validate_policy(approval["modes"])
-        plan_id = sha(encode([identity, runtime_digest(), kernel_release(), str(state), approval, finance]))
+        print(encode(graph_estimate(args.sources)).decode())
+        plan_id = sha(encode([args.plan_sha256, args.owner_go]))
         print(f"Compile plan identity: {plan_id}")
         with locked(args.state):
             if args.knowledge.exists() or args.reports.exists():
@@ -708,7 +692,9 @@ def main():
     parser.add_argument("--confirm-provider-contract", action="store_true")
     parser.add_argument("--budget-approval", type=Path)
     parser.add_argument("--policy", required=True, type=Path)
-    parser.add_argument("--engineering-report", required=True, type=Path)
+    parser.add_argument("--card", required=True, type=Path)
+    parser.add_argument("--plan-sha256", required=True)
+    parser.add_argument("--owner-go", required=True)
     run(parser.parse_args())
 
 

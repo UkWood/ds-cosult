@@ -50,6 +50,7 @@ class EndToEnd(unittest.TestCase):
         from protocol import Ledger, encode, load, runtime_digest
         from sources import verify
         from test_d import fake_reply
+        from test_compile_release import stream_fixture
 
         paths = os.environ.get("UTKC_ACCEPTANCE_PACKAGES")
         if not paths:
@@ -63,6 +64,7 @@ class EndToEnd(unittest.TestCase):
             observed.append((source_manifest["entity"]["type"], len(source_manifest["records"])))
             uploads = set()
             calls = []
+            families = set()
             truncated = set()
             children = set()
 
@@ -75,6 +77,10 @@ class EndToEnd(unittest.TestCase):
                     return dict(id=f"file-api-mock-{len(uploads)}", purpose="text_recognition",
                                 bytes=len(raw), expires_at=4102444800)
                 wire = json.loads(body)
+                self.assertIs(wire["stream"], True)
+                self.assertEqual(wire["stream_options"], {"include_usage": True})
+                self.assertEqual(wire["thinking"], {"type": "disabled"})
+                self.assertNotIn("reasoning_effort", wire)
                 blocks = wire["messages"][1]["content"]
                 text_blocks = [block["text"] for block in blocks if block["type"] == "text"]
                 fixed, request = map(json.loads, text_blocks)
@@ -88,6 +94,11 @@ class EndToEnd(unittest.TestCase):
                 self.assertNotIn("source_text", fixed)
                 self.assertIn(kind, ("extract", "vision", "fusion"))
                 calls.append(kind)
+                family = kind
+                if kind == "vision":
+                    record = source_manifest["records"][fixed["source"]]
+                    family = "vision_photo" if record["kind"] == "image" else "vision_document"
+                families.add(family)
                 if ".s" in current["id"]:
                     children.add(kind)
                 if kind == "fusion":
@@ -112,8 +123,9 @@ class EndToEnd(unittest.TestCase):
                                              kind="unresolved",
                                              locators=list(dict.fromkeys(loc for v in prior.values()
                                                                         for row in v for loc in row["locators"])))]
-                    return fake_reply(body, encode(dict(status="FACTS", facts=partial_rows)).decode(), "length")
-                return fake_reply(body, encode(result).decode())
+                    return stream_fixture(fake_reply(body, encode(dict(status="FACTS", facts=partial_rows)).decode(),
+                                                     "length"))
+                return stream_fixture(fake_reply(body, encode(result).decode()))
 
             with tempfile.TemporaryDirectory() as directory:
                 stage = Path(directory)
@@ -126,6 +138,7 @@ class EndToEnd(unittest.TestCase):
                 compile_snapshot(raw_dir, knowledge, reports, ledger, identity, post)
                 self.assertIn("fusion", calls)
                 if pack == 0:
+                    self.assertEqual(families, {"extract", "vision_photo", "vision_document", "fusion"})
                     self.assertEqual(truncated, {"extract", "vision", "fusion"})
                     self.assertTrue(truncated <= children)
                 resumed = Ledger(ledger_path, "compile", 10**12, 10**12, identity, True)
