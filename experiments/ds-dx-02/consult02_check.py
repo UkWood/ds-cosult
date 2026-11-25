@@ -6,11 +6,12 @@ import sys
 from pathlib import Path
 
 from bundle import archive, sums
-from consult02 import BASELINE_SHA, CARD_SHA, baseline_path, pins, read_zip
+from consult02 import BASELINE_SHA, CARD_SHA, OFFLINE_DIR, baseline_path, pins, read_zip
 from consult_d import select as select_v1
 from protocol import Stop, encode, offline, save, sha
+from progress import Progress, reporting
 from qa_pins import PINS, QUESTION_SHA256
-from selector_v2 import Selector
+from selector_v2 import CONTEXT_PROFILES, Selector, WIRE_LIMIT
 
 CARD = Path(__file__).with_name("test_fixtures") / "DS-DX-02-CONSULT-02-SELECTOR-CARD.json"
 
@@ -19,7 +20,7 @@ def match(groups, ids):
     return [dict(need=group["need"], matched=sorted(set(group["any_of"]) & ids)) for group in groups]
 
 
-def benchmark(entries, rows, card, previous):
+def benchmark(entries, rows, card, previous, *, wire_limit=WIRE_LIMIT):
     known = {row["fact_id"] for row in json.loads(entries["index.json"])}
     selector = Selector(entries)
     answers = previous["answers"]
@@ -45,17 +46,20 @@ def benchmark(entries, rows, card, previous):
             {"question": rows[9]["question"], "answer": "[Синтетическая реплика для dry-run]"}])
         history = [] if position != 11 else [
             {"question": rows[9]["question"], "answer": "[Синтетическая реплика для dry-run]"}]
-        _, v2 = selector.select(question, history)
+        _, v2 = selector.select(question, history, wire_limit=wire_limit)
         chosen = match(groups, set(v2["fact_ids"]))
         actual, same_case = None, chosen
         if position == 11:
-            _, actual = selector.select(question, [{"question": rows[9]["question"], "answer": answers[9]["text"]}])
+            _, actual = selector.select(question, [{"question": rows[9]["question"], "answer": answers[9]["text"]}],
+                                        wire_limit=wire_limit)
             same_case = match(groups, set(actual["fact_ids"]))
         comparisons[key] = dict(historical_v1=historical, historical_v1_fact_ids=sorted(old_ids),
                                 dryrun_v1=dict(fact_ids=v1["fact_ids"], wire_bytes=len(v1_body),
                                                groups=match(groups, set(v1["fact_ids"]))),
                                 dryrun_v2=v2, groups_v2=chosen,
-                                actual_history_v2=actual, groups_actual_history=same_case)
+                                actual_history_v2=actual, groups_actual_history=same_case,
+                                missing_groups=[group["need"] for group in chosen if not group["matched"]],
+                                missing_groups_actual_history=[group["need"] for group in same_case if not group["matched"]])
         baseline_total += sum(bool(group["matched"]) for group in historical)
         v2_total += sum(bool(group["matched"]) for group in chosen)
         actual_total += sum(bool(group["matched"]) for group in same_case)
@@ -65,17 +69,60 @@ def benchmark(entries, rows, card, previous):
     bounds = all(case["dryrun_v2"]["local_bound_ok"] and
                  (case["actual_history_v2"] is None or case["actual_history_v2"]["local_bound_ok"])
                  for case in comparisons.values())
+    safety_preserved = all(case["dryrun_v2"]["safety_preserved"] and
+                           (case["actual_history_v2"] is None or case["actual_history_v2"]["safety_preserved"])
+                           for case in comparisons.values())
     gated = {key: case["dryrun_v2"]["gate"] for key, case in comparisons.items() if case["dryrun_v2"]["gate"]}
     safety = all(gated.get(case) == "safety_conflict" for case in ("Q02", "Q08"))
     abstention = comparisons["Q12"]["dryrun_v2"]["abstention_guard"]
-    passed = (baseline_total == 42 and v2_total == actual_total == needed and bounds and safety and abstention
+    passed = (baseline_total == 42 and v2_total == actual_total == needed and bounds and safety and abstention and safety_preserved
               and all(gate == "safety_conflict" for gate in gated.values())
               and comparisons["Q11"]["actual_history_v2"]["gate"] is None)
     summary = dict(status="PASS" if passed else "FAIL", matched=v2_total, expected=needed,
                    baseline_historical_matched=baseline_total, actual_history_matched=actual_total,
-                   local_bounds_pass=bounds, safety_conflict_pass=safety, abstention_guard_pass=abstention,
+                   local_bounds_pass=bounds, relevant_safety_preserved=safety_preserved, safety_conflict_pass=safety, abstention_guard_pass=abstention,
                    local_deviations=gated, card_sha256=CARD_SHA, paid_calls=0, provider_usage=None)
     return summary, comparisons
+
+
+def sufficient_case(key, detail):
+    trace = detail["dryrun_v2"]
+    if (not trace["local_bound_ok"] or not trace["safety_preserved"] or detail["missing_groups"]):
+        return False
+    if key in {"Q02", "Q08"} and trace["gate"] != "safety_conflict":
+        return False
+    if trace["gate"] not in {None, "safety_conflict"}:
+        return False
+    if key == "Q12" and not trace["abstention_guard"]:
+        return False
+    actual = detail["actual_history_v2"]
+    return actual is None or (actual["local_bound_ok"] and actual["safety_preserved"]
+                              and actual["gate"] is None and not detail["missing_groups_actual_history"])
+
+
+def context_sweep(entries, rows, card, previous, *, progress=None):
+    profiles, cases, minimum_question = {}, {}, {}
+    for profile, wire_limit in CONTEXT_PROFILES.items():
+        if progress:
+            progress.task, progress.known = profile, len(CONTEXT_PROFILES)
+            progress.emit("PROFILE")
+        summary, details = benchmark(entries, rows, card, previous, wire_limit=wire_limit)
+        profiles[profile] = dict(summary, json_byte_limit=wire_limit)
+        cases[profile] = details
+        if progress:
+            progress.completed += 1
+        for key, item in details.items():
+            if sufficient_case(key, item):
+                minimum_question.setdefault(key, dict(profile=profile, json_byte_limit=wire_limit))
+    minimum = next((profile for profile, result in profiles.items() if result["status"] == "PASS"), None)
+    questions = tuple(next(iter(cases.values())))
+    summary = dict(status="PASS" if minimum else "FAIL",
+                   matched=profiles[minimum]["matched"] if minimum else max(p["matched"] for p in profiles.values()),
+                   expected=54, minimum_series_profile=minimum,
+                   minimum_series_json_bytes=CONTEXT_PROFILES[minimum] if minimum else None,
+                   minimum_by_question={key: minimum_question.get(key) for key in questions},
+                   profiles=profiles, card_sha256=CARD_SHA, paid_calls=0, provider_usage=None)
+    return summary, cases
 
 
 def main():
@@ -96,26 +143,31 @@ def main():
             baseline_results_zip_sha256=BASELINE_SHA, questions_sha256=QUESTION_SHA256).items()):
         raise Stop("Test-only selector card is for another release")
     previous = json.loads(read_zip(baseline_path(workspace), BASELINE_SHA)["consult.json"])
-    summary, details = benchmark(entries, rows, card, previous)
-    output = workspace / "consult02-offline"
+    output = workspace / OFFLINE_DIR
     if output.is_symlink() or (output / "plan.json").exists():
         raise Stop("Use fresh offline acceptance output")
     preflight_zip = args.preflight.with_name("DS-DX-02-D-preflight.zip")
     tests = read_zip(preflight_zip, sha(preflight_zip.read_bytes()))
     if tests["preflight.json"] != args.preflight.read_bytes():
         raise Stop("Preflight report differs from its archive")
+    path = output / "consult02-context-sweep.zip"
+    progress = Progress("CONSULT-02-R1-SWEEP", path)
+    with reporting(progress):
+        summary, details = context_sweep(entries, rows, card, previous, progress=progress)
     package = {"summary.json": encode(summary), "cases.json": encode(details),
                "plan-pins.json": encode(plan), "tests.txt": tests["tests.txt"]}
     package["SHA256SUMS"] = sums(package)
-    path = output / "consult02-dryrun.zip"
     archive(path, package)
     if summary["status"] == "PASS":
-        save(output / "plan.json", dict(pins=plan, report_zip_sha256=sha(path.read_bytes()),
+        profile = summary["minimum_series_profile"]
+        save(output / "plan.json", dict(pins=plan, selected_profile=profile,
+                                       local_wire_bytes=CONTEXT_PROFILES[profile], report_zip_sha256=sha(path.read_bytes()),
                                        summary_sha256=sha(package["summary.json"])))
         summary["plan_sha256"] = sha((output / "plan.json").read_bytes())
     print(encode(summary).decode())
+    progress.terminal("COMPLETE_UNREVIEWED" if summary["status"] == "PASS" else "STOP")
     if summary["status"] != "PASS":
-        raise Stop("Offline selector acceptance failed; inspect consult02-dryrun.zip")
+        raise Stop("Offline selector acceptance failed; inspect consult02-context-sweep.zip")
 
 
 if __name__ == "__main__":

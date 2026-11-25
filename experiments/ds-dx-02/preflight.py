@@ -37,7 +37,7 @@ def run(args):
     sys.stdout.flush()
     sys.stdout.buffer.write(log.stdout)
     evidence = {"snapshot": identity, "offline": "seccomp: socket EPERM", "paid_calls": 0,
-                "transport": "mock only", "r4_c_sse": True, "r4_b_int": True, "r4_b_qa": True, "consult02": True, "package_count": len(packages), "graph": graph, "experiment_sha256": sha(encode(experiment)), "kernel": kernel_release(), "runtime": runtime_digest(), "status": "ENGINEERING_PREFLIGHT_ONLY"}
+                "transport": "mock only", "r4_c_sse": True, "r4_b_int": True, "r4_b_qa": True, "consult02_r1": True, "package_count": len(packages), "graph": graph, "experiment_sha256": sha(encode(experiment)), "kernel": kernel_release(), "runtime": runtime_digest(), "status": "ENGINEERING_PREFLIGHT_ONLY"}
     entries = {"preflight.json": encode(evidence), "tests.txt": log.stdout,
                "r4-a-plan.json": encode(experiment)}
     entries["SHA256SUMS"] = sums(entries)
