@@ -90,11 +90,6 @@ class EndToEnd(unittest.TestCase):
                 calls.append(kind)
                 if ".s" in current["id"]:
                     children.add(kind)
-                if pack == 0 and kind not in truncated and ".s" not in current["id"] and (
-                        (kind in {"extract", "fusion"} and any(len(v) > 1 for v in current["scope"].values()))
-                        or (kind == "vision" and len(current["images"]) > 1)):
-                    truncated.add(kind)
-                    return fake_reply(body, '{"facts":[{', "length")
                 if kind == "fusion":
                     self.assertGreaterEqual(len(current["scope"]), 2)
                     result = dict(status="NO_SUPPORTED_CONTENT", facts=[])
@@ -105,6 +100,19 @@ class EndToEnd(unittest.TestCase):
                                   applicability="Mock result", locators=[loc],
                                   kind="visual_observation" if current["images"] else "source_assertion")
                                   for loc in locs])
+                if pack == 0 and kind not in truncated and ".s" not in current["id"] and (
+                        (kind in {"extract", "fusion"} and any(len(v) > 1 for v in current["scope"].values()))
+                        or (kind == "vision" and len(current["images"]) > 1)):
+                    truncated.add(kind)
+                    partial_rows = result["facts"]
+                    if kind == "fusion":
+                        prior = evidence["validated_prior_records"]
+                        partial_rows = [dict(text="Mock unresolved comparison",
+                                             applicability="conditions for this fragment",
+                                             kind="unresolved",
+                                             locators=list(dict.fromkeys(loc for v in prior.values()
+                                                                        for row in v for loc in row["locators"])))]
+                    return fake_reply(body, encode(dict(status="FACTS", facts=partial_rows)).decode(), "length")
                 return fake_reply(body, encode(result).decode())
 
             with tempfile.TemporaryDirectory() as directory:

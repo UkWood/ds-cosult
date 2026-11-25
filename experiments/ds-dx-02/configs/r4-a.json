@@ -1,0 +1,13 @@
+{
+  "astro_commit": "084d759487bfab6e111549c9b5469711ac5fc13e",
+  "astro": "A-c5c7146d49ed3f59",
+  "astro_lines": 71,
+  "pdf": "P-42f2fcb6f7dfdfa3",
+  "pdf_pages": 8,
+  "pdf_sha256": "496ddc2786b8fb2cdfd8970947fadde6b7a045e7d86e20737f2ef694425d5890",
+  "visual_source": "P-6f65a717b55eec7c",
+  "visual_pdf_sha256": "030303812b4bd8dfc7e82fcd3ad4ef8493526549c7c90d033ce25b4f8b2fe83a",
+  "visual_page": 11,
+  "visual_images": ["P-6f65a717b55eec7c-011-upper.png", "P-6f65a717b55eec7c-011-lower.png"],
+  "visual_review": "Рисунок 3, схема подключения контроллера. На кропах читаются XT1–XT9, антенные разъёмы и обозначения цепей."
+}

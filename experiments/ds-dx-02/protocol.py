@@ -11,6 +11,8 @@ import socket
 import tempfile
 import time
 from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -18,10 +20,39 @@ MODEL = "deepseek-flash"
 CONTEXT = 1_000_000
 HIT, MISS, OUTPUT, PAGE = 6, 300, 1200, 225_000  # nanodollars
 BODY = 48 * 1024**2
+RESPONSE_MAX = 32 * 1024**2
+MODES = {"disabled", "low", "high"}
+STAGES = {"compile", "consult", "r4-a"}
+ENDPOINTS = {"/files", "/chat/completions"}
 
 
 class Stop(RuntimeError):
     pass
+
+
+class ProviderContract(Stop):
+    def __init__(self, stage):
+        self.stage = stage
+        super().__init__("Unknown provider outcome: invalid " + stage)
+
+
+@dataclass
+class Delivery:
+    value: object = None
+    raw: bytes | None = None
+    metadata: dict | None = None
+
+
+class TransportFault(Stop):
+    def __init__(self, stage, exception, delivery):
+        super().__init__("Provider transport outcome is uncertain")
+        self.stage = stage
+        self.exception = exception
+        self.delivery = delivery
+
+
+def utc_now():
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 def encode(value):
@@ -74,15 +105,19 @@ def text(value):
     return {"type": "text", "text": value}
 
 
-def chat(system, blocks, limit, *, compile_task=False):
+def chat(system, blocks, limit, *, compile_task=False, mode="disabled"):
+    if mode not in MODES or not compile_task and mode != "disabled":
+        raise Stop("Unsupported reasoning mode")
     body = {
         "model": MODEL, "stream": False, "max_tokens": limit,
         "messages": [{"role": "system", "content": system},
                      {"role": "user", "content": blocks}],
-        "thinking": {"type": "enabled" if compile_task else "disabled"},
+        "thinking": {"type": "enabled" if mode != "disabled" else "disabled"},
     }
     if compile_task:
-        body.update(reasoning_effort="high", response_format={"type": "json_object"})
+        body["response_format"] = {"type": "json_object"}
+    if mode != "disabled":
+        body["reasoning_effort"] = mode
     return body
 
 
@@ -93,46 +128,116 @@ def reply(response, limit):
         choice, = response["choices"]
         finish = choice["finish_reason"]
         content = choice["message"].get("content")
+        if not isinstance(finish, str) or (content is not None and not isinstance(content, str)):
+            raise ValueError
+    except (KeyError, ValueError, AttributeError, TypeError):
+        raise ProviderContract("parse") from None
+    try:
         usage = response["usage"]
         names = ("prompt_tokens", "prompt_cache_hit_tokens",
                  "prompt_cache_miss_tokens", "completion_tokens")
         prompt, hit, miss, output = (usage[key] for key in names)
-        details = usage.get("completion_tokens_details") or {}
-        reasoning = details.get("reasoning_tokens")
-        values = (prompt, hit, miss, output)
-        if any(type(n) is not int or n < 0 for n in values):
+        details = usage.get("completion_tokens_details")
+        reasoning = None if details is None else details.get("reasoning_tokens")
+        if any(type(n) is not int or n < 0 for n in (prompt, hit, miss, output)):
             raise ValueError
         if prompt != hit + miss or prompt > CONTEXT or output > limit:
             raise ValueError
         if reasoning is not None and (type(reasoning) is not int or not 0 <= reasoning <= output):
             raise ValueError
-        if not isinstance(finish, str) or (content is not None and not isinstance(content, str)):
-            raise ValueError
-        result = dict(zip(names, values))
-        result["reasoning_tokens"] = reasoning
-        return {"text": content or "", "finish_reason": finish, "usage": result,
-                "model": response["model"], "cost_nd": hit * HIT + miss * MISS + output * OUTPUT}
     except (KeyError, ValueError, AttributeError, TypeError):
-        raise Stop("Unknown provider outcome: invalid model, response or usage") from None
+        raise ProviderContract("usage") from None
+    observed = response.get("thinking")
+    observed_type = observed.get("type") if isinstance(observed, dict) else None
+    effort = response.get("reasoning_effort")
+    reported = ("disabled" if observed_type == "disabled" else
+                effort if observed_type == "enabled" and effort in ("low", "high") else
+                "enabled" if observed_type == "enabled" else None)
+    result = dict(zip(names, (prompt, hit, miss, output)))
+    result["reasoning_tokens"] = reasoning
+    return {"text": content or "", "finish_reason": finish, "usage": result,
+            "model": response["model"], "reported_mode": reported,
+            "cost_nd": hit * HIT + miss * MISS + output * OUTPUT}
 
 
 def reserve(limit):
     return CONTEXT * MISS + limit * OUTPUT
 
 
+def provider_error(value, key):
+    error = value.get("error") if isinstance(value, dict) else None
+    if not isinstance(error, dict):
+        return None
+    code = error.get("code")
+    message = error.get("message")
+    code = str(code) if type(code) is int else code
+    allowed = {"invalid_request_error", "authentication_error", "rate_limit_error",
+               "server_error", "insufficient_balance", "invalid_request", "model_not_found"}
+    cleaned = code if isinstance(code, str) and (code in allowed or re.fullmatch(r"[0-9]{1,8}", code)) else None
+    # Use fixed classifications; error text can echo credentials or supplied material.
+    reasons = ("rate limit", "invalid api key", "insufficient balance", "invalid request",
+               "context length", "server error", "service unavailable", "overloaded")
+    match = next((reason for reason in reasons if reason in message[:2048].lower()), None) if isinstance(message, str) else None
+    return {"code": cleaned if cleaned != key else None, "message": match or "[redacted]"}
+
+
 def transport(key):
+    def safe_id(value):
+        return value if (isinstance(value, str) and key not in value
+                         and re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", value)) else None
+
     def post(endpoint, body, content_type):
-        if endpoint not in ("/files", "/chat/completions") or len(body) > BODY:
+        if endpoint not in ENDPOINTS or len(body) > BODY:
             raise Stop("Request outside approved API contract")
         conn = http.client.HTTPSConnection("api.deepseek.com", timeout=275)
+        stage = "connect"
+        delivery = Delivery(metadata={})
         try:
+            conn.connect()
+            stage = "send"
             conn.request("POST", endpoint, body, {"Authorization": "Bearer " + key,
                                                    "Content-Type": content_type})
+            stage = "headers"
             response = conn.getresponse()
-            data = response.read(32 * 1024**2 + 1)
-            if response.status != 200 or len(data) > 32 * 1024**2:
-                raise Stop(f"Unknown provider outcome: HTTP {response.status}")
-            return json.loads(data)
+            delivery.metadata.update(http_status=response.status, request_id=safe_id(response.getheader("x-request-id") or response.getheader("request-id")))
+            stage = "read"
+            data = bytearray()
+            try:
+                while len(data) <= RESPONSE_MAX:
+                    chunk = response.read1(min(65536, RESPONSE_MAX + 1 - len(data)))
+                    if not chunk:
+                        break
+                    data.extend(chunk)
+            finally:
+                raw = bytes(data)
+                delivery.metadata.update(response_bytes=len(raw), response_sha256=sha(raw))
+                if len(raw) <= RESPONSE_MAX and key.encode() not in raw:
+                    delivery.raw = raw
+            if len(data) > RESPONSE_MAX:
+                raise Stop("Response exceeds local size limit")
+            if response.length not in (None, 0):
+                raise http.client.IncompleteRead(b"", response.length)
+            delivery.metadata["response_complete"] = True
+            stage = "parse"
+            if response.status != 200:
+                stage = "headers"
+                if len(data) <= 65536:
+                    try:
+                        value = json.loads(data)
+                        delivery.metadata["provider_error"] = provider_error(value, key)
+                        if isinstance(value, dict):
+                            delivery.metadata["response_id"] = safe_id(value.get("id"))
+                    except (ValueError, RecursionError, UnicodeError):
+                        pass
+                raise TransportFault(stage, "HTTPStatusError", delivery)
+            delivery.value = json.loads(data)
+            if isinstance(delivery.value, dict):
+                delivery.metadata["response_id"] = safe_id(delivery.value.get("id"))
+            return delivery
+        except TransportFault:
+            raise
+        except BaseException as error:
+            raise TransportFault(stage, type(error).__name__, delivery) from None
         finally:
             conn.close()
     return post
@@ -151,9 +256,12 @@ def locked(root):
 
 class Ledger:
     def __init__(self, path, stage, cap, total, identity, resume=False, approval=None):
-        if stage not in {"compile", "consult"}:
+        if stage not in STAGES:
             raise Stop("Unsupported ledger stage")
         self.path = path
+        self.inflight = path.parent / ".inflight"
+        if self.inflight.exists():
+            raise Stop("A durable in-flight operation requires independent reconciliation")
         self.stage = stage
         self.cap = cap
         self.total = total
@@ -209,7 +317,7 @@ class Ledger:
                 if op["status"] != "SETTLED":
                     raise Stop("Pending/unknown operation requires independent reconciliation")
                 key = (op["stage"], op["id"])
-                if (key in operations or op["stage"] not in {"compile", "consult"} or op["stage"] not in stages
+                if (key in operations or op["stage"] not in STAGES or op["stage"] not in stages
                         or not re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]{0,127}", op["id"])
                         or not 0 <= op["cost_nd"] <= op["reserve_nd"]):
                     raise Stop("Invalid operation history")
@@ -241,7 +349,7 @@ class Ledger:
 
     def check(self, amount):
         ops = self.data["ops"]
-        if any(op["status"] != "SETTLED" for op in ops):
+        if self.inflight.exists() or any(op["status"] != "SETTLED" for op in ops):
             raise Stop("Pending/unknown operation requires independent reconciliation")
         stage_spent = sum(op["cost_nd"] for op in ops if op["stage"] == self.stage)
         spent = sum(op["cost_nd"] for op in ops)
@@ -251,36 +359,103 @@ class Ledger:
                        f"total_spent={spent}nd, available={remaining}nd")
 
     def execute(self, id_, endpoint, body, reserve_nd, post, parse, *, content_type="application/json", prefix=None):
-        if self.has(id_) or len(body) > BODY or not re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]{0,127}", id_):
+        if (self.has(id_) or endpoint not in ENDPOINTS or len(body) > BODY
+                or type(reserve_nd) is not int or reserve_nd <= 0
+                or not re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]{0,127}", id_)):
             raise Stop("Duplicate or malformed operation, or oversized body")
         self.check(reserve_nd)
-        op = {"stage": self.stage, "id": id_, "status": "PENDING",
+        op = {"stage": self.stage, "id": id_, "status": "PENDING", "endpoint": endpoint,
               "reserve_nd": reserve_nd, "request_sha256": sha(body), "prefix_sha256": prefix}
+        mode = None
         if endpoint == "/chat/completions":
             try:
                 params = json.loads(body)
                 op["parameters"] = {key: params[key] for key in ("model", "max_tokens", "thinking",
                                     "reasoning_effort", "response_format") if key in params}
-            except (ValueError, TypeError):
+                mode = ("disabled" if params.get("thinking", {}).get("type") == "disabled"
+                        else params.get("reasoning_effort"))
+            except (ValueError, TypeError, AttributeError):
                 raise Stop("Invalid serialized chat request") from None
+        diag = dict(operation_id=id_, endpoint=endpoint, request_sha256=op["request_sha256"],
+                    request_bytes=len(body), mode=mode, started_utc=utc_now(), http_status=None,
+                    request_id=None, response_id=None, response_bytes=None, response_sha256=None,
+                    response_complete=False, provider_error=None, raw_saved=False, result_saved=False)
         self.data["ops"].append(op)
-        save(self.path, self.data)
         start = time.monotonic()
+        stage = "persist_pending"
+        delivery = Delivery()
+        root = self.path.parent
+        diagnostic_path = root / "diagnostics" / self.stage / (id_ + ".json")
+
+        def timing():
+            return dict(ended_utc=utc_now(), elapsed_ms=round((time.monotonic() - start) * 1000))
+
+        def private_response():
+            if delivery.raw is not None and not diag["raw_saved"]:
+                write(root / "responses" / self.stage / (id_ + ".bin"), delivery.raw)
+                diag["raw_saved"] = True
+
+        def diagnostic():
+            diag.update(delivery.metadata or {})
+            diag.update(timing())
+            save(diagnostic_path, diag)
+
         try:
+            save(self.path, self.data)
+            save(self.inflight, {key: op[key] for key in ("id", "stage", "reserve_nd", "request_sha256")})
+            stage = "send"
             response = post(endpoint, body, content_type)
-            result = parse(response)
+            if isinstance(response, Delivery):
+                delivery = response
+            else:
+                raw = encode(response)
+                delivery = Delivery(response, raw, dict(response_bytes=len(raw), response_sha256=sha(raw),
+                                                       response_complete=True))
+            stage = "persist_response"
+            private_response()
+            stage = "parse"
+            result = parse(delivery.value)
+            stage = "usage"
             if not 0 <= result["cost_nd"] <= reserve_nd:
-                raise Stop("Provider charge outside reserve")
-            save(self.path.parent / self.stage / (id_ + ".json"), result)
-            op.update(status="SETTLED", cost_nd=result["cost_nd"],
-                      duration_ms=round((time.monotonic() - start) * 1000),
-                      response_sha256=sha(encode(response)), result_sha256=sha(encode(result)))
+                raise ProviderContract("usage")
+            stage = "persist_result"
+            save(root / self.stage / (id_ + ".json"), result)
+            diag["result_saved"] = True
+            stage = "persist_diagnostic"
+            diag.update(stage="complete", exception=None)
+            diagnostic()
+            stage = "persist_ledger"
+            settled = dict(op, status="SETTLED", cost_nd=result["cost_nd"], duration_ms=diag["elapsed_ms"],
+                           response_sha256=sha(encode(delivery.value)), result_sha256=sha(encode(result)))
+            self.data["ops"][-1] = settled
             save(self.path, self.data)
+            stage = "persist_clear_inflight"
+            self.inflight.unlink()
             return result
-        except BaseException:
-            op["status"] = "UNKNOWN"
-            save(self.path, self.data)
-            raise Stop(f"{id_}: unknown outcome; all paid operations blocked") from None
+        except BaseException as error:
+            if isinstance(error, TransportFault):
+                delivery = error.delivery
+                stage = error.stage
+            elif isinstance(error, ProviderContract):
+                stage = error.stage
+            kind = error.exception if isinstance(error, TransportFault) else type(error).__name__
+            # A failed settlement write can leave a valid result but must still block further POSTs.
+            op.update(status="UNKNOWN", uncertainty_stage=stage)
+            self.data["ops"][-1] = op
+            diag.update(stage=stage, exception=kind)
+            try:
+                private_response()
+            except OSError:
+                diag["raw_persist_failed"] = True
+            try:
+                diagnostic()
+            except OSError:
+                pass
+            try:
+                save(self.path, self.data)
+            except OSError:
+                pass  # the last durable PENDING remains blocking
+            raise Stop(f"{id_}: unknown outcome at {stage}; all paid operations blocked") from None
 
     def checkpoint_request(self, id_, body, prefix):
         op, = (item for item in self.data["ops"] if item["stage"] == self.stage and item["id"] == id_)

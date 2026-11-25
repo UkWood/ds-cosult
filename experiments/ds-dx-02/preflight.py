@@ -7,7 +7,8 @@ from pathlib import Path
 
 from bundle import archive, sums
 from compile_d import graph_estimate
-from protocol import Stop, encode, offline, save, kernel_release, runtime_digest
+from protocol import Stop, encode, offline, save, sha, kernel_release, runtime_digest
+from r4_a import plan
 from sources import verify
 
 
@@ -21,11 +22,12 @@ def run(args):
     package_env = (os.pathsep.join(str(path.resolve()) for path in packages)
                    if len(packages) > 1 else "")
     graph = graph_estimate(args.sources)
+    experiment = plan(args.sources)
     args.reports = args.reports.resolve()
     if args.reports.exists():
         raise Stop("Choose a fresh preflight reports path")
     print("Pilot base graph " + encode(graph).decode(), flush=True)
-    log = subprocess.run([sys.executable, "-m", "unittest", "-v", "test_d", "test_universal"],
+    log = subprocess.run([sys.executable, "-m", "unittest", "-v", "test_d", "test_universal", "test_r4"],
                          cwd=Path(__file__).resolve().parent, check=True,
                          env=dict(os.environ, DX02_PREFLIGHT_SOURCES=str(args.sources.resolve()),
                                   DX02_PREFLIGHT_SITE=str(args.site.resolve()),
@@ -35,8 +37,9 @@ def run(args):
     sys.stdout.flush()
     sys.stdout.buffer.write(log.stdout)
     evidence = {"snapshot": identity, "offline": "seccomp: socket EPERM", "paid_calls": 0,
-                "transport": "mock only", "graph": graph, "kernel": kernel_release(), "runtime": runtime_digest(), "status": "ENGINEERING_PREFLIGHT_ONLY"}
-    entries = {"preflight.json": encode(evidence), "tests.txt": log.stdout}
+                "transport": "mock only", "package_count": len(packages), "graph": graph, "experiment_sha256": sha(encode(experiment)), "kernel": kernel_release(), "runtime": runtime_digest(), "status": "ENGINEERING_PREFLIGHT_ONLY"}
+    entries = {"preflight.json": encode(evidence), "tests.txt": log.stdout,
+               "r4-a-plan.json": encode(experiment)}
     entries["SHA256SUMS"] = sums(entries)
     archive(args.reports / "DS-DX-02-D-preflight.zip", entries)
     save(args.reports / "preflight.json", evidence)
