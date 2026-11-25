@@ -1,35 +1,25 @@
-# HANDOFF Architecture Session A — DS-DX-02-D-R4-B-INT
+# HANDOFF Architecture Session A — DS-DX-02-R4-B-QA / CONSULT-01
 
-25 ноября 2026 года · `UkWood/ds-cosult` · `experiment/ds-dx-02-d-unified-knowledge-compiler`
+Ветка `experiment/ds-dx-02-d-unified-knowledge-compiler` · реализация QA `e2c6ff9379dd76cebd382e042f70151581bc0d03` · runtime SHA-256 `1a9f9a2b2b6072dc15ed47c9967e5abab52128e5a7beeb477b6a35e1d93227df`.
 
-- Базовая реализация R4-C: `19e70a72d18b932e9119357749290d8bfa897016`
-- Коммит реализации INT: `86acd589f99276f192eb06a80e5bf2f308697bc3`
-- Runtime SHA-256: `da8e7bdf27c3fde1816b368d6d3035497166e9a545123f4e2372db5b0bf0d247`
-- Saturn-Main-Site commit/tree: `084d759487bfab6e111549c9b5469711ac5fc13e` / `a5297822bf3a5e071b10cc1dca553481c1b84d47`
+База R4-B — `86acd589f99276f192eb06a80e5bf2f308697bc3`. Исходный снимок и результаты владельца читаются из прежних каталогов. [HANDOFF R4-B-INT](https://github.com/UkWood/ds-cosult/blob/b2d04355b946d5f13b4eb885112e098b7ec40857/experiments/ds-dx-02/HANDOFF.md)
 
-## Интеграция и основания
+## Что поставлено
 
-Полный COMPILE использует `thinking.type=disabled` для extract, vision_photo, vision_document и fusion. Каждый Chat Completions проходит через SSE с `stream=true` и `stream_options.include_usage=true`. Files API остаётся отдельным вызовом. Граф, SourceArchive, промпты, Fusion, формат KnowledgeBase и тракт CONSULT сохранены. При обрыве, отсутствии DONE либо ошибке usage операция остаётся UNKNOWN с удержанием резерва. Матрицы R4-A/R4-C и закрытые исходные материалы используются для проверки допуска.
+- **QA-01.** Бесплатный replay под seccomp проверяет пины двух ZIP, плана, ledger, SourceArchive и 98 завершённых checkpoints. Восстанавливает порядок, request/prefix hashes и фактические области задач, включая основания Fusion. Для исторического file handle используется окно от времени завершения upload до сохранённого expiry, сверенное с исходным UTC начала каждого запроса. Сегодняшний TTL не влияет на replay. Реконструкция во временном каталоге сравнивает содержимое обоих ZIP с исходными и удаляется при выходе. Публикуется только отдельный review ZIP. Любое расхождение останавливает проверку.
+- **Диагностика.** Review ZIP содержит безопасные исходные поля, порядковый номер, исходный первый код, дополнительные выявленные причины, допустимые локаторы, изображения и отдельное предложение только для однозначных преобразований. Сводка включает примеры, распределения и сравнение с переданными 327 первыми причинами, а также списки `unconfirmed_images`, `truncated` и `invalid_json`. Только фактический replay заполнит эти результаты. Предложения не меняют факты или исходную KnowledgeBase.
+- **CONSULT-01.** Приложенные 12 вопросов сохранены побайтно, SHA-256 `aa083f7d102e583a3f49d347001dde2d4b3d0322696b01a9758876d3d8ec2c08`. Q10–Q11 образуют один диалог `serial`. Первый эксперимент отправляет текст из подготовленной базы и метаданные источников без inline-изображений, эталонных ответов, tools и raw fallback. Прежний selector остаётся с `CONTEXT_BYTES=240000`, `LIMIT=4096`. В системный текст для PARTIAL добавлено одно указание о статусе, инженерной непроверенности и существенных пробелах. SSE отправляет естественный текст с Thinking Disabled и итоговым usage. Q12 оценивается по источникам после ответа.
+- **Прогресс.** COMPILE, CONSULT и QA replay пишут в stderr время UTC, текущую задачу, завершённые и известные задачи, учтённые нанодоллары и heartbeat примерно каждые 15 секунд. Heartbeat показывает работу процесса, а не получение данных. Терминальный статус содержит путь отчёта. Причина прежнего Ctrl+C не установлена.
 
-Architecture Session A зафиксировала Disabled 68/72 и 0 критических пропусков, Low 18/72 и 7 критических пропусков, SSE 4/4 без новых UNKNOWN. Disabled для vision_photo и fusion остаётся предварительной инженерной политикой. Их качество проверяется на полной KnowledgeBase владельцем.
+**Бесплатная приёмка в Codex — 43 PASS, 0 FAIL, 0 SKIP.** Три прежних SourceArchive, socket EPERM, 0 платных операций. Тест replay с истёкшей арендой выполнен на синтетических checkpoints. Приватные артефакты владельца и фактические причины отклонений проверяются на UK-PC.
 
-Бесплатная подготовка сверяет оба `score.json` с замороженной картой `R4-A-ENGINEERING-01`, идентичностью Owner GO, сводками экспериментов, завершёнными checkpoints и режимами запросов. Штатный оценщик пересчитывает оценки. Для R4-C дополнительно проверяется прежний замороженный план продолжения. SHA плана связывает Thinking, SSE, SHA обоих оценочных отчётов, карту, исходный снимок, runtime, preflight и финансовое основание. LIVE пересчитывает эти пины под финансовой блокировкой до запроса ключа. Замена файла после утверждения плана требует нового бесплатного расчёта и отдельного решения владельца.
-
-## Бесплатная приёмка
-
-**38 PASS, 0 FAIL, 0 SKIP.** Сохранены все 36 прежних тестов. Трёхпакетный mock пропустил результаты через SSE-ассемблер, проверил параметризацию всех четырёх семейств, повтор по checkpoints и совместимость готовой базы с CONSULT. Добавлены проверки остановки полного COMPILE при EOF и плохом usage, отсутствия и изменения каждого score, смены режима и изменения финансового пина. Использованы Linux и прежние три SourceArchive с seccomp `socket EPERM`. Проверки разрешения использовали синтетические локальные отчёты соответствующего формата. Фактические приватные артефакты владельца проверяются на UK-PC. Платные операции в Codex — **0**.
-
-| Артефакт | SHA-256 |
+| ZIP preflight | SHA-256 |
 |---|---|
-| `DS-DX-02-D-preflight.zip` | `bdc658ae8ea25c91305f7cc06a39b9a03960d4d1d64d48bf3af511f039fcf54e` |
-| `mock-package-1.zip` | `f9bd04f74fe746e2d6593eb88cfe329df29ca316ecdc3ec60cdaad129989cf32` |
-| `mock-package-2.zip` | `d015250d25a8df30086c6b4355c909d49ed7d213e05adc080303a616485ddad9` |
-| `mock-package-3.zip` | `3a0ea943d6c04b25917effe02da57109ce49b46a2df62801ad90c6591ddec08a` |
-| `r4-a-mock.zip` | `61d46cfeb9b4c2832e91e9b5f5ebc1914010ef32e12e44476e6789ce23f98b4d` |
+| `DS-DX-02-D-preflight.zip` | `171709d27cfb97be6d8626921dedd937195566d5203a0060448fcded53f7f750` |
 
-## Независимый бесплатный WSL-preflight и подготовка допуска
+## Один бесплатный WSL-блок
 
-Команды используют прежний checkout, venv и SourceArchive. Приватные пути соответствуют предыдущим HANDOFF. Сохраните выведенный SHA плана в отдельном Owner GO.
+Запустите на UK-PC в прежней WSL-среде. Укажите фактическую папку `UTKC_HOME`, если она отличается от приведённой. QA ZIP содержит тексты для внутренней инженерной проверки. Храните экспорт в согласованном локальном каталоге. Новый пакет KnowledgeBase здесь не экспортируется.
 
 ```bash
 export UTKC_HOME="$HOME/utkc-r2-acceptance"
@@ -37,52 +27,45 @@ export UTKC_HOME="$HOME/utkc-r2-acceptance"
   set -euo pipefail
   test -z "$(git -C "$UTKC_HOME/backend" status --porcelain)"
   git -C "$UTKC_HOME/backend" fetch origin experiment/ds-dx-02-d-unified-knowledge-compiler
-  git -C "$UTKC_HOME/backend" switch --detach 86acd589f99276f192eb06a80e5bf2f308697bc3
-  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = 86acd589f99276f192eb06a80e5bf2f308697bc3
+  git -C "$UTKC_HOME/backend" switch --detach e2c6ff9379dd76cebd382e042f70151581bc0d03
+  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = e2c6ff9379dd76cebd382e042f70151581bc0d03
   test "$(git -C "$UTKC_HOME/site" rev-parse HEAD)" = 084d759487bfab6e111549c9b5469711ac5fc13e
   cd "$UTKC_HOME/backend/experiments/ds-dx-02"
   export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
   bash preflight.sh --sources "$UTKC_HOME/source-pilot" \
     --additional-source "$UTKC_HOME/source-product" --additional-source "$UTKC_HOME/source-system" \
-    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-r4-b-int"
-  (cd "$UTKC_HOME/preflight-r4-b-int" && sha256sum -c ./*.zip.sha256)
-  "$DX02_PYTHON" compile_release.py --workspace "$UTKC_HOME" \
-    --sources "$UTKC_HOME/source-pilot" --card "$UTKC_HOME/r4-a-plan/reviewed-card.json" \
-    --preflight "$UTKC_HOME/preflight-r4-b-int/preflight.json" \
-    --output "$UTKC_HOME/r4-b-int-plan.json"
+    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-r4-b-qa"
+  (cd "$UTKC_HOME/preflight-r4-b-qa" && sha256sum -c ./*.zip.sha256)
+  "$DX02_PYTHON" qa_replay.py --workspace "$UTKC_HOME" \
+    --output "$UTKC_HOME/qa-r4-b/qa-review.zip"
+  "$DX02_PYTHON" consult_qa.py prepare --workspace "$UTKC_HOME" \
+    --preflight "$UTKC_HOME/preflight-r4-b-qa/preflight.json"
+  (cd "$UTKC_HOME/qa-r4-b" && sha256sum -c qa-review.zip.sha256 consult-dryrun.zip.sha256)
+  output=/mnt/c/DS-Validation/Reports/DS-DX-02-R4-B-QA
+  mkdir -p "$output"
+  cp -n "$UTKC_HOME/preflight-r4-b-qa"/DS-DX-02-D-preflight.zip{,.sha256} \
+    "$UTKC_HOME/qa-r4-b"/qa-review.zip{,.sha256} \
+    "$UTKC_HOME/qa-r4-b"/consult-dryrun.zip{,.sha256} "$output/"
+  (cd "$output" && sha256sum -c "$UTKC_HOME/preflight-r4-b-qa/DS-DX-02-D-preflight.zip.sha256" \
+    "$UTKC_HOME/qa-r4-b/qa-review.zip.sha256" "$UTKC_HOME/qa-r4-b/consult-dryrun.zip.sha256")
 )
 ```
 
-Финансовый пин вычисляется по локальным ledger и проверенным завершённым checkpoints. Контроль Architecture Session A — $0.212773848 расходов плюс $0.614745600 удержанных резервов. Контрольные остатки — $1.172480552 COMPILE и $4.172480552 всего. При расхождении представьте локальное основание владельцу до GO. Старые UNKNOWN сохраняются в прежних сессиях и учитываются в лимитах нового R4-B.
+В dry-run Q11 использует явно синтетический ответ Q10. ZIP содержит байты контекстного блока и запроса, виды и число выбранных записей, наличие критических записей и локаторов. Это проверка selector. Фактические usage и качество ответа измеряются в LIVE. Если критические записи не помещаются или не передаются, подготовка останавливается. Исходные счета R2, R3, R4-A, R4-C и R4-B проверяются и фиксируются в SHA плана. Удержанные резервы остаются в расчёте. Пиковый резерв первого вопроса **$0.3049152**, сумма резервов 12 вопросов **$3.6589824**. Это верхние оценки, а не утверждённый бюджет.
 
-## Полный COMPILE пилота после отдельного Owner GO
+## Будущий LIVE-CONSULT после отдельного Owner GO
 
-Из утверждённого решения задайте `R4B_PLAN_SHA`, `R4B_OWNER_GO`, `R4B_COMPILE_USD` и `R4B_TOTAL_USD`. Ключ вводится скрыто в интерактивной WSL2. Перед запуском подтвердите действующий контракт провайдера.
+После просмотра QA ZIP и dry-run установите `CONSULT_PLAN_SHA`, `CONSULT_OWNER_GO`, `CONSULT_GO_USD` и `CONSULT_TOTAL_USD` из отдельного решения владельца. Launcher повторно сверяет план, исторические счета, архив, вопросы и runtime перед запросом ключа. При UNKNOWN матрица останавливается. Автоматических повторов нет.
 
 ```bash
 cd "$UTKC_HOME/backend/experiments/ds-dx-02"
 export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
-bash compile-live.sh --sources "$UTKC_HOME/source-pilot" \
-  --preflight "$UTKC_HOME/preflight-r4-b-int/preflight.json" \
-  --card "$UTKC_HOME/r4-a-plan/reviewed-card.json" \
-  --policy "$UTKC_HOME/r4-b-int-plan.json" --plan-sha256 "${R4B_PLAN_SHA:?}" \
-  --state "$UTKC_HOME/private-r4-b" --knowledge "$UTKC_HOME/knowledge-r4-b-v1" \
-  --reports "$UTKC_HOME/compile-r4-b-v1" --owner-go "${R4B_OWNER_GO:?}" \
-  --owner-go-usd "${R4B_COMPILE_USD:?}" --total-go-usd "${R4B_TOTAL_USD:?}" \
-  --confirm-provider-contract
+bash consult-live.sh live --workspace "$UTKC_HOME" \
+  --preflight "$UTKC_HOME/preflight-r4-b-qa/preflight.json" \
+  --plan-sha256 "${CONSULT_PLAN_SHA:?}" --owner-go "${CONSULT_OWNER_GO:?}" \
+  --owner-go-usd "${CONSULT_GO_USD:?}" --total-go-usd "${CONSULT_TOTAL_USD:?}" \
+  --allow-partial --confirm-provider-contract
+(cd "$UTKC_HOME/reports-consult-01" && sha256sum -c DS-DX-02B-results.zip.sha256)
 ```
 
-При остановке по бюджету доступный результат остаётся частичным. Явный `--resume` с тем же SHA, Owner GO и state использует завершённые checkpoints. Выберите новые пути KnowledgeBase и отчётов. Увеличение требует действующей процедуры `--budget-approval` и соблюдения итоговых потолков из плана. UNKNOWN блокирует возобновление. Пиковые резервы последовательны, и имеющийся остаток не гарантирует прохождение всего графа.
-
-## Экспорт и проверка
-
-```bash
-(cd "$UTKC_HOME/compile-r4-b-v1" && sha256sum -c knowledge.zip.sha256 DS-DX-02A-results.zip.sha256)
-bash export.sh --zip "$UTKC_HOME/compile-r4-b-v1/knowledge.zip"
-bash export.sh --knowledge "$UTKC_HOME/knowledge-r4-b-v1" --zip "$UTKC_HOME/portable-knowledge-r4-b-v1.zip"
-"$DX02_PYTHON" reconcile.py --ledger "$UTKC_HOME/private-r4-b/ledger.json" \
-  --knowledge-zip "$UTKC_HOME/compile-r4-b-v1/knowledge.zip" \
-  --output "$UTKC_HOME/reconcile-r4-b-v1.json"
-```
-
-Инженерная приёмка проверяет полноту, происхождение, условия применимости, критические пробелы и качество vision_photo и fusion. Результаты mock подтверждают протокол. Реальные показатели полного COMPILE и пригодность KnowledgeBase подтверждаются после отдельного запуска владельца. [Предыдущий HANDOFF R4-C](https://github.com/UkWood/ds-cosult/blob/f19ffa9e8a8ca0b5de4a473b3e9cb64f4801e789/experiments/ds-dx-02/HANDOFF.md)
+Ответы UNREVIEWED. Сопоставьте их с `R4-A-ENGINEERING-01` и исходными материалами отдельно от измерений selector. Особое внимание уделите критическим условиям, исходным противоречиям, распиновке и реакции Q12 на неподтверждённый диапазон.
