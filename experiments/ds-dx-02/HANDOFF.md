@@ -1,40 +1,38 @@
-# HANDOFF Architecture Session A — DS-DX-02 CONSULT-02-R1
+# HANDOFF Architecture Session A — DS-DX-02 CONSULT-02-R2
 
-Ветка `experiment/ds-dx-02-d-unified-knowledge-compiler` · реализация `78fc12ba49d03a276eabf297b9c28d0b42fcde48` · runtime SHA-256 `c8c72f64fe98c07e8d86c3992a62ef4bce522108bedee30a992365cb872fa48d`.
+Ветка `experiment/ds-dx-02-d-unified-knowledge-compiler` · immutable implementation `ecde5b407703122b3ee977d89884b2d26a99e90d` · runtime SHA-256 `b7341deccd4df14167a9d4956a38bd4bdfea03ac594be9be3443c94f8e390e19`.
 
-База R1 — `88e61096296729fe217c92889210f0ddb8f7df3d`. Исходная KnowledgeBase R4-B, вопросы, контрольная карта, история запросов, планы и ledger сохранены. Ранжирование selector не менялось. [HANDOFF CONSULT-02](https://github.com/UkWood/ds-cosult/blob/a70cd7c3580f35ffe959cd5fb3e1bbe981014e96/experiments/ds-dx-02/HANDOFF.md)
+Базовая реализация — `78fc12ba49d03a276eabf297b9c28d0b42fcde48`. [HANDOFF CONSULT-02-R1](https://github.com/UkWood/ds-cosult/blob/4d3de2e4ec169c9b33fc5c1860c5dc8b3695e620/experiments/ds-dx-02/HANDOFF.md)
 
-## Нормативы и размер запроса
+## Изменения
 
-CONSULT-02-R1 отправляет `max_tokens=5000`, Thinking Disabled и Streaming SSE с usage. В системный промпт добавлено дословное указание отвечать по существу, выбирая объём по сложности вопроса и сохраняя технически значимые условия, ограничения, меры безопасности и ссылки. Инструкция «Не выдумывай недостающие технические характеристики» сохранена. Исторический CONSULT-01 остаётся отдельной базой сравнения.
+- Диапазоны раскрываются для однотипных технических обозначений с совпадающими нормализованными префиксами. Обрабатываются пробелы, ASCII и Unicode-дефисы, кириллические и латинские варианты. Раскрывается не больше 16 позиций. Числовые интервалы, префиксы единиц измерения и несовместимые обозначения не раскрываются. Промежуточные обозначения участвуют в поиске и проверке области конфликта. Отчёт содержит обозначение, ID записей и локаторы силового и сигнального указаний. Это основание для локальной остановки и проверки у изготовителя.
+- Для открытых обзоров возможностей selector добавляет до шести кандидатов из прямых деклараций по подходящим категориям. Приоритет задан для подготовленной карточки сущности. Например, защищённые сетевые функции могут попасть в обзор связи без общих лексических токенов. Дополнения подчиняются тому же JSON-пределу и идут после обязательных ограничений безопасности. Узкие процедурные вопросы сохраняют обычный путь поиска.
+- Оригинальная KnowledgeBase, контрольная карта, 12 вопросов, исторические результаты и ledger остаются неизменными. Действуют Token Policy v2 **50 000/5 000**, прежний системный промпт, Thinking Disabled, Streaming SSE с usage, отключённые native tools и один POST на вопрос максимум. Консервативный резерв — **306 000 000 nd**. Размер компактного JSON остаётся приближённым ограничителем, проверка токенов выполняется по usage провайдера.
 
-Локальный предел — размер компактного JSON в UTF-8. Ни один из профилей не даёт гарантии 50 000 входных токенов до отправки. Совместимый подтверждённый токенизатор в этом этапе не внедрён. LIVE проверяет фактический `prompt_tokens` после получения usage. При превышении 50 000 стоимость учитывается и дальнейшая серия прекращается. Output свыше 5 000 нарушает проверку usage и удерживает резерв.
+## Бесплатная проверка
 
-Резерв по штатной консервативной формуле — **$0.306 за запрос**, до **$3.672** для 12 запросов. Профиль JSON и норматив входа не снижают расчётный резерв. Исторические расходы и удержанные UNKNOWN учитываются по ledger. Новый бюджет требует отдельного Owner GO. Один платный POST на вопрос максимум, автоматических повторов нет. Heartbeat WSL примерно каждые 15 секунд.
+**56 PASS, 0 FAIL, 0 SKIP** на трёх прежних SourceArchive с seccomp socket EPERM. Закрытые данные владельца не входили в облачный прогон. Платных вызовов и повторной компиляции — 0. Покрытие R2 будет измерено только на UK-PC.
 
-## Бесплатный Selector Context Sweep
+| Профиль | Предел JSON | R1, по данным UK-PC | R2 |
+|---|---:|---:|---|
+| A | 9 000 | 23/54 | ожидает замера |
+| B | 32 000 | 42/54 | ожидает замера |
+| C | 64 000 | 44/54 | ожидает замера |
+| D | 96 000 | 48/54 | ожидает замера |
+| E | 128 000 | 53/54 | ожидает замера |
 
-| Профиль | Предел компактного JSON |
-|---|---:|
-| A | 9 000 байт |
-| B | 32 000 байт |
-| C | 64 000 байт |
-| D | 96 000 байт |
-| E | 128 000 байт |
+R1 завершился FAIL по всем профилям, Q11 с фактической историей достиг 3/3 в D/E. Проверяющий CLI сверяет архив R1 по SHA-256 `672aa6112c73c933867f482b6de871aad3f385dbf397b1f5e652b5adc239ec20`. В `r1-comparison.json` войдут дельты по профилям, восстановленные и новые пропуски, изменения локальных остановок и отдельное сравнение исторического Q11.
 
-В каждом профиле проверяются 12 вопросов. `cases.json` содержит покрытие и конкретные пропуски групп, выбранные ID, число неопределённостей и критических записей, размеры запроса, локальные остановки и сохранность применимых мер безопасности. Q11 отдельно проверяется с фактическим ответом Q10 из CONSULT-01, который используется только как ограниченный контекст диалога. Контрольная карта читается только проверяющим CLI.
-
-В `summary.json` указан первый достаточный профиль из испытанных для каждого вопроса и отдельно для всей серии. Для серии проверяются все 54 группы, обе истории Q11, локальные пределы, сохранность обязательных сведений и специальные проверки Q02, Q08 и Q12. Профили могут давать разные выборки. План LIVE записывается только при прохождении всей серии и закрепляет прошедший минимальный профиль. При FAIL ZIP сохраняет измеренные пропуски без плана LIVE.
-
-**52 PASS, 0 FAIL, 0 SKIP** в Codex на трёх прежних SourceArchive, seccomp socket EPERM. 0 платных операций. Приватные данные UK-PC в Codex недоступны, поэтому фактическое покрытие 54/54 и минимальный достаточный профиль ещё не измерены. Фактического usage v2 в бесплатной приёмке нет.
+PASS R2 требует 54/54, обе истории Q11, Safety Gate Q02 и Q08 по известному конфликту, отсутствие дополнительных блокировок, abstention guard Q12, сохранность обязательных мер безопасности и соблюдение JSON-предела. Отчёт покажет минимальные достаточные профили по каждому вопросу и всей серии. При FAIL отчёт сохраняется, план LIVE не формируется.
 
 | ZIP preflight | SHA-256 |
 |---|---|
-| `DS-DX-02-D-preflight.zip` | `e5b03465fa10ae91d3f2d5d5636cf9dc7746e54de42f1c6da329f6bb3df4a9ec` |
+| `DS-DX-02-D-preflight.zip` | `5d182d3ecbe44d2a0fe6b14f3ab9798e0bd7fae8cf21c60406d08930daa30db0` |
 
-## Один бесплатный блок WSL для UK-PC
+## Один бесплатный блок WSL на UK-PC
 
-Блок использует старые venv, три SourceArchive, KnowledgeBase, архив CONSULT-01 и исторические ledger. Он экспортирует измеренный ZIP при PASS и при FAIL, если проверка смогла собрать отчёт. Каталоги R1 отдельные.
+Сохраните архив R1 с его sidecar в прежнем `consult02-r1-offline`. Используются прежние venv, SourceArchive, KnowledgeBase и исторические данные. Блок экспортирует единый ZIP R2 при PASS или FAIL, если отчёт сформирован.
 
 ```bash
 export UTKC_HOME="$HOME/utkc-r2-acceptance"
@@ -42,22 +40,22 @@ export UTKC_HOME="$HOME/utkc-r2-acceptance"
   set -euo pipefail
   test -z "$(git -C "$UTKC_HOME/backend" status --porcelain)"
   git -C "$UTKC_HOME/backend" fetch origin experiment/ds-dx-02-d-unified-knowledge-compiler
-  git -C "$UTKC_HOME/backend" switch --detach 78fc12ba49d03a276eabf297b9c28d0b42fcde48
-  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = 78fc12ba49d03a276eabf297b9c28d0b42fcde48
+  git -C "$UTKC_HOME/backend" switch --detach ecde5b407703122b3ee977d89884b2d26a99e90d
+  test "$(git -C "$UTKC_HOME/backend" rev-parse HEAD)" = ecde5b407703122b3ee977d89884b2d26a99e90d
   test "$(git -C "$UTKC_HOME/site" rev-parse HEAD)" = 084d759487bfab6e111549c9b5469711ac5fc13e
   cd "$UTKC_HOME/backend/experiments/ds-dx-02"
   export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
   bash preflight.sh --sources "$UTKC_HOME/source-pilot" \
     --additional-source "$UTKC_HOME/source-product" --additional-source "$UTKC_HOME/source-system" \
-    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-consult02-r1"
-  (cd "$UTKC_HOME/preflight-consult02-r1" && sha256sum -c ./*.zip.sha256)
+    --site "$UTKC_HOME/site" --reports "$UTKC_HOME/preflight-consult02-r2"
+  (cd "$UTKC_HOME/preflight-consult02-r2" && sha256sum -c ./*.zip.sha256)
   result=0
   "$DX02_PYTHON" consult02_check.py --workspace "$UTKC_HOME" \
-    --preflight "$UTKC_HOME/preflight-consult02-r1/preflight.json" || result=$?
-  src="$UTKC_HOME/consult02-r1-offline"
+    --preflight "$UTKC_HOME/preflight-consult02-r2/preflight.json" || result=$?
+  src="$UTKC_HOME/consult02-r2-offline"
   test -f "$src/consult02-context-sweep.zip" || exit 1
   (cd "$src" && sha256sum -c consult02-context-sweep.zip.sha256)
-  target=/mnt/c/DS-Validation/Reports/DS-DX-02-CONSULT-02-R1
+  target=/mnt/c/DS-Validation/Reports/DS-DX-02-CONSULT-02-R2
   mkdir -p "$target"
   cp -n "$src"/consult02-context-sweep.zip{,.sha256} "$target/"
   (cd "$target" && sha256sum -c "$src/consult02-context-sweep.zip.sha256")
@@ -65,16 +63,4 @@ export UTKC_HOME="$HOME/utkc-r2-acceptance"
 )
 ```
 
-## LIVE только после отдельного Owner GO
-
-Используйте SHA `consult02-r1-offline/plan.json`, напечатанный при PASS. Launcher сверяет выбранный профиль по ZIP, SHA плана и исторические ledger до ввода ключа. Если обнаружен ledger предыдущего CONSULT-02, требуется отдельная финансовая сверка его экспозиции. Все новые операции пишутся в `private-consult-02-r1`, отчёты — в `reports-consult-02-r1`.
-
-```bash
-cd "$UTKC_HOME/backend/experiments/ds-dx-02"
-export DX02_PYTHON="$UTKC_HOME/venv/bin/python" PYTHONDONTWRITEBYTECODE=1
-"$DX02_PYTHON" consult02.py --workspace "$UTKC_HOME" \
-  --preflight "$UTKC_HOME/preflight-consult02-r1/preflight.json" \
-  --plan-sha256 "${CONSULT02_R1_PLAN_SHA:?}" --owner-go "${CONSULT02_R1_OWNER_GO:?}" \
-  --owner-go-usd "${CONSULT02_R1_GO_USD:?}" --total-go-usd "${CONSULT02_R1_TOTAL_USD:?}" \
-  --allow-partial --confirm-provider-contract
-```
+Sweep и будущий LIVE показывают heartbeat в stderr примерно каждые 15 секунд. При PASS отдельно выводится SHA `consult02-r2-offline/plan.json`. LIVE запускается владельцем после отдельного Owner GO, с этим SHA и `preflight-consult02-r2/preflight.json`, через `consult02.py` по интерфейсу R1. Для новых записей используются только `private-consult-02-r2` и `reports-consult-02-r2`. Любая ранее запущенная платная сессия CONSULT-02 требует сверки её финансовой экспозиции до подготовки нового плана.
