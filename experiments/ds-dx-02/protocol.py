@@ -16,13 +16,15 @@ from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from sse import ChatStream
+
 MODEL = "deepseek-flash"
 CONTEXT = 1_000_000
 HIT, MISS, OUTPUT, PAGE = 6, 300, 1200, 225_000  # nanodollars
 BODY = 48 * 1024**2
 RESPONSE_MAX = 32 * 1024**2
 MODES = {"disabled", "low", "high"}
-STAGES = {"compile", "consult", "r4-a"}
+STAGES = {"compile", "consult", "r4-a", "r4-c"}
 ENDPOINTS = {"/files", "/chat/completions"}
 
 
@@ -105,15 +107,17 @@ def text(value):
     return {"type": "text", "text": value}
 
 
-def chat(system, blocks, limit, *, compile_task=False, mode="disabled"):
+def chat(system, blocks, limit, *, compile_task=False, mode="disabled", streaming=False):
     if mode not in MODES or not compile_task and mode != "disabled":
         raise Stop("Unsupported reasoning mode")
     body = {
-        "model": MODEL, "stream": False, "max_tokens": limit,
+        "model": MODEL, "stream": streaming, "max_tokens": limit,
         "messages": [{"role": "system", "content": system},
                      {"role": "user", "content": blocks}],
         "thinking": {"type": "enabled" if mode != "disabled" else "disabled"},
     }
+    if streaming:
+        body["stream_options"] = {"include_usage": True}
     if compile_task:
         body["response_format"] = {"type": "json_object"}
     if mode != "disabled":
@@ -142,6 +146,9 @@ def reply(response, limit):
         if any(type(n) is not int or n < 0 for n in (prompt, hit, miss, output)):
             raise ValueError
         if prompt != hit + miss or prompt > CONTEXT or output > limit:
+            raise ValueError
+        if "total_tokens" in usage and (type(usage["total_tokens"]) is not int
+                                      or usage["total_tokens"] != prompt + output):
             raise ValueError
         if reasoning is not None and (type(reasoning) is not int or not 0 <= reasoning <= output):
             raise ValueError
@@ -189,32 +196,65 @@ def transport(key):
     def post(endpoint, body, content_type):
         if endpoint not in ENDPOINTS or len(body) > BODY:
             raise Stop("Request outside approved API contract")
+        streaming = endpoint == "/chat/completions" and json.loads(body).get("stream") is True
         conn = http.client.HTTPSConnection("api.deepseek.com", timeout=275)
         stage = "connect"
-        delivery = Delivery(metadata={})
+        stream = ChatStream() if streaming else None
+        delivery = Delivery(metadata=dict(stream.metadata(), response_format="sse") if stream else {})
         try:
             conn.connect()
             stage = "send"
-            conn.request("POST", endpoint, body, {"Authorization": "Bearer " + key,
-                                                   "Content-Type": content_type})
+            headers = {"Authorization": "Bearer " + key, "Content-Type": content_type}
+            if streaming:
+                headers["Accept"] = "text/event-stream"
+            conn.request("POST", endpoint, body, headers)
             stage = "headers"
             response = conn.getresponse()
             delivery.metadata.update(http_status=response.status, request_id=safe_id(response.getheader("x-request-id") or response.getheader("request-id")))
             stage = "read"
+            if response.status != 200:
+                stream = None
             data = bytearray()
+            deadline = time.monotonic() + 1200
             try:
+                if stream and (response.getheader("Content-Type") or "").partition(";")[0].strip().lower() != "text/event-stream":
+                    stage = "headers"
+                    raise Stop("Expected a DeepSeek SSE response")
                 while len(data) <= RESPONSE_MAX:
-                    chunk = response.read1(min(65536, RESPONSE_MAX + 1 - len(data)))
+                    if stream and time.monotonic() > deadline:
+                        raise TimeoutError("SSE wall timeout")
+                    read_size = min(65536, RESPONSE_MAX + 1 - len(data))
+                    try:
+                        chunk = response.read1(read_size)
+                    except http.client.IncompleteRead as error:
+                        data.extend(error.partial[:read_size])
+                        raise
                     if not chunk:
                         break
                     data.extend(chunk)
+                    if stream:
+                        stage = "parse"
+                        stream.feed(chunk)
+                        stage = "read"
+                        if stream.done:
+                            break
             finally:
                 raw = bytes(data)
                 delivery.metadata.update(response_bytes=len(raw), response_sha256=sha(raw))
+                if stream:
+                    delivery.metadata.update(stream.metadata(), response_format="sse",
+                                             response_id=safe_id(stream.response_id))
                 if len(raw) <= RESPONSE_MAX and key.encode() not in raw:
                     delivery.raw = raw
             if len(data) > RESPONSE_MAX:
                 raise Stop("Response exceeds local size limit")
+            if stream:
+                if not stream.done:
+                    raise http.client.IncompleteRead(b"", None)
+                stage = "parse"
+                delivery.value = stream.assembled()
+                delivery.metadata["response_complete"] = True
+                return delivery
             if response.length not in (None, 0):
                 raise http.client.IncompleteRead(b"", response.length)
             delivery.metadata["response_complete"] = True
@@ -371,7 +411,7 @@ class Ledger:
             try:
                 params = json.loads(body)
                 op["parameters"] = {key: params[key] for key in ("model", "max_tokens", "thinking",
-                                    "reasoning_effort", "response_format") if key in params}
+                                    "reasoning_effort", "response_format", "stream", "stream_options") if key in params}
                 mode = ("disabled" if params.get("thinking", {}).get("type") == "disabled"
                         else params.get("reasoning_effort"))
             except (ValueError, TypeError, AttributeError):

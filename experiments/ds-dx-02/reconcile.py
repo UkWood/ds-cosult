@@ -18,7 +18,7 @@ SAFE_STAGES = {"connect", "send", "headers", "read", "parse", "usage", "complete
 SAFE_EXCEPTIONS = {"HTTPStatusError", "TimeoutError", "ConnectionError", "ConnectionResetError",
                    "ConnectionRefusedError", "RemoteDisconnected", "IncompleteRead", "JSONDecodeError",
                    "UnicodeDecodeError", "ProviderContract", "OSError", "PermissionError", "SSLError",
-                   "gaierror", "Stop", "KeyboardInterrupt"}
+                   "gaierror", "Stop", "KeyboardInterrupt", "StreamFormat"}
 
 
 def safe_diagnostic(path):
@@ -30,6 +30,9 @@ def safe_diagnostic(path):
             stage=row["stage"] if row["stage"] in SAFE_STAGES else None,
             exception=row["exception"] if row["exception"] in SAFE_EXCEPTIONS else None,
             response_complete=row.get("response_complete") is True,
+            **{field: row[field] for field in ("sse_done", "sse_finish_seen", "sse_usage_seen",
+                "sse_events", "sse_keepalives", "sse_content_bytes", "sse_reasoning_bytes")
+               if type(row.get(field)) in (int, bool)},
             endpoint=row["endpoint"] if row["endpoint"] in ENDPOINTS else None,
             request_id_available=bool(row.get("request_id")),
             response_id_available=bool(row.get("response_id")),
@@ -152,7 +155,14 @@ def independent_proof(ledger, summary, approval, evidence):
         raw = path.read_bytes()
         if sha(raw) != proof.get("response_sha256"):
             raise Stop("Independently verified response hash differs")
-        raw_object = json.loads(raw)
+        if op.get("parameters", {}).get("stream") is True:
+            from sse import ChatStream
+
+            stream = ChatStream()
+            stream.feed(raw)
+            raw_object = stream.assembled()
+        else:
+            raw_object = json.loads(raw)
         if op.get("endpoint") == "/files":
             from compile_d import uploaded
             from protocol import PAGE

@@ -154,7 +154,7 @@ def provider_files(id_, row):
         dict(path=f"pdf/{id_}.pdf", first=1, last=row["pages"], size=row["size"], sha256=row["sha256"])]
 
 
-def payload(root, website, task, handles, previous, group, *, mode="disabled"):
+def payload(root, website, task, handles, previous, group, *, mode="disabled", streaming=False):
     source, values = group
     kind = task["kind"]
     active_file = handles.get(source) if kind == "extract" else None
@@ -183,7 +183,7 @@ def payload(root, website, task, handles, previous, group, *, mode="disabled"):
                     validated_prior_records=previous)
     blocks.append(text(encode({"task": task, "available_evidence": evidence}).decode()))
     blocks.extend(image_block((root / "raw-illustrations" / name).read_bytes()) for name in names)
-    body = encode(chat(SYSTEM, blocks, task["limit"], compile_task=True, mode=mode))
+    body = encode(chat(SYSTEM, blocks, task["limit"], compile_task=True, mode=mode, streaming=streaming))
     if len(body) > WIRE_MAX:
         raise Stop("Request exceeds bounded wire size")
     return body, prefix
@@ -670,27 +670,32 @@ def run(args):
     if (state.name != "private-r4-b" or args.state.is_symlink()
             or args.engineering_report.resolve() != score_path or not load(score_path)["cases"]):
         raise Stop("Full COMPILE requires engineering assessment from R4-A and a separate canonical R4-B state")
-    finance = finances(workspace, include_r4_a=True)
-    cap, total = money(args.owner_go_usd), money(args.total_go_usd)
-    if not cap <= min(total, finance["max_compile_nd"]) or total > finance["max_total_nd"]:
-        raise Stop("R4-B caps exceed original ceilings after earlier expenses and retained reserves")
-    approval = load(args.policy)
-    if (not isinstance(approval, dict) or set(approval) != {"modes", "engineering_report_sha256", "owner_go"}
-            or not isinstance(approval["owner_go"], str) or not approval["owner_go"].strip()
-            or approval["engineering_report_sha256"] != sha(args.engineering_report.read_bytes())):
-        raise Stop("Full COMPILE requires a frozen R4-B policy and matching engineering report")
-    policy = validate_policy(approval["modes"])
-    plan_id = sha(encode([identity, runtime_digest(), kernel_release(), str(state), approval, finance]))
-    print(f"Compile plan identity: {plan_id}")
-    with locked(args.state):
-        if args.knowledge.exists() or args.reports.exists():
-            raise Stop("Choose fresh knowledge and evidence paths")
-        journal = Ledger(state / "ledger.json", "compile", cap, total, plan_id, args.resume,
-                         load(args.budget_approval) if args.budget_approval else None)
-        key = getpass.getpass("Ключ DeepSeek: ")
-        if not key:
-            raise Stop("Empty key")
-        compile_snapshot(args.sources, args.knowledge, args.reports, journal, identity, transport(key), execution="live", policy=policy)
+    from r4_c import BUDGET_LOCK
+
+    with locked(workspace / BUDGET_LOCK):
+        c_state = workspace / "private-r4-c"
+        finance = finances(workspace, include_r4_a=True,
+                           include_r4_c=(c_state / "ledger.json").exists() or (c_state / ".inflight").exists())
+        cap, total = money(args.owner_go_usd), money(args.total_go_usd)
+        if not cap <= min(total, finance["max_compile_nd"]) or total > finance["max_total_nd"]:
+            raise Stop("R4-B caps exceed original ceilings after earlier expenses and retained reserves")
+        approval = load(args.policy)
+        if (not isinstance(approval, dict) or set(approval) != {"modes", "engineering_report_sha256", "owner_go"}
+                or not isinstance(approval["owner_go"], str) or not approval["owner_go"].strip()
+                or approval["engineering_report_sha256"] != sha(args.engineering_report.read_bytes())):
+            raise Stop("Full COMPILE requires a frozen R4-B policy and matching engineering report")
+        policy = validate_policy(approval["modes"])
+        plan_id = sha(encode([identity, runtime_digest(), kernel_release(), str(state), approval, finance]))
+        print(f"Compile plan identity: {plan_id}")
+        with locked(args.state):
+            if args.knowledge.exists() or args.reports.exists():
+                raise Stop("Choose fresh knowledge and evidence paths")
+            journal = Ledger(state / "ledger.json", "compile", cap, total, plan_id, args.resume,
+                             load(args.budget_approval) if args.budget_approval else None)
+            key = getpass.getpass("Ключ DeepSeek: ")
+            if not key:
+                raise Stop("Empty key")
+            compile_snapshot(args.sources, args.knowledge, args.reports, journal, identity, transport(key), execution="live", policy=policy)
 
 
 def main():

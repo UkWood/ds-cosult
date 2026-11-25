@@ -124,7 +124,7 @@ def validate_card(card, experiment):
         raise Stop("Engineering card must cover A, P and V")
 
 
-def finances(workspace, *, include_r4_a=False):
+def finances(workspace, *, include_r4_a=False, include_r4_c=False):
     r2 = summarize(workspace / "private-state/ledger.json")
     r3 = summarize(workspace / "private-r3/ledger.json")
     # An independent billing CSV cannot remove the old UNKNOWN hold.
@@ -140,12 +140,14 @@ def finances(workspace, *, include_r4_a=False):
                   r2_counted_nd=r2_counted, r3_counted_nd=r3_counted, r3_minimum_hold_nd=R3_HELD,
                   max_compile_nd=ORIGINAL_COMPILE - compile_counted,
                   max_total_nd=ORIGINAL_TOTAL - r2_counted - r3_counted)
-    if include_r4_a:
-        r4 = summarize(workspace / "private-r4-a/ledger.json")
-        exposure = r4["spent_nd"] + r4["retained_nd"]
-        report.update(r4_a_sha256=r4["ledger_sha256"], r4_a_counted_nd=exposure,
-                      max_compile_nd=report["max_compile_nd"] - exposure,
-                      max_total_nd=report["max_total_nd"] - exposure)
+    for name, include in (("r4-a", include_r4_a), ("r4-c", include_r4_c)):
+        if include:
+            r4 = summarize(workspace / f"private-{name}/ledger.json")
+            exposure = r4["spent_nd"] + r4["retained_nd"]
+            field = name.replace("-", "_")
+            report.update({field + "_sha256": r4["ledger_sha256"], field + "_counted_nd": exposure,
+                           "max_compile_nd": report["max_compile_nd"] - exposure,
+                           "max_total_nd": report["max_total_nd"] - exposure})
     return report
 
 
@@ -173,7 +175,7 @@ def metrics(result, task, diagnostic):
                 elapsed_ms=diagnostic["elapsed_ms"] if diagnostic else None), rows
 
 
-def run_matrix(root, experiment, journal, post, reports, *, execution="mock"):
+def run_matrix(root, experiment, journal, post, reports, *, execution="mock", streaming=False, reused_file=None):
     website = load(root / "source-manifest.json")
     context = load(root / "plan/context.json")
     rows, reviewed = {}, {}
@@ -181,11 +183,14 @@ def run_matrix(root, experiment, journal, post, reports, *, execution="mock"):
                   graph_bound_nd=experiment["graph_bound_nd"], snapshot=experiment["snapshot"])
     handles = {}
     upload = experiment["upload"]
+    if reused_file is not None:
+        handles[upload["source"]] = dict(reused_file, first=1, last=upload["pages"])
+    name = journal.stage
 
     def perform(case):
         task = case["task"]
         source, = task["scope"]
-        if case["id"] == upload["before"]:
+        if case["id"] == upload["before"] and reused_file is None:
             raw = (root / "pdf" / (source + ".pdf")).read_bytes()
             if sha(raw) != upload["sha256"]:
                 raise Stop("Sample PDF hash changed")
@@ -198,10 +203,10 @@ def run_matrix(root, experiment, journal, post, reports, *, execution="mock"):
         if source in handles and handles[source]["expires_at"] <= time.time():
             raise Stop("Sample provider file expired")
         group = (source, {n: context[source][n - 1] for n in task["scope"][source]})
-        body, prefix = payload(root, website, task, handles, {}, group, mode=case["mode"])
+        body, prefix = payload(root, website, task, handles, {}, group, mode=case["mode"], streaming=streaming)
         response = journal.execute(case["id"], "/chat/completions", body, case["reserve_nd"], post,
                         lambda response: reply(response, task["limit"]), prefix=prefix)
-        diag = safe_diagnostic(journal.path.parent / "diagnostics/r4-a" / (case["id"] + ".json"))
+        diag = safe_diagnostic(journal.path.parent / "diagnostics" / name / (case["id"] + ".json"))
         summary, accepted = metrics(response, task, diag)
         rows[case["id"]].update(summary, prefix_sha256=prefix)
         reviewed[case["id"]] = accepted
@@ -221,7 +226,7 @@ def run_matrix(root, experiment, journal, post, reports, *, execution="mock"):
             rows[active]["status"] = "UNKNOWN"
             result["stop_reason"] = "UNKNOWN"
             result["blocking_operation"] = blocked["id"]
-            result["transport"] = safe_diagnostic(journal.path.parent / "diagnostics/r4-a" /
+            result["transport"] = safe_diagnostic(journal.path.parent / "diagnostics" / name /
                                                   (blocked["id"] + ".json"))
         elif str(error).startswith("DEFERRED_BUDGET"):
             rows[active]["status"] = "DEFERRED_BUDGET"
@@ -236,18 +241,18 @@ def run_matrix(root, experiment, journal, post, reports, *, execution="mock"):
     result["retained_nd"] = sum(op["reserve_nd"] for op in ops if op["status"] != "SETTLED")
     result["next_reserve_nd"] = None
     if result.get("stop_reason") == "DEFERRED_BUDGET":
-        result["next_reserve_nd"] = (upload["reserve_nd"] if active == upload["before"] and not
+        result["next_reserve_nd"] = (upload["reserve_nd"] if reused_file is None and active == upload["before"] and not
                                      any(op["id"] == "pdf-upload" for op in ops) else rows[active]["reserve_nd"])
     public = {"summary.json": encode(result)}
     public["SHA256SUMS"] = sums(public)
-    archive(reports / "r4-a-summary.zip", public)
+    archive(reports / f"{name}-summary.zip", public)
     private = journal.path.parent / "engineering"
     save(private / "facts.json", reviewed)
     sheet = {id_: dict(matched_required_ids=[], unsupported_claims=None, critical_omissions=[],
                       preserves_conditions_and_units=None, visual_false_positives=None, actual_billing_nd=None,
                       evidence_notes="") for id_ in reviewed}
     save(private / "review-template.json", sheet)
-    md = ["# R4-A · проверка утверждений", "", "Проверьте каждое утверждение по замороженной карте и оригиналу.", ""]
+    md = [f"# {name.upper()} · проверка утверждений", "", "Проверьте каждое утверждение по замороженной карте и оригиналу.", ""]
     for id_, accepted in reviewed.items():
         md.extend([f"## {id_}", ""])
         for row in accepted:
@@ -256,7 +261,7 @@ def run_matrix(root, experiment, journal, post, reports, *, execution="mock"):
     owner = {"facts.json": encode(reviewed), "review-template.json": encode(sheet),
              "REVIEW.md": "\n".join(md).encode(), "summary.json": encode(result)}
     owner["SHA256SUMS"] = sums(owner)
-    archive(private / "r4-a-engineering.zip", owner)
+    archive(private / f"{name}-engineering.zip", owner)
     return result
 
 
